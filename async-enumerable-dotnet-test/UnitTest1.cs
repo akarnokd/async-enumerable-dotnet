@@ -1,5 +1,6 @@
 using System;
 using Xunit;
+using async_enumerable_dotnet;
 
 namespace async_enumerable_dotnet_test
 {

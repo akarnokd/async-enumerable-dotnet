@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using async_enumerable_dotnet.impl;
 
@@ -23,7 +24,12 @@ namespace async_enumerable_dotnet
 
         public static IAsyncEnumerable<long> Timer(TimeSpan delay)
         {
-            return new Timer(delay);
+            return new impl.Timer(delay);
+        }
+
+        public static IAsyncEnumerable<long> Timer(TimeSpan delay, CancellationToken token)
+        {
+            return new TimerCancellable(delay, token);
         }
 
         public static IAsyncEnumerable<T> DoOnDispose<T>(this IAsyncEnumerable<T> source, Action handler)
@@ -34,6 +40,26 @@ namespace async_enumerable_dotnet
         public static IAsyncEnumerable<T> DoOnDisposeAsync<T>(this IAsyncEnumerable<T> source, Func<ValueTask> handler)
         {
             return new DoOnDisposeAsync<T>(source, handler);
+        }
+
+        public static IAsyncEnumerable<T> Error<T>(Exception ex)
+        {
+            return new Error<T>(ex);
+        }
+
+        public static IAsyncEnumerable<T> Using<T, R>(Func<R> resourceProvider, Func<R, IAsyncEnumerable<T>> sourceProvider, Action<R> resourceCleanup)
+        {
+            return new Using<T, R>(resourceProvider, sourceProvider, resourceCleanup);
+        }
+
+        public static IAsyncEnumerable<T> FromTask<T>(Func<Task<T>> func)
+        {
+            return new FromTaskFunc<T>(func);
+        }
+
+        public static IAsyncEnumerable<T> Create<T>(Func<IAsyncEmitter<T>, Task> handler)
+        {
+            return new CreateEmitter<T>(handler);
         }
     }
 }

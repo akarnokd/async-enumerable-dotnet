@@ -36,10 +36,22 @@ namespace async_enumerable_dotnet.impl
 
             public T Current => source.Current;
 
-            public ValueTask DisposeAsync()
+            public async ValueTask DisposeAsync()
             {
-                handler();
-                return source.DisposeAsync();
+                var ex = default(Exception);
+                try
+                {
+                    handler();
+                }
+                catch (Exception e)
+                {
+                    ex = e;
+                }
+                await source.DisposeAsync();
+                if (ex != null)
+                {
+                    throw ex;
+                }
             }
 
             public ValueTask<bool> MoveNextAsync()
@@ -82,8 +94,21 @@ namespace async_enumerable_dotnet.impl
 
             public async ValueTask DisposeAsync()
             {
-                await handler().ConfigureAwait(false);
+                var ex = default(Exception);
+                try
+                {
+                    await handler().ConfigureAwait(false);
+                }
+                catch (Exception e)
+                {
+                    ex = e;
+                }
+
                 await source.DisposeAsync().ConfigureAwait(false);
+                if (ex != null)
+                {
+                    throw ex;
+                }
             }
 
             public ValueTask<bool> MoveNextAsync()
