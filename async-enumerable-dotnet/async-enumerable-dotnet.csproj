@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp2.1</TargetFramework>
     <RootNamespace>async_enumerable_dotnet</RootNamespace>
+    <LangVersion>7.1</LangVersion>
   </PropertyGroup>
 
 </Project>
