@@ -58,6 +58,11 @@ namespace async_enumerable_dotnet
             return new FromTaskFunc<T>(func);
         }
 
+        public static IAsyncEnumerable<T> FromTask<T>(Task<T> task)
+        {
+            return new FromTask<T>(task);
+        }
+
         public static IAsyncEnumerable<T> Create<T>(Func<IAsyncEmitter<T>, Task> handler)
         {
             return new CreateEmitter<T>(handler);
@@ -88,6 +93,11 @@ namespace async_enumerable_dotnet
             return new Map<T, R>(source, mapper);
         }
 
+        public static IAsyncEnumerable<R> Map<T, R>(this IAsyncEnumerable<T> source, Func<T, Task<R>> mapper)
+        {
+            return new MapAsync<T, R>(source, mapper);
+        }
+
         public static IAsyncEnumerable<T> FromObservable<T>(IObservable<T> source)
         {
             return new FromObservable<T>(source);
@@ -108,6 +118,11 @@ namespace async_enumerable_dotnet
             return new Filter<T>(source, predicate);
         }
 
+        public static IAsyncEnumerable<T> Filter<T>(this IAsyncEnumerable<T> source, Func<T, Task<bool>> predicate)
+        {
+            return new FilterAsync<T>(source, predicate);
+        }
+
         public static IAsyncEnumerable<T> FromEnumerable<T>(IEnumerable<T> source)
         {
             return new FromEnumerable<T>(source);
@@ -121,6 +136,91 @@ namespace async_enumerable_dotnet
         public static IAsyncEnumerable<T> Skip<T>(this IAsyncEnumerable<T> source, long n)
         {
             return new Skip<T>(source, n);
+        }
+
+        public static IAsyncEnumerable<T> Empty<T>()
+        {
+            return impl.Empty<T>.Instance;
+        }
+
+        public static IAsyncEnumerable<T> Never<T>()
+        {
+            return impl.Never<T>.Instance;
+        }
+
+        public static ValueTask ForEach<T>(this IAsyncEnumerable<T> source, Action<T> onNext = null, Action<Exception> onError = null, Action onComplete = null)
+        {
+            return impl.ForEach.ForEachAction<T>(source, onNext, onError, onComplete);
+        }
+
+        public static ValueTask<T> FirstTask<T>(this IAsyncEnumerable<T> source)
+        {
+            return impl.FirstLastSingleTask.First(source, default, false);
+        }
+
+        public static ValueTask<T> FirstTask<T>(this IAsyncEnumerable<T> source, T defaultItem)
+        {
+            return impl.FirstLastSingleTask.First(source, defaultItem, true);
+        }
+
+        public static ValueTask<T> LastTask<T>(this IAsyncEnumerable<T> source)
+        {
+            return impl.FirstLastSingleTask.Last(source, default, false);
+        }
+
+        public static ValueTask<T> LastTask<T>(this IAsyncEnumerable<T> source, T defaultItem)
+        {
+            return impl.FirstLastSingleTask.Last(source, defaultItem, true);
+        }
+
+        public static ValueTask<T> SingleTask<T>(this IAsyncEnumerable<T> source)
+        {
+            return impl.FirstLastSingleTask.Single(source, default, false);
+        }
+
+        public static ValueTask<T> SingleTask<T>(this IAsyncEnumerable<T> source, T defaultItem)
+        {
+            return impl.FirstLastSingleTask.Single(source, defaultItem, true);
+        }
+
+        public static IAsyncEnumerable<T> Reduce<T>(this IAsyncEnumerable<T> source, Func<T, T, T> reducer)
+        {
+            return new Reduce<T>(source, reducer);
+        }
+
+        public static IAsyncEnumerable<R> Reduce<T, R>(this IAsyncEnumerable<T> source, Func<R> initialSupplier, Func<R, T, R> reducer)
+        {
+            return new ReduceSeed<T, R>(source, initialSupplier, reducer);
+        }
+
+        public static IAsyncEnumerable<C> Collect<T, C>(this IAsyncEnumerable<T> source, Func<C> collectionSupplier, Action<C, T> collector)
+        {
+            return new Collect<T, C>(source, collectionSupplier, collector);
+        }
+
+        public static IAsyncEnumerable<R> ConcatMap<T, R>(this IAsyncEnumerable<T> source, Func<T, IAsyncEnumerable<R>> mapper)
+        {
+            return new ConcatMap<T, R>(source, mapper);
+        }
+
+        public static IAsyncEnumerable<R> ConcatMap<T, R>(this IAsyncEnumerable<T> source, Func<T, IEnumerable<R>> mapper)
+        {
+            return new ConcatMapEnumerable<T, R>(source, mapper);
+        }
+
+        public static IAsyncEnumerable<T> DoOnNext<T>(this IAsyncEnumerable<T> source, Action<T> handler)
+        {
+            return new DoOnNext<T>(source, handler);
+        }
+
+        public static IAsyncEnumerable<T> DoOnNext<T>(this IAsyncEnumerable<T> source, Func<T, Task> handler)
+        {
+            return new DoOnNextAsync<T>(source, handler);
+        }
+
+        public static IEnumerable<T> ToEnumerable<T>(this IAsyncEnumerable<T> source)
+        {
+            return new ToEnumerable<T>(source);
         }
     }
 }

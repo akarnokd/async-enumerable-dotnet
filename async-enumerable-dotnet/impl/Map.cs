@@ -55,4 +55,55 @@ namespace async_enumerable_dotnet.impl
             }
         }
     }
+
+    internal sealed class MapAsync<T, R> : IAsyncEnumerable<R>
+    {
+        readonly IAsyncEnumerable<T> source;
+
+        readonly Func<T, Task<R>> mapper;
+
+        public MapAsync(IAsyncEnumerable<T> source, Func<T, Task<R>> mapper)
+        {
+            this.source = source;
+            this.mapper = mapper;
+        }
+
+        public IAsyncEnumerator<R> GetAsyncEnumerator()
+        {
+            return new MapAsyncEnumerator(source.GetAsyncEnumerator(), mapper);
+        }
+
+        internal sealed class MapAsyncEnumerator : IAsyncEnumerator<R>
+        {
+            readonly IAsyncEnumerator<T> source;
+
+            readonly Func<T, Task<R>> mapper;
+
+            public MapAsyncEnumerator(IAsyncEnumerator<T> source, Func<T, Task<R>> mapper)
+            {
+                this.source = source;
+                this.mapper = mapper;
+            }
+
+            public R Current => current;
+
+            R current;
+
+            public ValueTask DisposeAsync()
+            {
+                current = default;
+                return source.DisposeAsync();
+            }
+
+            public async ValueTask<bool> MoveNextAsync()
+            {
+                if (await source.MoveNextAsync())
+                {
+                    current = await mapper(source.Current);
+                    return true;
+                }
+                return false;
+            }
+        }
+    }
 }

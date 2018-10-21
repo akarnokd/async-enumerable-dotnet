@@ -54,4 +54,51 @@ namespace async_enumerable_dotnet.impl
             }
         }
     }
+
+    internal sealed class FromTask<T> : IAsyncEnumerable<T>
+    {
+        readonly Task<T> task;
+
+        public FromTask(Task<T> task)
+        {
+            this.task = task;
+        }
+
+        public IAsyncEnumerator<T> GetAsyncEnumerator()
+        {
+            return new FromTaskEnumerator(task);
+        }
+
+        internal sealed class FromTaskEnumerator : IAsyncEnumerator<T>
+        {
+            readonly Task<T> task;
+
+            public T Current => task.Result;
+
+            bool once;
+
+            public FromTaskEnumerator(Task<T> task)
+            {
+                this.task = task;
+            }
+
+            public ValueTask DisposeAsync()
+            {
+                return new ValueTask();
+            }
+
+            public async ValueTask<bool> MoveNextAsync()
+            {
+                if (once)
+                {
+                    return false;
+                }
+
+                once = true;
+
+                await task;
+                return true;
+            }
+        }
+    }
 }
