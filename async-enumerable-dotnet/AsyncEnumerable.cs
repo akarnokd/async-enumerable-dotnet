@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using async_enumerable_dotnet.impl;
@@ -100,6 +101,26 @@ namespace async_enumerable_dotnet
         public static IObservable<T> ToObservable<T>(this IAsyncEnumerable<T> source)
         {
             return new ToObservable<T>(source);
+        }
+
+        public static IAsyncEnumerable<T> Filter<T>(this IAsyncEnumerable<T> source, Func<T, bool> predicate)
+        {
+            return new Filter<T>(source, predicate);
+        }
+
+        public static IAsyncEnumerable<T> FromEnumerable<T>(IEnumerable<T> source)
+        {
+            return new FromEnumerable<T>(source);
+        }
+
+        public static IAsyncEnumerable<T> Just<T>(T item)
+        {
+            return new Just<T>(item);
+        }
+
+        public static IAsyncEnumerable<T> Skip<T>(this IAsyncEnumerable<T> source, long n)
+        {
+            return new Skip<T>(source, n);
         }
     }
 }
