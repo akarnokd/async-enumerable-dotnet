@@ -16,16 +16,33 @@ namespace async_enumerable_dotnet_test
             var idx = 0;
             try
             {
-                if (await en.MoveNextAsync())
+                while (await en.MoveNextAsync())
                 {
                     Assert.True(idx < values.Length);
-                    Assert.Equal(en.Current, values[idx]);
+                    Assert.Equal(values[idx], en.Current);
                     idx++;
                 }
-                else
+
+                Assert.Equal(idx, values.Length);
+            }
+            finally
+            {
+                await en.DisposeAsync();
+            }
+        }
+
+        public static async ValueTask AssertResultSet<T>(this IAsyncEnumerable<T> source, params T[] values)
+        {
+            var set = new HashSet<T>(values);
+            var en = source.GetAsyncEnumerator();
+            try
+            {
+                while (await en.MoveNextAsync())
                 {
-                    Assert.Equal(idx, values.Length);
+                    Assert.True(set.Remove(en.Current));
                 }
+
+                Assert.Empty(set);
             }
             finally
             {
@@ -39,16 +56,14 @@ namespace async_enumerable_dotnet_test
             var idx = 0;
             try
             {
-                if (await en.MoveNextAsync())
+                while (await en.MoveNextAsync())
                 {
                     Assert.True(idx < values.Length);
                     Assert.Equal(en.Current, values[idx]);
                     idx++;
                 }
-                else
-                {
-                    Assert.True(false, "Did not throw the exception " + exception);
-                }
+
+                Assert.True(false, "Did not throw the exception " + exception);
             }
             catch (Exception ex)
             {

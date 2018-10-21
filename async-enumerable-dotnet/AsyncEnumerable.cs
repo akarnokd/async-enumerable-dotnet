@@ -76,5 +76,30 @@ namespace async_enumerable_dotnet
         {
             return new Range(start, start + count);
         }
+
+        public static IAsyncEnumerable<R> FlatMap<T, R>(this IAsyncEnumerable<T> source, Func<T, IAsyncEnumerable<R>> mapper, int maxConcurrency = int.MaxValue, int prefetch = 32)
+        {
+            return new FlatMap<T, R>(source, mapper, maxConcurrency, prefetch);
+        }
+
+        public static IAsyncEnumerable<R> Map<T, R>(this IAsyncEnumerable<T> source, Func<T, R> mapper)
+        {
+            return new Map<T, R>(source, mapper);
+        }
+
+        public static IAsyncEnumerable<T> FromObservable<T>(IObservable<T> source)
+        {
+            return new FromObservable<T>(source);
+        }
+
+        public static IAsyncEnumerable<T> ToAsyncEnumerable<T>(this IObservable<T> source)
+        {
+            return new FromObservable<T>(source);
+        }
+
+        public static IObservable<T> ToObservable<T>(this IAsyncEnumerable<T> source)
+        {
+            return new ToObservable<T>(source);
+        }
     }
 }
