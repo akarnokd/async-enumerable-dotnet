@@ -61,5 +61,20 @@ namespace async_enumerable_dotnet
         {
             return new CreateEmitter<T>(handler);
         }
+
+        public static IAsyncEnumerable<T> Defer<T>(Func<IAsyncEnumerable<T>> func)
+        {
+            return new Defer<T>(func);
+        }
+
+        public static IAsyncEnumerable<T> Take<T>(this IAsyncEnumerable<T> source, long n)
+        {
+            return new Take<T>(source, n);
+        }
+
+        public static IAsyncEnumerable<int> Range(int start, int count)
+        {
+            return new Range(start, start + count);
+        }
     }
 }

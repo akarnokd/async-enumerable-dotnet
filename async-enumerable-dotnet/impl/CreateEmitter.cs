@@ -53,6 +53,7 @@ namespace async_enumerable_dotnet.impl
             public ValueTask DisposeAsync()
             {
                 disposeRequested = true;
+                Consumed().TrySetResult(true);
                 return new ValueTask(task);
             }
 
@@ -68,12 +69,32 @@ namespace async_enumerable_dotnet.impl
                 }
                 Consumed().TrySetResult(true);
 
-                return await ValueReady().Task;
+                var b = await ValueReady().Task;
+                Interlocked.Exchange(ref valueReady, null);
+
+                if (b)
+                {
+                    return true;
+                }
+                if (task.IsFaulted)
+                {
+                    throw task.Exception;
+                }
+                return false;
             }
 
             public async ValueTask Next(T value)
             {
+                if (disposeRequested)
+                {
+                    return;
+                }
                 await Consumed().Task;
+                Interlocked.Exchange(ref consumed, null);
+                if (disposeRequested)
+                {
+                    return;
+                }
 
                 current = value;
 
@@ -87,7 +108,7 @@ namespace async_enumerable_dotnet.impl
                 {
                     var a = Volatile.Read(ref valueReady);
 
-                    if (a == null || a.Task.IsCompleted)
+                    if (a == null)
                     {
                         if (b == null)
                         {
@@ -112,7 +133,7 @@ namespace async_enumerable_dotnet.impl
                 {
                     var a = Volatile.Read(ref consumed);
 
-                    if (a == null || a.Task.IsCompleted)
+                    if (a == null)
                     {
                         if (b == null)
                         {

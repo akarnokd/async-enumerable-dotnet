@@ -16,7 +16,7 @@ namespace async_enumerable_dotnet.impl
 
         public IAsyncEnumerator<T> GetAsyncEnumerator()
         {
-            throw new NotImplementedException();
+            return new FromTaskFuncEnumerator(func);
         }
 
         internal sealed class FromTaskFuncEnumerator : IAsyncEnumerator<T>
@@ -28,6 +28,11 @@ namespace async_enumerable_dotnet.impl
             T current;
 
             bool once;
+
+            public FromTaskFuncEnumerator(Func<Task<T>> func)
+            {
+                this.func = func;
+            }
 
             public ValueTask DisposeAsync()
             {
