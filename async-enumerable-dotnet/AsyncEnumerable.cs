@@ -222,5 +222,50 @@ namespace async_enumerable_dotnet
         {
             return new ToEnumerable<T>(source);
         }
+
+        public static IAsyncEnumerable<T> OnErrorResumeNext<T>(this IAsyncEnumerable<T> source, Func<Exception, IAsyncEnumerable<T>> handler)
+        {
+            return new OnErrorResumeNext<T>(source, handler);
+        }
+
+        public static IAsyncEnumerable<T> Concat<T>(params IAsyncEnumerable<T>[] sources)
+        {
+            return new Concat<T>(sources);
+        }
+
+        public static IAsyncEnumerable<T> Concat<T>(IEnumerable<IAsyncEnumerable<T>> sources)
+        {
+            return new ConcatEnumerable<T>(sources);
+        }
+
+        public static IAsyncEnumerable<T> ConcatWith<T>(this IAsyncEnumerable<T> source, IAsyncEnumerable<T> other)
+        {
+            return Concat(source, other);
+        }
+
+        public static IAsyncEnumerable<T> TakeUntil<T, U>(this IAsyncEnumerable<T> source, IAsyncEnumerable<U> other)
+        {
+            return new TakeUntil<T, U>(source, other);
+        }
+
+        public static IAsyncEnumerable<long> Interval(TimeSpan period)
+        {
+            return new Interval(0, long.MinValue, period, period);
+        }
+
+        public static IAsyncEnumerable<long> Interval(TimeSpan initialDelay, TimeSpan period)
+        {
+            return new Interval(0, long.MinValue, initialDelay, period);
+        }
+
+        public static IAsyncEnumerable<long> IntervalRange(long start, long count, TimeSpan period)
+        {
+            return new Interval(start, start + count, period, period);
+        }
+
+        public static IAsyncEnumerable<long> Interval(long start, long count, TimeSpan initialDelay, TimeSpan period)
+        {
+            return new Interval(start, start + count, initialDelay, period);
+        }
     }
 }

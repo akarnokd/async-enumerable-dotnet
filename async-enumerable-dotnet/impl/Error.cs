@@ -16,7 +16,7 @@ namespace async_enumerable_dotnet.impl
 
         public IAsyncEnumerator<T> GetAsyncEnumerator()
         {
-            throw new NotImplementedException();
+            return new ErrorEnumerator(error);
         }
 
         internal sealed class ErrorEnumerator : IAsyncEnumerator<T>
