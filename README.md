@@ -53,6 +53,7 @@ finally
 
 ## Intermediate operators
 
+- `Buffer` - collect some number of items into buffer(s) and emit those buffers
 - `Collect` - collect items into a custom collection and emit the collection at the end
 - `ConcatMap` - concatenate in order the inner async sequences mapped from the main sequence
 - `ConcatWith` - concatenate in order with another async sequence
@@ -60,17 +61,23 @@ finally
 - `DoOnNext` - execute an action when an item becomes available
 - `DoOnDispose` - execute an action when the async sequence gets disposed.
 - `Filter` - prevent items from passing through which don't pass a predicate
+- `First` - signals the first item of the async sequence
 - `FlatMap` - map the source items into `IAsyncEnumerable`s and merge their values into a single async sequence
 - `IgnoreElements` - ignores items and ends when the source async sequence ends
+- `Last` - signals the last item of the async sequence
 - `Map` - transform one source value into some other value
 - `OnErrorResumeNext` - if the main source fails, switch to an alternative source
 - `Reduce` - combine elements with an accumulator and emit the last result
 - `Repeat` - repeatedly consume the entire source async sequence (up to a number of times and/or condition)
 - `Retry` - retry a failed async sequence (up to a number of times or based on condition)
+- `Scan` - perform rolling aggregation by emitting intermediate results
+- `Single` - signals the only item of the async sequence, fails if the sequence has more than one item
 - `Skip` - skip the first specified number of items of the source async sequence
+- `SkipLast` - skip the last number of elements
 - `SkipWhile` - skip items while the predicate returns true, start emitting when it turns false
 - `SwitchIfEmpty` - switch to an alternate async sequence if the main sequence turns out to be empty
 - `Take` - take at most a given number of items and stop the async sequence after that
+- `TakeLast` - take the last given number of items of the source async sequence and emit those
 - `TakeUntil` - take items from the main source until a secondary async sequence signals an item or completes
 - `TakeWhile` - take items while predicate is true and stop when it turns false
 - `Timeout` - signal an error if the next item doesn't arrive within the specified time

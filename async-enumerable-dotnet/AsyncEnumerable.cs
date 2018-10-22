@@ -317,5 +317,91 @@ namespace async_enumerable_dotnet
         {
             return new Retry<T>(source, long.MaxValue, condition);
         }
+
+        public static IAsyncEnumerable<T> SkipLast<T>(this IAsyncEnumerable<T> source, int n)
+        {
+            if (n == 0)
+            {
+                return source;
+            }
+            return new SkipLast<T>(source, n);
+        }
+
+        public static IAsyncEnumerable<T> TakeLast<T>(this IAsyncEnumerable<T> source, int n)
+        {
+            if (n == 0)
+            {
+                return IgnoreElements(source);
+            }
+            return new TakeLast<T>(source, n);
+        }
+
+        public static IAsyncEnumerable<IList<T>> Buffer<T>(this IAsyncEnumerable<T> source, int size)
+        {
+            return Buffer(source, size, () => new List<T>());
+        }
+
+        public static IAsyncEnumerable<C> Buffer<T, C>(this IAsyncEnumerable<T> source, int size, Func<C> bufferSupplier) where C : ICollection<T>
+        {
+            return new BufferExact<T, C>(source, size, bufferSupplier);
+        }
+
+        public static IAsyncEnumerable<IList<T>> Buffer<T>(this IAsyncEnumerable<T> source, int size, int skip)
+        {
+            return Buffer(source, size, skip, () => new List<T>());
+        }
+
+        public static IAsyncEnumerable<C> Buffer<T, C>(this IAsyncEnumerable<T> source, int size, int skip, Func<C> bufferSupplier) where C : ICollection<T>
+        {
+            if (size == skip)
+            {
+                return new BufferExact<T, C>(source, size, bufferSupplier);
+            }
+            else if (size < skip)
+            {
+                return new BufferSkip<T, C>(source, size, skip, bufferSupplier);
+            }
+            return new BufferOverlap<T, C>(source, size, skip, bufferSupplier);
+        }
+
+        public static IAsyncEnumerable<T> Scan<T>(this IAsyncEnumerable<T> source, Func<T, T, T> scanner)
+        {
+            return new Scan<T>(source, scanner);
+        }
+
+        public static IAsyncEnumerable<R> Scan<T, R>(this IAsyncEnumerable<T> source, Func<R> initialSupplier, Func<R, T, R> scanner)
+        {
+            return new ScanSeed<T, R>(source, initialSupplier, scanner);
+        }
+
+        public static IAsyncEnumerable<T> First<T>(this IAsyncEnumerable<T> source)
+        {
+            return new First<T>(source, default, false);
+        }
+
+        public static IAsyncEnumerable<T> First<T>(this IAsyncEnumerable<T> source, T defaultItem)
+        {
+            return new First<T>(source, defaultItem, true);
+        }
+
+        public static IAsyncEnumerable<T> Last<T>(this IAsyncEnumerable<T> source)
+        {
+            return new Last<T>(source, default, false);
+        }
+
+        public static IAsyncEnumerable<T> Last<T>(this IAsyncEnumerable<T> source, T defaultItem)
+        {
+            return new Last<T>(source, defaultItem, true);
+        }
+
+        public static IAsyncEnumerable<T> Single<T>(this IAsyncEnumerable<T> source)
+        {
+            return new Single<T>(source, default, false);
+        }
+
+        public static IAsyncEnumerable<T> Single<T>(this IAsyncEnumerable<T> source, T defaultItem)
+        {
+            return new Single<T>(source, defaultItem, true);
+        }
     }
 }
