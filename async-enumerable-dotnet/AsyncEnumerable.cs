@@ -258,7 +258,7 @@ namespace async_enumerable_dotnet
             return new Interval(0, long.MinValue, initialDelay, period);
         }
 
-        public static IAsyncEnumerable<long> IntervalRange(long start, long count, TimeSpan period)
+        public static IAsyncEnumerable<long> Interval(long start, long count, TimeSpan period)
         {
             return new Interval(start, start + count, period, period);
         }
@@ -266,6 +266,56 @@ namespace async_enumerable_dotnet
         public static IAsyncEnumerable<long> Interval(long start, long count, TimeSpan initialDelay, TimeSpan period)
         {
             return new Interval(start, start + count, initialDelay, period);
+        }
+
+        public static IAsyncEnumerable<T> Amb<T>(params IAsyncEnumerable<T>[] sources)
+        {
+            return new Amb<T>(sources);
+        }
+
+        public static IAsyncEnumerable<T> IgnoreElements<T>(this IAsyncEnumerable<T> source)
+        {
+            return new IgnoreElements<T>(source);
+        }
+
+        public static IAsyncEnumerable<T> DefaultIfEmpty<T>(this IAsyncEnumerable<T> source, T defaultItem)
+        {
+            return new DefaultIfEmpty<T>(source, defaultItem);
+        }
+
+        public static IAsyncEnumerable<T> SwitchIfEmpty<T>(this IAsyncEnumerable<T> source, IAsyncEnumerable<T> other)
+        {
+            return new SwitchIfEmpty<T>(source, other);
+        }
+
+        public static IAsyncEnumerable<T> TakeWhile<T>(this IAsyncEnumerable<T> source, Func<T, bool> predicate)
+        {
+            return new TakeWhile<T>(source, predicate);
+        }
+
+        public static IAsyncEnumerable<T> SkipWhile<T>(this IAsyncEnumerable<T> source, Func<T, bool> predicate)
+        {
+            return new SkipWhile<T>(source, predicate);
+        }
+
+        public static IAsyncEnumerable<T> Repeat<T>(this IAsyncEnumerable<T> source, long n = long.MaxValue)
+        {
+            return new Repeat<T>(source, n, v => true);
+        }
+
+        public static IAsyncEnumerable<T> Repeat<T>(this IAsyncEnumerable<T> source, Func<long, bool> condition)
+        {
+            return new Repeat<T>(source, long.MaxValue, condition);
+        }
+
+        public static IAsyncEnumerable<T> Retry<T>(this IAsyncEnumerable<T> source, long n = long.MaxValue)
+        {
+            return new Retry<T>(source, n, (a, b) => true);
+        }
+
+        public static IAsyncEnumerable<T> Retry<T>(this IAsyncEnumerable<T> source, Func<long, Exception, bool> condition)
+        {
+            return new Retry<T>(source, long.MaxValue, condition);
         }
     }
 }

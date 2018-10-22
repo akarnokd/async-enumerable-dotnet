@@ -115,6 +115,7 @@ namespace async_enumerable_dotnet.impl
 
                 if (value != end)
                 {
+                    // FIXME compensate for drifts
                     Task.Delay(period, cts.Token)
                         .ContinueWith(x => Next(x));
                 }

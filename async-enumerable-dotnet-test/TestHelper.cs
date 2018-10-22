@@ -18,7 +18,7 @@ namespace async_enumerable_dotnet_test
             {
                 while (await en.MoveNextAsync())
                 {
-                    Assert.True(idx < values.Length);
+                    Assert.True(idx < values.Length, "Source has more than the expected " + values.Length + " items");
                     Assert.Equal(values[idx], en.Current);
                     idx++;
                 }
@@ -58,7 +58,7 @@ namespace async_enumerable_dotnet_test
             {
                 while (await en.MoveNextAsync())
                 {
-                    Assert.True(idx < values.Length);
+                    Assert.True(idx < values.Length, "Source has more than the expected " + values.Length + " items");
                     Assert.Equal(en.Current, values[idx]);
                     idx++;
                 }
@@ -69,7 +69,7 @@ namespace async_enumerable_dotnet_test
             {
                 Assert.Equal(idx, values.Length);
 
-                Assert.True(exception.GetTypeInfo().IsAssignableFrom(ex.GetType().GetTypeInfo()));
+                Assert.True(exception.GetTypeInfo().IsAssignableFrom(ex.GetType().GetTypeInfo()), "Wrong exception, Expected: " + exception + ", Actual: " + ex);
             }
             finally
             {

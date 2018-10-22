@@ -265,7 +265,7 @@ namespace async_enumerable_dotnet.impl
 
             void AddException(Exception ex)
             {
-                Interlocked.CompareExchange(ref errors, ex, null);
+                ExceptionHelper.AddException(ref errors, ex);
             }
 
             void NextSource()
