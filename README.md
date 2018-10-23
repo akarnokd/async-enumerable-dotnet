@@ -2,6 +2,11 @@
 
 Experimental operators for C# 8 [`IAsyncEnumerable`s](https://github.com/dotnet/corefx/issues/32640).
 
+Travis-CI: <a href='https://travis-ci.org/akarnokd/async-enumerable-dotnet/builds'><img src='https://travis-ci.org/akarnokd/async-enumerable-dotnet.svg?branch=master' alt="async-enumerable-dotnet"></a>
+<!--
+NuGet: <a href='https://www.nuget.org/packages/async-enumerable-dotnet'><img src='https://img.shields.io/nuget/v/async-enumerable-dotnet.svg' alt="async-enumerable-dotnet"/></a>
+-->
+
 # Getting started
 
 Namespace: `async_enumerable_dotnet`
@@ -85,6 +90,7 @@ finally
 
 ## End-consumers
 
+- `Consume` - consume the async sequence via a awaitable push interface of `IAsyncConsumer`
 - `FirstTask` - get the very first value of the async sequence
 - `ForEach` - invoke callbacks for each item and for the terminal signals
 - `LastTask` - get the very last value of the sequence
@@ -96,3 +102,24 @@ finally
 
 - `MulticastAsyncEnumerable` - signals events to currently associated IAsyncEnumerator consumers (aka PublishSubject).
 - `ReplayAsyncEnumerable` - replays some or all items to its IAsyncEnumerator consumers (aka ReplaySubject).
+
+### IAsyncConsumer
+
+Represents a push-like consumer where items, an error and/or completion can be signaled and awaited:
+
+```cs
+public interface IAsyncConsumer<in T>
+{
+    ValueTask Next(T item);
+
+    ValueTask Error(Exception error);
+
+    ValueTask Complete();
+}
+```
+
+The methods must be awaited and called non-concurrently and non-overlappingly with themselves and each other:
+
+```
+Next* (Error | Complete)?
+```

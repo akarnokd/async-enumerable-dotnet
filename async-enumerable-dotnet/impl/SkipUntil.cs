@@ -107,8 +107,6 @@ namespace async_enumerable_dotnet.impl
                             next = true;
                             current = source.Current;
                         }
-                        Interlocked.Exchange(ref resume, null);
-                        Interlocked.Decrement(ref wip);
                         MoveNextMain();
                         if (next)
                         {
@@ -119,8 +117,9 @@ namespace async_enumerable_dotnet.impl
                     if (Volatile.Read(ref wip) == 0)
                     {
                         await ResumeHelper.Resume(ref resume).Task;
-                        Interlocked.Exchange(ref resume, null);
                     }
+                    ResumeHelper.Clear(ref resume);
+                    Interlocked.Exchange(ref wip, 0);
                 }
             }
 

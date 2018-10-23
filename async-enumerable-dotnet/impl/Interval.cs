@@ -78,8 +78,6 @@ namespace async_enumerable_dotnet.impl
                     {
                         current = b;
                         index = b + 1;
-                        Interlocked.Exchange(ref resume, null);
-                        Interlocked.Decrement(ref wip);
                         return true;
                     }
                     if (b == end)
@@ -89,9 +87,10 @@ namespace async_enumerable_dotnet.impl
 
                     if (Volatile.Read(ref wip) == 0)
                     {
-                        await Resume().Task;
-                        Interlocked.Exchange(ref resume, null);
+                        await ResumeHelper.Resume(ref resume).Task;
                     }
+                    ResumeHelper.Clear(ref resume);
+                    Interlocked.Exchange(ref wip, 0);
                 }
             }
 
@@ -110,7 +109,7 @@ namespace async_enumerable_dotnet.impl
                 var value = Interlocked.Increment(ref available);
                 if (Interlocked.Increment(ref wip) == 1)
                 {
-                    Resume().TrySetResult(true);
+                    ResumeHelper.Resume(ref resume).TrySetResult(true);
                 }
 
                 if (value != end)
@@ -121,29 +120,6 @@ namespace async_enumerable_dotnet.impl
                 }
             }
 
-            TaskCompletionSource<bool> Resume()
-            {
-                var b = default(TaskCompletionSource<bool>);
-                for (; ; )
-                {
-                    var a = Volatile.Read(ref resume);
-                    if (a == null)
-                    {
-                        if (b == null)
-                        {
-                            b = new TaskCompletionSource<bool>();
-                        }
-                        if (Interlocked.CompareExchange(ref resume, b, a) == a)
-                        {
-                            return b;
-                        }
-                    }
-                    else
-                    {
-                        return a;
-                    }
-                }
-            }
         }
     }
 }

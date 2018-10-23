@@ -1,0 +1,5 @@
+language: csharp
+dotnet: 2.1.400
+
+script:
+  - dotnet test ./async-enumerable-dotnet-test/async-enumerable-dotnet-test.csproj

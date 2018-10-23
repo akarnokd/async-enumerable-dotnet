@@ -408,5 +408,37 @@ namespace async_enumerable_dotnet
         {
             return new SkipUntil<T, U>(source, other);
         }
+
+        public static async ValueTask Consume<T>(this IAsyncEnumerable<T> source, IAsyncConsumer<T> consumer, CancellationToken ct = default)
+        {
+            var en = source.GetAsyncEnumerator();
+            try
+            {
+                if (!ct.IsCancellationRequested)
+                {
+                    try
+                    {
+                        while (await en.MoveNextAsync())
+                        {
+                            if (ct.IsCancellationRequested)
+                            {
+                                return;
+                            }
+                            await consumer.Next(en.Current);
+                        }
+
+                        await consumer.Complete();
+                    }
+                    catch (Exception ex)
+                    {
+                        await consumer.Error(ex);
+                    }
+                }
+            }
+            finally
+            {
+                await en.DisposeAsync();
+            }
+        }
     }
 }

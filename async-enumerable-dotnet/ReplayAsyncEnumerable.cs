@@ -24,6 +24,11 @@ namespace async_enumerable_dotnet
 
         public bool HasConsumers => enumerators.Length != 0;
 
+        static readonly Func<long> DefaultTimeSource = () =>
+        {
+            return DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        };
+
         /// <summary>
         /// Construct an unbounded ReplayAsyncEnumerable.
         /// </summary>
@@ -39,17 +44,20 @@ namespace async_enumerable_dotnet
         /// <param name="maxSize">The maximum number of items to retain.</param>
         public ReplayAsyncEnumerable(int maxSize)
         {
-            // TODO
+            this.buffer = new SizeBoundBuffer(maxSize);
+            Volatile.Write(ref enumerators, EMPTY);
         }
 
-        public ReplayAsyncEnumerable(TimeSpan maxAge)
+        public ReplayAsyncEnumerable(TimeSpan maxAge, Func<long> timeSource = null)
         {
-            // TODO
+            this.buffer = new TimeSizeBoundBuffer(int.MaxValue, maxAge, timeSource ?? DefaultTimeSource);
+            Volatile.Write(ref enumerators, EMPTY);
         }
 
-        public ReplayAsyncEnumerable(int maxSize, TimeSpan maxAge)
+        public ReplayAsyncEnumerable(int maxSize, TimeSpan maxAge, Func<long> timeSource = null)
         {
-            // TODO
+            this.buffer = new TimeSizeBoundBuffer(maxSize, maxAge, timeSource ?? DefaultTimeSource);
+            Volatile.Write(ref enumerators, EMPTY);
         }
 
         public ValueTask Complete()
@@ -183,6 +191,7 @@ namespace async_enumerable_dotnet
             public ValueTask DisposeAsync()
             {
                 current = default;
+                node = null;
                 parent.Remove(this);
                 return new ValueTask();
             }
@@ -240,16 +249,15 @@ namespace async_enumerable_dotnet
                     {
                         consumer.current = values[index];
                         consumer.index = index + 1;
-                        ResumeHelper.Clear(ref consumer.resume);
-                        Interlocked.Decrement(ref consumer.wip);
                         return true;
                     }
 
                     if (Volatile.Read(ref consumer.wip) == 0)
                     {
                         await ResumeHelper.Resume(ref consumer.resume).Task;
-                        ResumeHelper.Clear(ref consumer.resume);
                     }
+                    ResumeHelper.Clear(ref consumer.resume);
+                    Interlocked.Exchange(ref consumer.wip, 0L);
                 }
             }
 
@@ -289,10 +297,11 @@ namespace async_enumerable_dotnet
             internal void ClearHead()
             {
                 // clear any beyond max size items by replacing the head
-                if (head.next != null)
+                var h = head;
+                if (h.next != null)
                 {
                     var n = new Node(default);
-                    n.next = head.next;
+                    n.next = h.next;
                     head = n;
                 }
             }
@@ -306,24 +315,69 @@ namespace async_enumerable_dotnet
             public void Error(Exception error)
             {
                 ClearHead();
-                throw new NotImplementedException();
+                this.error = error;
+                this.done = true;
             }
 
             public void Next(T item)
             {
-                throw new NotImplementedException();
+                var n = new Node(item);
+                if (size != maxSize)
+                {
+                    size++;
+                    tail.next = n;
+                    tail = n;
+                }
+                else
+                {
+                    tail.next = n;
+                    tail = n;
+                    head = head.next;
+                }
             }
 
-            public ValueTask<bool> Drain(ReplayEnumerator consumer)
+            public async ValueTask<bool> Drain(ReplayEnumerator consumer)
             {
-                throw new NotImplementedException();
+                for (; ;)
+                {
+                    var d = done;
+                    var n = consumer.node as Node;
+                    if (n == null)
+                    {
+                        n = head;
+                        consumer.node = head;
+                    }
+                    var x = n.next;
+                    var empty = x == null;
+                    if (d && empty)
+                    {
+                        if (error != null)
+                        {
+                            throw error;
+                        }
+                        return false;
+                    }
+                    else if (!empty)
+                    {
+                        consumer.current = x.item;
+                        consumer.node = x;
+                        return true;
+                    }
+
+                    if (Volatile.Read(ref consumer.wip) == 0)
+                    {
+                        await ResumeHelper.Resume(ref consumer.resume).Task;
+                    }
+                    ResumeHelper.Clear(ref consumer.resume);
+                    Interlocked.Exchange(ref consumer.wip, 0L);
+                }
             }
 
             internal sealed class Node
             {
                 internal readonly T item;
 
-                internal Node next;
+                internal volatile Node next;
 
                 internal Node(T item)
                 {
@@ -331,5 +385,177 @@ namespace async_enumerable_dotnet
                 }
             }
         }
+
+        internal sealed class TimeSizeBoundBuffer : IBufferManager
+        {
+            readonly long maxAge;
+
+            readonly int maxSize;
+
+            readonly Func<long> timeSource;
+
+            Exception error;
+            volatile bool done;
+
+            volatile Node head;
+            Node tail;
+
+            int size;
+
+            internal TimeSizeBoundBuffer(int maxSize, TimeSpan maxAge, Func<long> timeSource)
+            {
+                this.maxSize = maxSize;
+                this.maxAge = (long)maxAge.TotalMilliseconds;
+                this.timeSource = timeSource;
+                var h = new Node(default, 0L);
+                tail = h;
+                head = h;
+            }
+
+            internal void ClearHead()
+            {
+                // clear any beyond max size items by replacing the head
+                if (head.next != null)
+                {
+                    var n = new Node(default, 0L);
+                    n.next = head.next;
+                    head = n;
+                }
+            }
+
+            void TrimTime()
+            {
+                long now = timeSource() - maxAge;
+
+                var c = size;
+                var h = head;
+                for (; ;)
+                {
+                    var x = h.next;
+                    if (x == null)
+                    {
+                        break;
+                    }
+                    if (x.timestamp > now)
+                    {
+                        break;
+                    }
+                    h = x;
+                    c--;
+                }
+
+                if (h != head)
+                {
+                    size = c;
+                    head = h;
+                }
+            }
+
+            Node FindHead()
+            {
+                long now = timeSource() - maxAge;
+
+                var h = head;
+                for (; ; )
+                {
+                    var x = h.next;
+                    if (x == null)
+                    {
+                        return h;
+                    }
+                    if (x.timestamp > now)
+                    {
+                        return h;
+                    }
+                    h = x;
+                }
+            }
+
+            public void Complete()
+            {
+                TrimTime();
+                ClearHead();
+                done = true;
+            }
+
+            public void Error(Exception error)
+            {
+                TrimTime();
+                ClearHead();
+                this.error = error;
+                this.done = true;
+            }
+
+            public void Next(T item)
+            {
+                var n = new Node(item, timeSource());
+                if (size != maxSize)
+                {
+                    size++;
+                    tail.next = n;
+                    tail = n;
+                }
+                else
+                {
+                    tail.next = n;
+                    tail = n;
+                    head = head.next;
+                    TrimTime();
+                }
+            }
+
+            public async ValueTask<bool> Drain(ReplayEnumerator consumer)
+            {
+                for (; ; )
+                {
+                    var d = done;
+                    var n = consumer.node as Node;
+                    if (n == null)
+                    {
+                        n = FindHead();
+                        consumer.node = head;
+                    }
+                    var x = n.next;
+                    var empty = x == null;
+                    if (d && empty)
+                    {
+                        if (error != null)
+                        {
+                            throw error;
+                        }
+                        return false;
+                    }
+                    else if (!empty)
+                    {
+                        consumer.current = x.item;
+                        consumer.node = x;
+                        return true;
+                    }
+
+                    if (Volatile.Read(ref consumer.wip) == 0)
+                    {
+                        await ResumeHelper.Resume(ref consumer.resume).Task;
+                    }
+                    ResumeHelper.Clear(ref consumer.resume);
+                    Interlocked.Exchange(ref consumer.wip, 0L);
+                }
+            }
+
+            internal sealed class Node
+            {
+                internal readonly T item;
+
+                internal readonly long timestamp;
+
+                internal volatile Node next;
+
+                internal Node(T item, long timestamp)
+                {
+                    this.item = item;
+                    this.timestamp = timestamp;
+                }
+            }
+        }
+
     }
 }

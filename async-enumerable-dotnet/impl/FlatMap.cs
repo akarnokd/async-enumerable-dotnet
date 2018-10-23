@@ -193,17 +193,16 @@ namespace async_enumerable_dotnet.impl
                         {
                             Remove(v.sender);
                             NextSource();
-                            Interlocked.Exchange(ref resume, null);
-                            Interlocked.Decrement(ref queueWip);
                             continue;
                         }
                     }
 
                     if (Volatile.Read(ref queueWip) == 0)
                     {
-                        await Resume().Task;
-                        Interlocked.Exchange(ref resume, null);
+                        await ResumeHelper.Resume(ref resume).Task;
                     }
+                    ResumeHelper.Clear(ref resume);
+                    Interlocked.Exchange(ref queueWip, 0);
                 }
             }
 
@@ -310,30 +309,7 @@ namespace async_enumerable_dotnet.impl
             {
                 if (Interlocked.Increment(ref queueWip) == 1)
                 {
-                    Resume().TrySetResult(true);
-                }
-            }
-
-            TaskCompletionSource<bool> Resume()
-            {
-                var b = default(TaskCompletionSource<bool>);
-                for (; ; )
-                {
-                    var a = Volatile.Read(ref resume);
-                    if (a == null)
-                    {
-                        if (b == null)
-                        {
-                            b = new TaskCompletionSource<bool>();
-                        }
-                        if (Interlocked.CompareExchange(ref resume, b, a) == a)
-                        {
-                            return b;
-                        }
-                    } else
-                    {
-                        return a;
-                    }
+                    ResumeHelper.Resume(ref resume).TrySetResult(true);
                 }
             }
         }
