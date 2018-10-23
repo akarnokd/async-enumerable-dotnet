@@ -10,16 +10,20 @@ namespace async_enumerable_dotnet_test
 {
     internal static class TestHelper
     {
-        public static async ValueTask AssertResult<T>(this IAsyncEnumerable<T> source, params T[] values)
+        public static ValueTask AssertResult<T>(this IAsyncEnumerable<T> source, params T[] values)
         {
-            var en = source.GetAsyncEnumerator();
+            return AssertResult(source.GetAsyncEnumerator(), values);
+        }
+
+        public static async ValueTask AssertResult<T>(this IAsyncEnumerator<T> source, params T[] values)
+        {
             var idx = 0;
             try
             {
-                while (await en.MoveNextAsync())
+                while (await source.MoveNextAsync())
                 {
                     Assert.True(idx < values.Length, "Source has more than the expected " + values.Length + " items");
-                    Assert.Equal(values[idx], en.Current);
+                    Assert.Equal(values[idx], source.Current);
                     idx++;
                 }
 
@@ -27,7 +31,7 @@ namespace async_enumerable_dotnet_test
             }
             finally
             {
-                await en.DisposeAsync();
+                await source.DisposeAsync();
             }
         }
 
@@ -50,16 +54,20 @@ namespace async_enumerable_dotnet_test
             }
         }
 
-        public static async ValueTask AssertFailure<T>(this IAsyncEnumerable<T> source, Type exception, params T[] values)
+        public static ValueTask AssertFailure<T>(this IAsyncEnumerable<T> source, Type exception, params T[] values)
         {
-            var en = source.GetAsyncEnumerator();
+            return AssertFailure(source.GetAsyncEnumerator(), exception, values);
+        }
+
+        public static async ValueTask AssertFailure<T>(this IAsyncEnumerator<T> source, Type exception, params T[] values)
+        {
             var idx = 0;
             try
             {
-                while (await en.MoveNextAsync())
+                while (await source.MoveNextAsync())
                 {
                     Assert.True(idx < values.Length, "Source has more than the expected " + values.Length + " items");
-                    Assert.Equal(en.Current, values[idx]);
+                    Assert.Equal(source.Current, values[idx]);
                     idx++;
                 }
 
@@ -73,7 +81,7 @@ namespace async_enumerable_dotnet_test
             }
             finally
             {
-                await en.DisposeAsync();
+                await source.DisposeAsync();
             }
         }
     }

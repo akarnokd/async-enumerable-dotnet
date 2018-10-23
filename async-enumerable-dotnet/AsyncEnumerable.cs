@@ -403,5 +403,10 @@ namespace async_enumerable_dotnet
         {
             return new Single<T>(source, defaultItem, true);
         }
+
+        public static IAsyncEnumerable<T> SkipUntil<T, U>(this IAsyncEnumerable<T> source, IAsyncEnumerable<U> other)
+        {
+            return new SkipUntil<T, U>(source, other);
+        }
     }
 }

@@ -46,14 +46,14 @@ namespace async_enumerable_dotnet.impl
                 task.ContinueWith(t =>
                 {
                     taskComplete = true;
-                    ValueReady().TrySetResult(false);
+                    ResumeHelper.Resume(ref valueReady).TrySetResult(false);
                 });
             }
 
             public ValueTask DisposeAsync()
             {
                 disposeRequested = true;
-                Consumed().TrySetResult(true);
+                ResumeHelper.Resume(ref consumed).TrySetResult(true);
                 return new ValueTask(task);
             }
 
@@ -67,10 +67,10 @@ namespace async_enumerable_dotnet.impl
                     }
                     return false;
                 }
-                Consumed().TrySetResult(true);
+                ResumeHelper.Resume(ref consumed).TrySetResult(true);
 
-                var b = await ValueReady().Task;
-                Interlocked.Exchange(ref valueReady, null);
+                var b = await ResumeHelper.Resume(ref valueReady).Task;
+                ResumeHelper.Clear(ref valueReady);
 
                 if (b)
                 {
@@ -89,8 +89,8 @@ namespace async_enumerable_dotnet.impl
                 {
                     return;
                 }
-                await Consumed().Task;
-                Interlocked.Exchange(ref consumed, null);
+                await ResumeHelper.Resume(ref consumed).Task;
+                ResumeHelper.Clear(ref consumed);
                 if (disposeRequested)
                 {
                     return;
@@ -98,58 +98,7 @@ namespace async_enumerable_dotnet.impl
 
                 current = value;
 
-                ValueReady().TrySetResult(true);
-            }
-
-            TaskCompletionSource<bool> ValueReady()
-            {
-                var b = default(TaskCompletionSource<bool>);
-                for (;;)
-                {
-                    var a = Volatile.Read(ref valueReady);
-
-                    if (a == null)
-                    {
-                        if (b == null)
-                        {
-                            b = new TaskCompletionSource<bool>();
-                        }
-                    } else
-                    {
-                        return a;
-                    }
-
-                    if (Interlocked.CompareExchange(ref valueReady, b, a) == a)
-                    {
-                        return b;
-                    }
-                }
-            }
-
-            TaskCompletionSource<bool> Consumed()
-            {
-                var b = default(TaskCompletionSource<bool>);
-                for (; ; )
-                {
-                    var a = Volatile.Read(ref consumed);
-
-                    if (a == null)
-                    {
-                        if (b == null)
-                        {
-                            b = new TaskCompletionSource<bool>();
-                        }
-                    }
-                    else
-                    {
-                        return a;
-                    }
-
-                    if (Interlocked.CompareExchange(ref consumed, b, a) == a)
-                    {
-                        return b;
-                    }
-                }
+                ResumeHelper.Resume(ref valueReady).TrySetResult(true);
             }
         }
     }

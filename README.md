@@ -74,6 +74,7 @@ finally
 - `Single` - signals the only item of the async sequence, fails if the sequence has more than one item
 - `Skip` - skip the first specified number of items of the source async sequence
 - `SkipLast` - skip the last number of elements
+- `SkipUntil` - skip until another async sequence signals an item or completes
 - `SkipWhile` - skip items while the predicate returns true, start emitting when it turns false
 - `SwitchIfEmpty` - switch to an alternate async sequence if the main sequence turns out to be empty
 - `Take` - take at most a given number of items and stop the async sequence after that
@@ -90,3 +91,8 @@ finally
 - `SingleTask` - get the only value of the sequence or signal error
 - `ToEnumerable` - convert the `IAsyncEnumerable` into a blocking `IEnumerable`
 - `ToObservable` - convert the `IAsyncEnumerable` into an `IObservable`
+
+## Push-pull bridges
+
+- `MulticastAsyncEnumerable` - signals events to currently associated IAsyncEnumerator consumers (aka PublishSubject).
+- `ReplayAsyncEnumerable` - replays some or all items to its IAsyncEnumerator consumers (aka ReplaySubject).
