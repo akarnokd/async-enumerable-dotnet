@@ -77,17 +77,7 @@ namespace async_enumerable_dotnet_test
         public async void Simple_MaxConcurrency_1_Prefetch_1()
         {
             var result = AsyncEnumerable.Range(1, 5)
-                .Map(v =>
-                {
-                    Console.WriteLine(v);
-                    return v;
-                })
                 .FlatMap(v => AsyncEnumerable.Range(v * 10, 5)
-                .Map(w =>
-                {
-                    Console.WriteLine(w);
-                    return w;
-                })
                 , 1, 1)
                 ;
 

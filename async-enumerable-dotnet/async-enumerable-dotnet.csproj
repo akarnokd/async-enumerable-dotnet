@@ -4,6 +4,25 @@
     <TargetFramework>netcoreapp2.1</TargetFramework>
     <RootNamespace>async_enumerable_dotnet</RootNamespace>
     <LangVersion>latest</LangVersion>
+    <PackageId>akarnokd.async-enumerable-dotnet</PackageId>
+    <Version>0.0.1.0</Version>
+    <Authors>David Karnok</Authors>
+    <Company />
+    <AssemblyVersion>0.0.1.0</AssemblyVersion>
+    <FileVersion>0.0.1.0</FileVersion>
+    <PackageTags>async, concurrency, async-enumerable, operators, async-sequence</PackageTags>
+    <RepositoryUrl>https://github.com/akarnokd/async-enumerable-dotnet</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/akarnokd/async-enumerable-dotnet#getting-started</PackageProjectUrl>
+    <Description>Experimental operators for the upcomin C# 8 IAsyncEnumerables.</Description>
+    <Copyright>(C) David Karnok</Copyright>
+    <PackageLicenseUrl>https://www.apache.org/licenses/LICENSE-2.0</PackageLicenseUrl>
+    <PackageReleaseNotes>First public release. Many operators</PackageReleaseNotes>
+    <RepositoryType>Github</RepositoryType>
+    <Product>Async Enumerable operators for .NET</Product>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DocumentationFile>C:\Users\akarnokd\git\async-enumerable-dotnet\async-enumerable-dotnet\async-enumerable-dotnet.xml</DocumentationFile>
   </PropertyGroup>
 
 </Project>

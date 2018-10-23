@@ -1,0 +1,123 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>async-enumerable-dotnet</name>
+    </assembly>
+    <members>
+        <member name="T:async_enumerable_dotnet.AsyncEnumerable">
+            <summary>
+            Factory and extension methods for working with <see cref="T:async_enumerable_dotnet.IAsyncEnumerable`1"/>s.
+            </summary>
+        </member>
+        <member name="T:async_enumerable_dotnet.IAsyncDisposable">
+            <summary>
+            Until C# 8: Dispose a resource or sequence asynchronously in an awaitable fashion.
+            </summary>
+        </member>
+        <member name="M:async_enumerable_dotnet.IAsyncDisposable.DisposeAsync">
+            <summary>
+            Dispose a resource or sequence asynchronously.
+            </summary>
+            <returns>The task completed when the dispose action completes.</returns>
+        </member>
+        <member name="T:async_enumerable_dotnet.IAsyncEnumerator`1">
+            <summary>
+            Until C# 8: Represents an active asynchronous sequence which can be polled for more items.
+            </summary>
+            <typeparam name="T">The element type of the async sequence.</typeparam>
+            <remarks>
+            The <see cref="M:async_enumerable_dotnet.IAsyncDisposable.DisposeAsync"/> should be called exactly once and
+            only after an outstanding <see cref="M:async_enumerable_dotnet.IAsyncEnumerator`1.MoveNextAsync"/>'s task completed.
+            </remarks>
+        </member>
+        <member name="M:async_enumerable_dotnet.IAsyncEnumerator`1.MoveNextAsync">
+            <summary>
+            Request the next element from the async sequence.
+            </summary>
+            <returns>A task that returns true if the next item can be read via
+            <see cref="P:async_enumerable_dotnet.IAsyncEnumerator`1.Current"/>, false if there will be no further items.</returns>
+        </member>
+        <member name="P:async_enumerable_dotnet.IAsyncEnumerator`1.Current">
+            <summary>
+            Returns the current item after a successful <see cref="M:async_enumerable_dotnet.IAsyncEnumerator`1.MoveNextAsync"/> call.
+            </summary>
+        </member>
+        <member name="T:async_enumerable_dotnet.IAsyncEnumerable`1">
+            <summary>
+            Until C# 8: Represents a deferred/lazy asynchronous sequence of values.
+            </summary>
+            <typeparam name="T">The element type of the async sequence.</typeparam>
+        </member>
+        <member name="M:async_enumerable_dotnet.IAsyncEnumerable`1.GetAsyncEnumerator">
+            <summary>
+            Returns an <see cref="T:async_enumerable_dotnet.IAsyncEnumerator`1"/> representing an active asynchronous sequence.
+            </summary>
+            <returns>The active asynchronous sequence to be consumed.</returns>
+        </member>
+        <member name="T:async_enumerable_dotnet.IAsyncConsumer`1">
+            <summary>
+            The "push-side" of an IAsyncEnumerator.
+            Each method should be awaited and called non-overlappingly.
+            </summary>
+            <typeparam name="T">The element type.</typeparam>
+        </member>
+        <member name="T:async_enumerable_dotnet.impl.ExceptionHelper">
+            <summary>
+            Helper methods for aggregating multiple Exceptions atomically.
+            </summary>
+        </member>
+        <member name="F:async_enumerable_dotnet.impl.ExceptionHelper.Terminated">
+            <summary>
+            The singleton exception indicating a terminal state so
+            that no further exceptions will be aggregated.
+            </summary>
+        </member>
+        <member name="T:async_enumerable_dotnet.impl.ResumeHelper">
+            <summary>
+            Utility methods for working with resumption-type
+            lock-free algorithms using TaskCompletionSources.
+            </summary>
+        </member>
+        <member name="M:async_enumerable_dotnet.impl.ResumeHelper.Resume``1(System.Threading.Tasks.TaskCompletionSource{``0}@)">
+            <summary>
+            Atomically get or create a TaskCompletionSource stored
+            in the given field.
+            </summary>
+            <typeparam name="U">The element type of the completion source.</typeparam>
+            <param name="resume">The field to store the completion source</param>
+            <returns>The existing or created TaskCompletionSource.</returns>
+        </member>
+        <member name="M:async_enumerable_dotnet.impl.ResumeHelper.Clear``1(System.Threading.Tasks.TaskCompletionSource{``0}@)">
+            <summary>
+            Atomically clear the target TaskCompletionSource field.
+            </summary>
+            <typeparam name="U">The element type of the completion source.</typeparam>
+            <param name="resume">The field to clear.</param>
+        </member>
+        <member name="T:async_enumerable_dotnet.MulticastAsyncEnumerable`1">
+            <summary>
+            Delivers items or terminal events to multiple
+            consumers.
+            </summary>
+            <typeparam name="T">The element type of the async sequence.</typeparam>
+        </member>
+        <member name="T:async_enumerable_dotnet.ReplayAsyncEnumerable`1">
+            <summary>
+            Caches items and terminal signals and replays it
+            to its IAsyncEnumerator consumers.
+            </summary>
+            <typeparam name="T">The element type.</typeparam>
+        </member>
+        <member name="M:async_enumerable_dotnet.ReplayAsyncEnumerable`1.#ctor">
+            <summary>
+            Construct an unbounded ReplayAsyncEnumerable.
+            </summary>
+        </member>
+        <member name="M:async_enumerable_dotnet.ReplayAsyncEnumerable`1.#ctor(System.Int32)">
+            <summary>
+            Construct a size-bound ReplayAsyncEnumerable.
+            </summary>
+            <param name="maxSize">The maximum number of items to retain.</param>
+        </member>
+    </members>
+</doc>

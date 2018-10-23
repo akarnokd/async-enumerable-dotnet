@@ -6,6 +6,9 @@ using async_enumerable_dotnet.impl;
 
 namespace async_enumerable_dotnet
 {
+    /// <summary>
+    /// Factory and extension methods for working with <see cref="IAsyncEnumerable{T}"/>s.
+    /// </summary>
     public static class AsyncEnumerable
     {
         public static IAsyncEnumerable<R> Zip<T, R>(Func<T[], R> zipper, params IAsyncEnumerable<T>[] sources)

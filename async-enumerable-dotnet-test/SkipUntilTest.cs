@@ -27,9 +27,14 @@ namespace async_enumerable_dotnet_test
         [Fact]
         public async void Skip_Some()
         {
+            int scale = 200;
+            if (Environment.GetEnvironmentVariable("CI") != null)
+            {
+                scale = 2000;
+            }
             await AsyncEnumerable.Range(1, 5)
-                .FlatMap(v => AsyncEnumerable.Timer(TimeSpan.FromMilliseconds(v * 200)).Map(w => v))
-                .SkipUntil(AsyncEnumerable.Timer(TimeSpan.FromMilliseconds(500)))
+                .FlatMap(v => AsyncEnumerable.Timer(TimeSpan.FromMilliseconds(v * scale)).Map(w => v))
+                .SkipUntil(AsyncEnumerable.Timer(TimeSpan.FromMilliseconds(5 * scale / 2)))
                 .AssertResult(3, 4, 5);
         }
     }
