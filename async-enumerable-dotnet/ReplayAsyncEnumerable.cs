@@ -22,6 +22,9 @@ namespace async_enumerable_dotnet
 
         static readonly ReplayEnumerator[] TERMINATED = new ReplayEnumerator[0];
 
+        /// <summary>
+        /// Returns true if there are any consumers to this AsyncEnumerable.
+        /// </summary>
         public bool HasConsumers => enumerators.Length != 0;
 
         static readonly Func<long> DefaultTimeSource = () =>
@@ -48,18 +51,33 @@ namespace async_enumerable_dotnet
             Volatile.Write(ref enumerators, EMPTY);
         }
 
+        /// <summary>
+        /// Construct a time-bound ReplayAsyncEnumerable.
+        /// </summary>
+        /// <param name="maxAge">The maximum age of items to retain.</param>
+        /// <param name="timeSource">The optional source for the current time. Defaults to the unix epoch milliseconds.</param>
         public ReplayAsyncEnumerable(TimeSpan maxAge, Func<long> timeSource = null)
         {
             this.buffer = new TimeSizeBoundBuffer(int.MaxValue, maxAge, timeSource ?? DefaultTimeSource);
             Volatile.Write(ref enumerators, EMPTY);
         }
 
+        /// <summary>
+        /// Construct a time- and size-bound ReplayAsyncEnumerable.
+        /// </summary>
+        /// <param name="maxSize">The maximum number of items to retain.</param>
+        /// <param name="maxAge">The maximum age of items to retain.</param>
+        /// <param name="timeSource">The optional source for the current time. Defaults to the unix epoch milliseconds.</param>
         public ReplayAsyncEnumerable(int maxSize, TimeSpan maxAge, Func<long> timeSource = null)
         {
             this.buffer = new TimeSizeBoundBuffer(maxSize, maxAge, timeSource ?? DefaultTimeSource);
             Volatile.Write(ref enumerators, EMPTY);
         }
 
+        /// <summary>
+        /// Indicate no more items will be pushed. Can be called at most once.
+        /// </summary>
+        /// <returns>The task to await before calling any of the methods again.</returns>
         public ValueTask Complete()
         {
             buffer.Complete();
@@ -70,6 +88,11 @@ namespace async_enumerable_dotnet
             return new ValueTask();
         }
 
+        /// <summary>
+        /// Push a final exception. Can be called at most once.
+        /// </summary>
+        /// <param name="ex">The exception to push.</param>
+        /// <returns>The task to await before calling any of the methods again.</returns>
         public ValueTask Error(Exception ex)
         {
             buffer.Error(ex);
@@ -80,6 +103,11 @@ namespace async_enumerable_dotnet
             return new ValueTask();
         }
 
+        /// <summary>
+        /// Push a value. Can be called multiple times.
+        /// </summary>
+        /// <param name="value">The value to push.</param>
+        /// <returns>The task to await before calling any of the methods again.</returns>
         public ValueTask Next(T value)
         {
             buffer.Next(value);
@@ -90,6 +118,10 @@ namespace async_enumerable_dotnet
             return new ValueTask();
         }
 
+        /// <summary>
+        /// Returns an <see cref="IAsyncEnumerator{T}"/> representing an active asynchronous sequence.
+        /// </summary>
+        /// <returns>The active asynchronous sequence to be consumed.</returns>
         public IAsyncEnumerator<T> GetAsyncEnumerator()
         {
             var en = new ReplayEnumerator(this);

@@ -3,9 +3,7 @@
 Experimental operators for C# 8 [`IAsyncEnumerable`s](https://github.com/dotnet/corefx/issues/32640).
 
 Travis-CI: <a href='https://travis-ci.org/akarnokd/async-enumerable-dotnet/builds'><img src='https://travis-ci.org/akarnokd/async-enumerable-dotnet.svg?branch=master' alt="async-enumerable-dotnet"></a>
-<!--
 NuGet: <a href='https://www.nuget.org/packages/akarnokd.async-enumerable-dotnet'><img src='https://img.shields.io/nuget/v/akarnokd.async-enumerable-dotnet.svg' alt="async-enumerable-dotnet"/></a>
--->
 
 # Getting started
 

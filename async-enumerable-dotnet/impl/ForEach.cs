@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet.impl
@@ -40,6 +41,38 @@ namespace async_enumerable_dotnet.impl
             finally
             {
                 await enumerator.DisposeAsync();
+            }
+        }
+
+        public static async ValueTask Consume<T>(this IAsyncEnumerable<T> source, IAsyncConsumer<T> consumer, CancellationToken ct)
+        {
+            var en = source.GetAsyncEnumerator();
+            try
+            {
+                if (!ct.IsCancellationRequested)
+                {
+                    try
+                    {
+                        while (await en.MoveNextAsync())
+                        {
+                            if (ct.IsCancellationRequested)
+                            {
+                                return;
+                            }
+                            await consumer.Next(en.Current);
+                        }
+
+                        await consumer.Complete();
+                    }
+                    catch (Exception ex)
+                    {
+                        await consumer.Error(ex);
+                    }
+                }
+            }
+            finally
+            {
+                await en.DisposeAsync();
             }
         }
 

@@ -22,30 +22,50 @@ namespace async_enumerable_dotnet
 
         static readonly MulticastEnumerator[] TERMINATED = new MulticastEnumerator[0];
 
+        /// <summary>
+        /// Returns true if there are any consumers to this AsyncEnumerable.
+        /// </summary>
         public bool HasConsumers => enumerators.Length != 0;
 
+        /// <summary>
+        /// Construct a non-terminated MulticastAsyncEnumerable.
+        /// </summary>
         public MulticastAsyncEnumerable()
         {
             Volatile.Write(ref enumerators, EMPTY);
         }
 
-        public async ValueTask Next(T item)
+        /// <summary>
+        /// Push a value. Can be called multiple times.
+        /// </summary>
+        /// <param name="value">The value to push.</param>
+        /// <returns>The task to await before calling any of the methods again.</returns>
+        public async ValueTask Next(T value)
         {
             foreach (var inner in Volatile.Read(ref enumerators))
             {
-                await inner.Next(item);
+                await inner.Next(value);
             }
         }
 
-        public async ValueTask Error(Exception error)
+        /// <summary>
+        /// Push a final exception. Can be called at most once.
+        /// </summary>
+        /// <param name="ex">The exception to push.</param>
+        /// <returns>The task to await before calling any of the methods again.</returns>
+        public async ValueTask Error(Exception ex)
         {
-            this.error = error;
+            this.error = ex;
             foreach (var inner in Interlocked.Exchange(ref enumerators, TERMINATED))
             {
-                await inner.Error(error);
+                await inner.Error(ex);
             }
         }
 
+        /// <summary>
+        /// Indicate no more items will be pushed. Can be called at most once.
+        /// </summary>
+        /// <returns>The task to await before calling any of the methods again.</returns>
         public async ValueTask Complete()
         {
             foreach (var inner in Interlocked.Exchange(ref enumerators, TERMINATED))
@@ -54,6 +74,10 @@ namespace async_enumerable_dotnet
             }
         }
 
+        /// <summary>
+        /// Returns an <see cref="IAsyncEnumerator{T}"/> representing an active asynchronous sequence.
+        /// </summary>
+        /// <returns>The active asynchronous sequence to be consumed.</returns>
         public IAsyncEnumerator<T> GetAsyncEnumerator()
         {
             var en = new MulticastEnumerator(this);
