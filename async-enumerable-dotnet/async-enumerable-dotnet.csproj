@@ -17,7 +17,14 @@
     <Description>Experimental operators for the upcoming C# 8 IAsyncEnumerables.</Description>
     <Copyright>(C) David Karnok</Copyright>
     <PackageLicenseUrl>https://www.apache.org/licenses/LICENSE-2.0</PackageLicenseUrl>
-    <PackageReleaseNotes>First public release. Many operators</PackageReleaseNotes>
+    <PackageReleaseNotes>Support for NETStandard 2.0 added.
+
+New operators:
+- GroupBy
+- Sample
+- ToList
+- ToListAsync
+- ToArray</PackageReleaseNotes>
     <RepositoryType>Github</RepositoryType>
     <Product>Async Enumerable operators for .NET</Product>
   </PropertyGroup>
