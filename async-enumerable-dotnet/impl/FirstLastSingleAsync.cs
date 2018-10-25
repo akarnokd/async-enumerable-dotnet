@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet.impl
 {
-    internal static class FirstLastSingleTask
+    internal static class FirstLastSingleAsync
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static async ValueTask<T> First<T>(IAsyncEnumerable<T> source, T defaultItem, bool hasDefault)
         {
             var enumerator = source.GetAsyncEnumerator();
@@ -31,6 +33,7 @@ namespace async_enumerable_dotnet.impl
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static async ValueTask<T> Last<T>(IAsyncEnumerable<T> source, T defaultItem, bool hasDefault)
         {
             var hasLast = false;
@@ -62,6 +65,7 @@ namespace async_enumerable_dotnet.impl
             throw new IndexOutOfRangeException("The source async sequence is empty");
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static async ValueTask<T> Single<T>(IAsyncEnumerable<T> source, T defaultItem, bool hasDefault)
         {
             var enumerator = source.GetAsyncEnumerator();

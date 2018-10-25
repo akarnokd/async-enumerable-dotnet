@@ -89,11 +89,13 @@ finally
 ## End-consumers
 
 - `Consume` - consume the async sequence via a awaitable push interface of `IAsyncConsumer`
-- `FirstTask` - get the very first value of the async sequence
+- `FirstAsync` - get the very first value of the async sequence
 - `ForEach` - invoke callbacks for each item and for the terminal signals
-- `LastTask` - get the very last value of the sequence
-- `SingleTask` - get the only value of the sequence or signal error
+- `LastAsync` - get the very last value of the sequence
+- `SingleAsync` - get the only value of the sequence or signal error
+- `ToArrayAsync` - get all items as an array
 - `ToEnumerable` - convert the `IAsyncEnumerable` into a blocking `IEnumerable`
+- `ToListAsync` - get all items in an IList
 - `ToObservable` - convert the `IAsyncEnumerable` into an `IObservable`
 
 ## Push-pull bridges

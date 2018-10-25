@@ -219,7 +219,7 @@ namespace async_enumerable_dotnet
         }
 
         /// <summary>
-        /// Transforms each souce item into another item via a function.
+        /// Transforms each source item into another item via a function.
         /// </summary>
         /// <typeparam name="T">The element type of the source.</typeparam>
         /// <typeparam name="R">The result type.</typeparam>
@@ -233,7 +233,7 @@ namespace async_enumerable_dotnet
         }
 
         /// <summary>
-        /// Transforms each souce item into another item via an asynchronous function.
+        /// Transforms each source item into another item via an asynchronous function.
         /// </summary>
         /// <typeparam name="T">The element type of the source.</typeparam>
         /// <typeparam name="R">The result type.</typeparam>
@@ -333,7 +333,7 @@ namespace async_enumerable_dotnet
         /// Skips the first given number of items of the source async sequence.
         /// </summary>
         /// <typeparam name="T">The element type.</typeparam>
-        /// <param name="source">The source asnyc sequence.</param>
+        /// <param name="source">The source async sequence.</param>
         /// <param name="n">The number of items to skip.</param>
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<T> Skip<T>(this IAsyncEnumerable<T> source, long n)
@@ -355,7 +355,7 @@ namespace async_enumerable_dotnet
         /// Returns a shared instance of an async sequence that never produces any items or terminates.
         /// </summary>
         /// <typeparam name="T">The target element type.</typeparam>
-        /// <returns>The shared non-signalling IAsyncEnumerable instance.</returns>
+        /// <returns>The shared non-signaling IAsyncEnumerable instance.</returns>
         /// <remarks>
         /// Note that the async sequence API doesn't really support a never emitting source because
         /// such source never completes its MoveNextAsync and thus DisposeAsync can't be called.
@@ -387,9 +387,9 @@ namespace async_enumerable_dotnet
         /// <typeparam name="T">The element type.</typeparam>
         /// <param name="source">The source async sequence to get the first item of.</param>
         /// <returns>The task that completes with the first item of the sequence or fails.</returns>
-        public static ValueTask<T> FirstTask<T>(this IAsyncEnumerable<T> source)
+        public static ValueTask<T> FirstAsync<T>(this IAsyncEnumerable<T> source)
         {
-            return impl.FirstLastSingleTask.First(source, default, false);
+            return impl.FirstLastSingleAsync.First(source, default, false);
         }
 
         /// <summary>
@@ -400,9 +400,9 @@ namespace async_enumerable_dotnet
         /// <param name="source">The source async sequence to get the first item of.</param>
         /// <param name="defaultItem">The item to return if the source is empty.</param>
         /// <returns>The task that completes with the first/default item of the sequence or fails.</returns>
-        public static ValueTask<T> FirstTask<T>(this IAsyncEnumerable<T> source, T defaultItem)
+        public static ValueTask<T> FirstAsync<T>(this IAsyncEnumerable<T> source, T defaultItem)
         {
-            return impl.FirstLastSingleTask.First(source, defaultItem, true);
+            return impl.FirstLastSingleAsync.First(source, defaultItem, true);
         }
 
         /// <summary>
@@ -412,9 +412,9 @@ namespace async_enumerable_dotnet
         /// <typeparam name="T">The element type.</typeparam>
         /// <param name="source">The source async sequence to get the last item of.</param>
         /// <returns>The task that completes with the last item of the sequence or fails.</returns>
-        public static ValueTask<T> LastTask<T>(this IAsyncEnumerable<T> source)
+        public static ValueTask<T> LastAsync<T>(this IAsyncEnumerable<T> source)
         {
-            return impl.FirstLastSingleTask.Last(source, default, false);
+            return impl.FirstLastSingleAsync.Last(source, default, false);
         }
 
         /// <summary>
@@ -425,9 +425,9 @@ namespace async_enumerable_dotnet
         /// <param name="source">The source async sequence to get the last item of.</param>
         /// <param name="defaultItem">The item to return if the source is empty.</param>
         /// <returns>The task that completes with the last/default item of the sequence or fails.</returns>
-        public static ValueTask<T> LastTask<T>(this IAsyncEnumerable<T> source, T defaultItem)
+        public static ValueTask<T> LastAsync<T>(this IAsyncEnumerable<T> source, T defaultItem)
         {
-            return impl.FirstLastSingleTask.Last(source, defaultItem, true);
+            return impl.FirstLastSingleAsync.Last(source, defaultItem, true);
         }
 
         /// <summary>
@@ -437,9 +437,9 @@ namespace async_enumerable_dotnet
         /// <typeparam name="T">The element type.</typeparam>
         /// <param name="source">The source async sequence to get the only item of.</param>
         /// <returns>The task that completes with the only item of the sequence or fails.</returns>
-        public static ValueTask<T> SingleTask<T>(this IAsyncEnumerable<T> source)
+        public static ValueTask<T> SingleAsync<T>(this IAsyncEnumerable<T> source)
         {
-            return impl.FirstLastSingleTask.Single(source, default, false);
+            return impl.FirstLastSingleAsync.Single(source, default, false);
         }
 
         /// <summary>
@@ -450,9 +450,9 @@ namespace async_enumerable_dotnet
         /// <param name="source">The source async sequence to get the only item of.</param>
         /// <param name="defaultItem">The item to return if the source is empty.</param>
         /// <returns>The task that completes with the only/default item of the sequence or fails.</returns>
-        public static ValueTask<T> SingleTask<T>(this IAsyncEnumerable<T> source, T defaultItem)
+        public static ValueTask<T> SingleAsync<T>(this IAsyncEnumerable<T> source, T defaultItem)
         {
-            return impl.FirstLastSingleTask.Single(source, defaultItem, true);
+            return impl.FirstLastSingleAsync.Single(source, defaultItem, true);
         }
 
         /// <summary>
@@ -507,7 +507,7 @@ namespace async_enumerable_dotnet
         /// <typeparam name="T">The element type of the source async sequence.</typeparam>
         /// <typeparam name="R">The element type of the inner sequences and the result items.</typeparam>
         /// <param name="source">The source async sequence to be mapped.</param>
-        /// <param name="mapper">The function recieving the source item and should return an inner async sequence to relay elements of.</param>
+        /// <param name="mapper">The function receiving the source item and should return an inner async sequence to relay elements of.</param>
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<R> ConcatMap<T, R>(this IAsyncEnumerable<T> source, Func<T, IAsyncEnumerable<R>> mapper)
         {
@@ -520,7 +520,7 @@ namespace async_enumerable_dotnet
         /// <typeparam name="T">The element type of the source async sequence.</typeparam>
         /// <typeparam name="R">The element type of the inner sequences and the result items.</typeparam>
         /// <param name="source">The source async sequence to be mapped.</param>
-        /// <param name="mapper">The function recieving the source item and should return an inner enumerable sequence to relay elements of.</param>
+        /// <param name="mapper">The function receiving the source item and should return an inner enumerable sequence to relay elements of.</param>
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<R> ConcatMap<T, R>(this IAsyncEnumerable<T> source, Func<T, IEnumerable<R>> mapper)
         {
@@ -658,7 +658,7 @@ namespace async_enumerable_dotnet
         }
 
         /// <summary>
-        /// Produces an ever increasing number after an itial delay, then periodically.
+        /// Produces an ever increasing number after an initial delay, then periodically.
         /// </summary>
         /// <param name="initialDelay">The initial delay before the first item emitted.</param>
         /// <param name="period">The initial and in-between time period for when to signal the next value.</param>
@@ -847,7 +847,7 @@ namespace async_enumerable_dotnet
         }
 
         /// <summary>
-        /// Collect the specified number of source items, non-overlappingly, into Lists and emit those lists.
+        /// Collect the specified number of source items, in a non-overlapping fashion, into Lists and emit those lists.
         /// </summary>
         /// <typeparam name="T">The element type.</typeparam>
         /// <param name="source">The source async sequence to batch up.</param>
@@ -859,7 +859,7 @@ namespace async_enumerable_dotnet
         }
 
         /// <summary>
-        /// Collect the specified number of source items, non-overlappingly, into custom ICollections generated on demand and emit those lists.
+        /// Collect the specified number of source items, in a non-overlapping fashion, into custom ICollections generated on demand and emit those lists.
         /// </summary>
         /// <typeparam name="T">The element type.</typeparam>
         /// <typeparam name="C">The custom collection type.</typeparam>
@@ -873,7 +873,7 @@ namespace async_enumerable_dotnet
         }
 
         /// <summary>
-        /// Collect the specified number of source items, possibly overlappingly, into Lists and emit those lists.
+        /// Collect the specified number of source items, possibly in an overlapping fashion, into Lists and emit those lists.
         /// </summary>
         /// <typeparam name="T">The element type.</typeparam>
         /// <param name="source">The source async sequence to batch up.</param>
@@ -886,7 +886,7 @@ namespace async_enumerable_dotnet
         }
 
         /// <summary>
-        /// Collect the specified number of source items, possibly overlappingly, into custom ICollections and emit those lists.
+        /// Collect the specified number of source items, possibly in an overlapping fashion, into custom ICollections and emit those lists.
         /// </summary>
         /// <typeparam name="T">The element type.</typeparam>
         /// <typeparam name="C">The custom collection type.</typeparam>
