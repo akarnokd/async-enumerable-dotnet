@@ -569,7 +569,7 @@ namespace async_enumerable_dotnet
         /// <param name="source">The source async sequence.</param>
         /// <typeparam name="T">The element type.</typeparam>
         /// <returns>The task returning the new List instance.</returns>
-        public static ValueTask<List<T>> ToList<T>(this IAsyncEnumerable<T> source)
+        public static ValueTask<List<T>> ToListAsync<T>(this IAsyncEnumerable<T> source)
         {
             return ToCollection.ToList(source);
         }
@@ -580,7 +580,7 @@ namespace async_enumerable_dotnet
         /// <param name="source">The source async sequence.</param>
         /// <typeparam name="T">The element type.</typeparam>
         /// <returns>The task returning the new Array instance.</returns>
-        public static ValueTask<T[]> ToArray<T>(this IAsyncEnumerable<T> source)
+        public static ValueTask<T[]> ToArrayAsync<T>(this IAsyncEnumerable<T> source)
         {
             return ToCollection.ToArray(source);
         }

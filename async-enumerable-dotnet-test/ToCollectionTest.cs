@@ -12,7 +12,7 @@ namespace async_enumerable_dotnet_test
         [Fact]
         public async Task ToListAllowsEmptySource()
         {
-            var result = await AsyncEnumerable.FromArray(new int[0]).ToList();
+            var result = await AsyncEnumerable.FromArray(new int[0]).ToListAsync();
             Assert.NotNull(result);
             Assert.Empty(result);
         }
@@ -21,15 +21,15 @@ namespace async_enumerable_dotnet_test
         public async Task ToListAlwaysReturnsNewInstance()
         {
             var source = AsyncEnumerable.FromArray(new int[0]);
-            var result1 = await source.ToList();
-            var result2 = await source.ToList();
+            var result1 = await source.ToListAsync();
+            var result2 = await source.ToListAsync();
             Assert.NotSame(result1, result2);
         }
 
         [Fact]
         public async Task ToListReturnsAllItems()
         {
-            var result = await AsyncEnumerable.Range(0, 10).ToList();
+            var result = await AsyncEnumerable.Range(0, 10).ToListAsync();
             var usedNumbers = new HashSet<int>(result);
             Assert.Equal(10, result.Count);
             for (var i = 0; i != 10; ++i)
@@ -41,7 +41,7 @@ namespace async_enumerable_dotnet_test
         [Fact]
         public async Task ToArrayAllowsEmptySource()
         {
-            var result = await AsyncEnumerable.FromArray(new int[0]).ToArray();
+            var result = await AsyncEnumerable.FromArray(new int[0]).ToArrayAsync();
             Assert.NotNull(result);
             Assert.Empty(result);
         }
@@ -50,15 +50,15 @@ namespace async_enumerable_dotnet_test
         public async Task ToArrayAlwaysReturnsNewInstanceForEmptySource()
         {
             var source = AsyncEnumerable.FromArray(new int[0]);
-            var result1 = await source.ToArray();
-            var result2 = await source.ToArray();
+            var result1 = await source.ToArrayAsync();
+            var result2 = await source.ToArrayAsync();
             Assert.Same(result1, result2);
         }
 
         [Fact]
         public async Task ToArrayReturnsAllItems()
         {
-            var result = await AsyncEnumerable.Range(0, 10).ToArray();
+            var result = await AsyncEnumerable.Range(0, 10).ToArrayAsync();
             var usedNumbers = new HashSet<int>(result);
             Assert.Equal(10, result.Length);
             for (var i = 0; i != 10; ++i)
