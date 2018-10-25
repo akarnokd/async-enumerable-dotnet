@@ -1121,5 +1121,17 @@ namespace async_enumerable_dotnet
         {
             return Collect<T, IList<T>>(source, () => new List<T>(capacityHint), (a, b) => a.Add(b));
         }
+
+        /// <summary>
+        /// Periodically take the latest item from the source async sequence and relay it.
+        /// </summary>
+        /// <typeparam name="T">The element type of the async sequence.</typeparam>
+        /// <param name="source">The source async sequence to sample.</param>
+        /// <param name="period">The sampling period.</param>
+        /// <returns>The new IAsyncEnumerable sequence.</returns>
+        public static IAsyncEnumerable<T> Sample<T>(this IAsyncEnumerable<T> source, TimeSpan period)
+        {
+            return new Sample<T>(source, period);
+        }
     }
 }

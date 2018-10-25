@@ -74,6 +74,7 @@ finally
 - `Reduce` - combine elements with an accumulator and emit the last result
 - `Repeat` - repeatedly consume the entire source async sequence (up to a number of times and/or condition)
 - `Retry` - retry a failed async sequence (up to a number of times or based on condition)
+- `Sample` - periodically take the latest item from the source sequence and emit it
 - `Scan` - perform rolling aggregation by emitting intermediate results
 - `Single` - signals the only item of the async sequence, fails if the sequence has more than one item
 - `Skip` - skip the first specified number of items of the source async sequence
