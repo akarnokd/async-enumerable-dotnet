@@ -1,19 +1,20 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <TargetFrameworks>netcoreapp2.1;netstandard2.0</TargetFrameworks>
     <RootNamespace>async_enumerable_dotnet</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <LangVersion>latest</LangVersion>
     <PackageId>akarnokd.async-enumerable-dotnet</PackageId>
-    <Version>0.0.1.0</Version>
+    <Version>0.0.1.3</Version>
     <Authors>David Karnok</Authors>
     <Company />
-    <AssemblyVersion>0.0.1.0</AssemblyVersion>
-    <FileVersion>0.0.1.0</FileVersion>
+    <AssemblyVersion>0.0.1.3</AssemblyVersion>
+    <FileVersion>0.0.1.3</FileVersion>
     <PackageTags>async, concurrency, async-enumerable, operators, async-sequence</PackageTags>
     <RepositoryUrl>https://github.com/akarnokd/async-enumerable-dotnet</RepositoryUrl>
     <PackageProjectUrl>https://github.com/akarnokd/async-enumerable-dotnet#getting-started</PackageProjectUrl>
-    <Description>Experimental operators for the upcomin C# 8 IAsyncEnumerables.</Description>
+    <Description>Experimental operators for the upcoming C# 8 IAsyncEnumerables.</Description>
     <Copyright>(C) David Karnok</Copyright>
     <PackageLicenseUrl>https://www.apache.org/licenses/LICENSE-2.0</PackageLicenseUrl>
     <PackageReleaseNotes>First public release. Many operators</PackageReleaseNotes>
@@ -21,8 +22,9 @@
     <Product>Async Enumerable operators for .NET</Product>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DocumentationFile>C:\Users\akarnokd\git\async-enumerable-dotnet\async-enumerable-dotnet\async-enumerable-dotnet.xml</DocumentationFile>
-  </PropertyGroup>
-
+    <ItemGroup>
+        <!-- ... -->
+        <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.1" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
+        <!-- ... -->
+    </ItemGroup>
 </Project>

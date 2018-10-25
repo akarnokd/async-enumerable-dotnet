@@ -11,13 +11,18 @@ namespace async_enumerable_dotnet_test
         [Fact]
         public async void Normal()
         {
+            var t = 500;
+            if (Environment.GetEnvironmentVariable("CI") != null)
+            {
+                t = 1500;
+            }
             var disposedMain = 0;
             var disposedOther = 0;
 
             await AsyncEnumerable.Range(1, 5)
                 .DoOnDispose(() => disposedMain++)
                 .TakeUntil(
-                    AsyncEnumerable.Timer(TimeSpan.FromMilliseconds(500))
+                    AsyncEnumerable.Timer(TimeSpan.FromMilliseconds(t))
                     .DoOnDispose(() => disposedOther += 2)
                 )
                 .AssertResult(1, 2, 3, 4, 5);
