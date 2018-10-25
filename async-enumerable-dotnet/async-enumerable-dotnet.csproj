@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;netcoreapp2.1</TargetFrameworks>
     <RootNamespace>async_enumerable_dotnet</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <LangVersion>latest</LangVersion>
     <PackageId>akarnokd.async-enumerable-dotnet</PackageId>
     <Version>0.0.1.0</Version>
@@ -19,14 +20,6 @@
     <PackageReleaseNotes>First public release. Many operators</PackageReleaseNotes>
     <RepositoryType>Github</RepositoryType>
     <Product>Async Enumerable operators for .NET</Product>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DocumentationFile>bin\Debug\async-enumerable-dotnet.xml</DocumentationFile>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <DocumentationFile>bin\Release\async-enumerable-dotnet.xml</DocumentationFile>
   </PropertyGroup>
 
     <ItemGroup>
