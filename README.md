@@ -71,6 +71,7 @@ finally
 - `Last` - signals the last item of the async sequence
 - `Map` - transform one source value into some other value
 - `OnErrorResumeNext` - if the main source fails, switch to an alternative source
+- `Prefetch` - run the source async sequence to prefetch items for a slow consumer
 - `Reduce` - combine elements with an accumulator and emit the last result
 - `Repeat` - repeatedly consume the entire source async sequence (up to a number of times and/or condition)
 - `Retry` - retry a failed async sequence (up to a number of times or based on condition)

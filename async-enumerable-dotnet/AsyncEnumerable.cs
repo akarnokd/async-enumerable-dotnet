@@ -319,7 +319,7 @@ namespace async_enumerable_dotnet
         }
 
         /// <summary>
-        /// Creates an async sequence that emits the given pre-existing value.
+        /// Creates an async sequence that emits the given preexisting value.
         /// </summary>
         /// <typeparam name="T">The element type.</typeparam>
         /// <param name="item">The item to emit.</param>
@@ -1132,6 +1132,36 @@ namespace async_enumerable_dotnet
         public static IAsyncEnumerable<T> Sample<T>(this IAsyncEnumerable<T> source, TimeSpan period)
         {
             return new Sample<T>(source, period);
+        }
+
+        /// <summary>
+        /// Starts buffering up to the specified amount from the source async sequence
+        /// and tries to keep this buffer filled in so with (75% limit) that a slow consumer can get
+        /// the items of the faster producer much earlier.
+        /// </summary>
+        /// <typeparam name="T">The element type of the async sequences.</typeparam>
+        /// <param name="source">The source to prefetch items of.</param>
+        /// <param name="prefetch">The number of items to prefetch at most</param>
+        /// <returns>The new IAsyncEnumerable sequence.</returns>
+        public static IAsyncEnumerable<T> Prefetch<T>(this IAsyncEnumerable<T> source, int prefetch)
+        {
+            return Prefetch(source, prefetch, prefetch - (prefetch >> 2)); // 75%
+        }
+
+        /// <summary>
+        /// Starts buffering up to the specified amount from the source async sequence
+        /// and tries to keep this buffer filled in so that a slow consumer can get
+        /// the items of the faster producer much earlier.
+        /// </summary>
+        /// <typeparam name="T">The element type of the async sequences.</typeparam>
+        /// <param name="source">The source to prefetch items of.</param>
+        /// <param name="prefetch">The number of items to prefetch at most</param>
+        /// <param name="limit">The number of consumed items after which more items should be
+        /// pulled from the source.</param>
+        /// <returns>The new IAsyncEnumerable sequence.</returns>
+        public static IAsyncEnumerable<T> Prefetch<T>(this IAsyncEnumerable<T> source, int prefetch, int limit)
+        {
+            return new Prefetch<T>(source, prefetch, limit);
         }
     }
 }
