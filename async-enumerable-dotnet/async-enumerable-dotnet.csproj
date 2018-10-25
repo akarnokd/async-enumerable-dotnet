@@ -1,7 +1,7 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <TargetFrameworks>netstandard13;netstandard20;net461;netcoreapp2.1</TargetFrameworks>
     <RootNamespace>async_enumerable_dotnet</RootNamespace>
     <LangVersion>latest</LangVersion>
     <PackageId>akarnokd.async-enumerable-dotnet</PackageId>
@@ -24,5 +24,9 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DocumentationFile>C:\Users\akarnokd\git\async-enumerable-dotnet\async-enumerable-dotnet\async-enumerable-dotnet.xml</DocumentationFile>
   </PropertyGroup>
+
+  <ItemGroup Condition="! $(TargetFramework.Contains('netcoreapp'))">
+    <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.0" />
+  </ItemGroup>
 
 </Project>
