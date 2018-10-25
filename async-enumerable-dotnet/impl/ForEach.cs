@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,6 +9,7 @@ namespace async_enumerable_dotnet.impl
 {
     internal static class ForEach
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static async ValueTask ForEachAction<T>(IAsyncEnumerable<T> source, Action<T> onNext, Action<Exception> onError, Action onComplete)
         {
             var enumerator = source.GetAsyncEnumerator();
@@ -44,6 +46,7 @@ namespace async_enumerable_dotnet.impl
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static async ValueTask Consume<T>(this IAsyncEnumerable<T> source, IAsyncConsumer<T> consumer, CancellationToken ct)
         {
             var en = source.GetAsyncEnumerator();

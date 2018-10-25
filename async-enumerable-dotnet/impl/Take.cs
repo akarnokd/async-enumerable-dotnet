@@ -28,6 +28,8 @@ namespace async_enumerable_dotnet.impl
 
             long remaining;
 
+            bool once;
+
             public TakeEnumerator(IAsyncEnumerator<T> source, long remaining)
             {
                 this.source = source;
@@ -38,7 +40,12 @@ namespace async_enumerable_dotnet.impl
 
             public ValueTask DisposeAsync()
             {
-                return source.DisposeAsync();
+                if (!once)
+                {
+                    once = true;
+                    return source.DisposeAsync();
+                }
+                return new ValueTask();
             }
 
             public async ValueTask<bool> MoveNextAsync()
@@ -46,6 +53,9 @@ namespace async_enumerable_dotnet.impl
                 long n = remaining;
                 if (n == 0)
                 {
+                    // eagerly dispose as who knows when the
+                    // consumer will call DisposeAsync?
+                    await DisposeAsync();
                     return false;
                 }
                 remaining = n - 1;

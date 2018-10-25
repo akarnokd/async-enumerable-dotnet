@@ -66,6 +66,7 @@ finally
 - `Filter` - prevent items from passing through which don't pass a predicate
 - `First` - signals the first item of the async sequence
 - `FlatMap` - map the source items into `IAsyncEnumerable`s and merge their values into a single async sequence
+- `GroupBy` - groups the source elements into distinct async groups
 - `IgnoreElements` - ignores items and ends when the source async sequence ends
 - `Last` - signals the last item of the async sequence
 - `Map` - transform one source value into some other value
@@ -85,6 +86,7 @@ finally
 - `TakeUntil` - take items from the main source until a secondary async sequence signals an item or completes
 - `TakeWhile` - take items while predicate is true and stop when it turns false
 - `Timeout` - signal an error if the next item doesn't arrive within the specified time
+- `ToList` - collects all items into a List and signals it as the single result of the async sequence
 
 ## End-consumers
 

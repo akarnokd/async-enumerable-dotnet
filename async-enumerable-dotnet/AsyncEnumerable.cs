@@ -1029,5 +1029,97 @@ namespace async_enumerable_dotnet
         {
             return impl.ForEach.Consume(source, consumer, ct);
         }
+
+        /// <summary>
+        /// Groups the source values into distinct groups of async sequences.
+        /// </summary>
+        /// <typeparam name="T">The source element type.</typeparam>
+        /// <typeparam name="K">The key type of the groups.</typeparam>
+        /// <param name="source">The source async sequence.</param>
+        /// <param name="keySelector">The function receiving the current source item
+        /// and should return a key for the group.</param>
+        /// <returns>The new IAsyncEnumerable sequence.</returns>
+        /// <remarks>
+        /// Note that all the groups and the main async sequence of those groups have
+        /// to be consumed, otherwise the setup live-locks.
+        /// </remarks>
+        public static IAsyncEnumerable<IAsyncGroupedEnumerable<K, T>> GroupBy<T, K>(this IAsyncEnumerable<T> source, Func<T, K> keySelector)
+        {
+            return GroupBy(source, keySelector, v => v, EqualityComparer<K>.Default);
+        }
+
+        /// <summary>
+        /// Groups the source values into distinct groups of async sequences.
+        /// </summary>
+        /// <typeparam name="T">The source element type.</typeparam>
+        /// <typeparam name="K">The key type of the groups.</typeparam>
+        /// <param name="source">The source async sequence.</param>
+        /// <param name="keySelector">The function receiving the current source item
+        /// and should return a key for the group.</param>
+        /// <param name="keyComparer">The comparer for deciding which keys are equal.</param>
+        /// <returns>The new IAsyncEnumerable sequence.</returns>
+        /// <remarks>
+        /// Note that all the groups and the main async sequence of those groups have
+        /// to be consumed, otherwise the setup live-locks.
+        /// </remarks>
+        public static IAsyncEnumerable<IAsyncGroupedEnumerable<K, T>> GroupBy<T, K>(this IAsyncEnumerable<T> source, Func<T, K> keySelector, IEqualityComparer<K> keyComparer)
+        {
+            return GroupBy(source, keySelector, v => v, keyComparer);
+        }
+
+        /// <summary>
+        /// Groups the source values into distinct groups of async sequences.
+        /// </summary>
+        /// <typeparam name="T">The source element type.</typeparam>
+        /// <typeparam name="K">The key type of the groups.</typeparam>
+        /// <typeparam name="V">The value type of the groups.</typeparam>
+        /// <param name="source">The source async sequence.</param>
+        /// <param name="keySelector">The function receiving the current source item
+        /// and should return a key for the group.</param>
+        /// <param name="valueSelector">The function receiving the current source item
+        /// and should return the value for the group.</param>
+        /// <returns>The new IAsyncEnumerable sequence.</returns>
+        /// <remarks>
+        /// Note that all the groups and the main async sequence of those groups have
+        /// to be consumed, otherwise the setup live-locks.
+        /// </remarks>
+        public static IAsyncEnumerable<IAsyncGroupedEnumerable<K, V>> GroupBy<T, K, V>(this IAsyncEnumerable<T> source, Func<T, K> keySelector, Func<T, V> valueSelector)
+        {
+            return GroupBy(source, keySelector, valueSelector, EqualityComparer<K>.Default);
+        }
+
+        /// <summary>
+        /// Groups the source values into distinct groups of async sequences.
+        /// </summary>
+        /// <typeparam name="T">The source element type.</typeparam>
+        /// <typeparam name="K">The key type of the groups.</typeparam>
+        /// <typeparam name="V">The value type of the groups.</typeparam>
+        /// <param name="source">The source async sequence.</param>
+        /// <param name="keySelector">The function receiving the current source item
+        /// and should return a key for the group.</param>
+        /// <param name="valueSelector">The function receiving the current source item
+        /// and should return the value for the group.</param>
+        /// <param name="keyComparer">The comparer for deciding which keys are equal.</param>
+        /// <returns>The new IAsyncEnumerable sequence.</returns>
+        /// <remarks>
+        /// Note that all the groups and the main async sequence of those groups have
+        /// to be consumed, otherwise the setup live-locks.
+        /// </remarks>
+        public static IAsyncEnumerable<IAsyncGroupedEnumerable<K, V>> GroupBy<T, K, V>(this IAsyncEnumerable<T> source, Func<T, K> keySelector, Func<T, V> valueSelector, IEqualityComparer<K> keyComparer)
+        {
+            return new GroupBy<T, K, V>(source, keySelector, valueSelector, keyComparer);
+        }
+
+        /// <summary>
+        /// Collects all items into a List and signals it as the single result of the async sequence.
+        /// </summary>
+        /// <typeparam name="T">The element type of the source and the list.</typeparam>
+        /// <param name="source">The source async sequence to collect up.</param>
+        /// <param name="capacityHint">The expected number of elements to avoid frequent list resizing.</param>
+        /// <returns>The new IAsyncEnumerable sequence.</returns>
+        public static IAsyncEnumerable<IList<T>> ToList<T>(this IAsyncEnumerable<T> source, int capacityHint = 16)
+        {
+            return Collect<T, IList<T>>(source, () => new List<T>(capacityHint), (a, b) => a.Add(b));
+        }
     }
 }
