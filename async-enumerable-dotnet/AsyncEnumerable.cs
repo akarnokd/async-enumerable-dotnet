@@ -564,6 +564,28 @@ namespace async_enumerable_dotnet
         }
 
         /// <summary>
+        /// Converts the async sequence into a list.
+        /// </summary>
+        /// <param name="source">The source async sequence.</param>
+        /// <typeparam name="T">The element type.</typeparam>
+        /// <returns>The task returning the new List instance.</returns>
+        public static ValueTask<List<T>> ToList<T>(this IAsyncEnumerable<T> source)
+        {
+            return ToCollection.ToList(source);
+        }
+
+        /// <summary>
+        /// Converts the async sequence into an array.
+        /// </summary>
+        /// <param name="source">The source async sequence.</param>
+        /// <typeparam name="T">The element type.</typeparam>
+        /// <returns>The task returning the new Array instance.</returns>
+        public static ValueTask<T[]> ToArray<T>(this IAsyncEnumerable<T> source)
+        {
+            return ToCollection.ToArray(source);
+        }
+
+        /// <summary>
         /// Calls a handler if the source async sequence fails to
         /// produce a fallback async sequence to resume with.
         /// </summary>
