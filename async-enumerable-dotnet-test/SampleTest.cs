@@ -22,7 +22,7 @@ namespace async_enumerable_dotnet_test
                         .Map(w => v)
                 )
                 .Sample(TimeSpan.FromMilliseconds(t * 2))
-                .AssertResult(2, 4, 5);
+                .AssertResult(2, 4);
         }
 
         [Fact]
@@ -30,6 +30,32 @@ namespace async_enumerable_dotnet_test
         {
             await AsyncEnumerable.Range(1, 5)
                 .Sample(TimeSpan.FromMilliseconds(500))
+                .AssertResult();
+        }
+
+        [Fact]
+        public async void Normal_EmitLast()
+        {
+            var t = 200;
+            if (Environment.GetEnvironmentVariable("CI") != null)
+            {
+                t = 2000;
+            }
+
+            await AsyncEnumerable.Range(1, 5)
+                .FlatMap(v =>
+                        AsyncEnumerable.Timer(TimeSpan.FromMilliseconds(t * v - t / 2))
+                        .Map(w => v)
+                )
+                .Sample(TimeSpan.FromMilliseconds(t * 2), true)
+                .AssertResult(2, 4, 5);
+        }
+
+        [Fact]
+        public async void Last_EmitLast()
+        {
+            await AsyncEnumerable.Range(1, 5)
+                .Sample(TimeSpan.FromMilliseconds(500), true)
                 .AssertResult(5);
         }
 

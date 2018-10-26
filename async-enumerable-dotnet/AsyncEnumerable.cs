@@ -1128,10 +1128,11 @@ namespace async_enumerable_dotnet
         /// <typeparam name="T">The element type of the async sequence.</typeparam>
         /// <param name="source">The source async sequence to sample.</param>
         /// <param name="period">The sampling period.</param>
+        /// <param name="emitLast">Emit the very last item, even if the sampling period has not passed.</param>
         /// <returns>The new IAsyncEnumerable sequence.</returns>
-        public static IAsyncEnumerable<T> Sample<T>(this IAsyncEnumerable<T> source, TimeSpan period)
+        public static IAsyncEnumerable<T> Sample<T>(this IAsyncEnumerable<T> source, TimeSpan period, bool emitLast = false)
         {
-            return new Sample<T>(source, period);
+            return new Sample<T>(source, period, emitLast);
         }
 
         /// <summary>
@@ -1162,6 +1163,21 @@ namespace async_enumerable_dotnet
         public static IAsyncEnumerable<T> Prefetch<T>(this IAsyncEnumerable<T> source, int prefetch, int limit)
         {
             return new Prefetch<T>(source, prefetch, limit);
+        }
+
+        /// <summary>
+        /// Emit the latest item if there were no newer items from the source async
+        /// sequence within the given delay period.
+        /// </summary>
+        /// <typeparam name="T">The element type of the source.</typeparam>
+        /// <param name="source">The source async sequence.</param>
+        /// <param name="delay">The time to wait after each item.</param>
+        /// <param name="emitLast">If true, the very last item is emitted upon completion if
+        /// the delay has not yet passed for it.</param>
+        /// <returns>The new AsyncEnumerable sequence.</returns>
+        public static IAsyncEnumerable<T> Debounce<T>(this IAsyncEnumerable<T> source, TimeSpan delay, bool emitLast = false)
+        {
+            return new Debounce<T>(source, delay, emitLast);
         }
     }
 }

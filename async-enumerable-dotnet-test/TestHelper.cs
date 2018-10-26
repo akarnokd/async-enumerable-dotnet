@@ -28,7 +28,7 @@ namespace async_enumerable_dotnet_test
                     idx++;
                 }
 
-                Assert.Equal(values.Length, idx);
+                Assert.True(values.Length == idx, "Source has less items than expected: " + values.Length + ", actual: " + idx);
             }
             finally
             {
@@ -104,7 +104,7 @@ namespace async_enumerable_dotnet_test
             }
             catch (Exception ex)
             {
-                Assert.Equal(values.Length, idx);
+                Assert.True(values.Length == idx, "Source has less items than expected: " + values.Length + ", actual: " + idx);
 
                 Assert.True(exception.GetTypeInfo().IsAssignableFrom(ex.GetType().GetTypeInfo()), "Wrong exception, Expected: " + exception + ", Actual: " + ex);
             }

@@ -12,15 +12,18 @@ namespace async_enumerable_dotnet.impl
 
         readonly TimeSpan period;
 
-        public Sample(IAsyncEnumerable<T> source, TimeSpan period)
+        readonly bool emitLast;
+
+        public Sample(IAsyncEnumerable<T> source, TimeSpan period, bool emitLast)
         {
             this.source = source;
             this.period = period;
+            this.emitLast = emitLast;
         }
 
         public IAsyncEnumerator<T> GetAsyncEnumerator()
         {
-            var en = new SampleEnumerator(source.GetAsyncEnumerator(), period);
+            var en = new SampleEnumerator(source.GetAsyncEnumerator(), period, emitLast);
             en.StartTimer();
             en.MoveNext();
             return en;
@@ -34,9 +37,13 @@ namespace async_enumerable_dotnet.impl
 
             readonly CancellationTokenSource cts;
 
+            readonly bool emitLast;
+
             int consumerWip;
 
             TaskCompletionSource<bool> resume;
+
+            object timerLatest;
 
             object latest;
             volatile bool done;
@@ -52,10 +59,11 @@ namespace async_enumerable_dotnet.impl
 
             static readonly object EmptyIndicator = new object();
 
-            public SampleEnumerator(IAsyncEnumerator<T> source, TimeSpan period)
+            public SampleEnumerator(IAsyncEnumerator<T> source, TimeSpan period, bool emitLast)
             {
                 this.source = source;
                 this.period = period;
+                this.emitLast = emitLast;
                 this.disposeTask = new TaskCompletionSource<bool>();
                 this.cts = new CancellationTokenSource();
                 Volatile.Write(ref latest, EmptyIndicator);
@@ -66,6 +74,7 @@ namespace async_enumerable_dotnet.impl
                 cts.Cancel();
                 if (Interlocked.Increment(ref disposeWip) == 1)
                 {
+                    Interlocked.Exchange(ref timerLatest, EmptyIndicator);
                     return source.DisposeAsync();
                 }
                 return new ValueTask(disposeTask.Task);
@@ -101,6 +110,7 @@ namespace async_enumerable_dotnet.impl
                 }
             }
 
+            // FIXME timer drift
             internal void StartTimer()
             {
                 Task.Delay(period, cts.Token)
@@ -109,6 +119,10 @@ namespace async_enumerable_dotnet.impl
 
             void HandleTimer(Task timer)
             {
+                // take the saved timerLatest and make it available to MoveNextAsync
+                // via latest
+                Interlocked.Exchange(ref latest, Interlocked.Exchange(ref timerLatest, EmptyIndicator));
+
                 Signal();
                 StartTimer();
             }
@@ -145,25 +159,34 @@ namespace async_enumerable_dotnet.impl
             {
                 if (Interlocked.Decrement(ref disposeWip) != 0)
                 {
+                    Interlocked.Exchange(ref timerLatest, EmptyIndicator);
                     ResumeHelper.ResumeWhen(source.DisposeAsync(), disposeTask);
                 }
                 else if (t.IsFaulted)
                 {
+                    cts.Cancel();
+                    if (emitLast)
+                    {
+                        Interlocked.Exchange(ref latest, Interlocked.Exchange(ref timerLatest, EmptyIndicator));
+                    }
                     error = ExceptionHelper.Unaggregate(t.Exception);
                     done = true;
-                    cts.Cancel();
                     Signal();
                 }
                 else if (t.Result)
                 {
-                    Interlocked.Exchange(ref latest, source.Current);
-                    // resumption will be triggered by the timer
+                    Interlocked.Exchange(ref timerLatest, source.Current);
+                    // the value will be picked up by the timer
                     MoveNext();
                 }
                 else
                 {
-                    done = true;
                     cts.Cancel();
+                    if (emitLast)
+                    {
+                        Interlocked.Exchange(ref latest, Interlocked.Exchange(ref timerLatest, EmptyIndicator));
+                    }
+                    done = true;
                     Signal();
                 }
             }
