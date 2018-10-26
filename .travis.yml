@@ -1,6 +1,8 @@
 language: csharp
 dotnet: 2.1.400
 mono: none
+# running in container causes test failures and 2x-3x longer build, use standalone instances
+sudo: required
 
 script:
   - dotnet test ./async-enumerable-dotnet-test/async-enumerable-dotnet-test.csproj

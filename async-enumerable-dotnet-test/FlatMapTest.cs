@@ -93,13 +93,19 @@ namespace async_enumerable_dotnet_test
         [Fact]
         public async void OutOfOrder()
         {
+            var t = 100;
+            if (Environment.GetEnvironmentVariable("CI") != null)
+            {
+                t = 1000;
+            }
+
             var result = AsyncEnumerable.FromArray(
-                    100, 300, 200, 0, 500, 400
+                    t, 3 * t, 2 * t, 0, 5 * t, 4 * t
                 )
                 .FlatMap(v => AsyncEnumerable.Timer(TimeSpan.FromMilliseconds(v)).Map(w => v))
             ;
 
-            await result.AssertResult(0, 100, 200, 300, 400, 500);
+            await result.AssertResult(0, t, 2 * t, 3 * t, 4 * t, 5 * t);
         }
 
         [Fact]
