@@ -70,6 +70,7 @@ finally
 - `GroupBy` - groups the source elements into distinct async groups
 - `IgnoreElements` - ignores items and ends when the source async sequence ends
 - `Last` - signals the last item of the async sequence
+- `Latest` - runs the source async sequence as fast as it can and samples it with the frequency of the consumer
 - `Map` - transform one source value into some other value
 - `OnErrorResumeNext` - if the main source fails, switch to an alternative source
 - `Prefetch` - run the source async sequence to prefetch items for a slow consumer

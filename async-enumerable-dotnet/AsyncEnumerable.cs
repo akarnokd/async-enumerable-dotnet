@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using async_enumerable_dotnet.impl;
@@ -11,6 +12,61 @@ namespace async_enumerable_dotnet
     /// </summary>
     public static class AsyncEnumerable
     {
+        #region - ValidationHelper -
+        /// <summary>
+        /// Checks if the argument is null and throws.
+        /// </summary>
+        /// <typeparam name="T">The class type.</typeparam>
+        /// <param name="value">The value to check.</param>
+        /// <param name="argumentName">The argument name for the ArgumentNullException</param>
+        /// <exception cref="ArgumentNullException">If <paramref name="value"/> is null.</exception>
+        /// <returns>The value.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static T RequireNonNull<T>(T value, string argumentName) where T : class
+        {
+            if (value == null)
+            {
+                throw new ArgumentNullException(argumentName);
+            }
+            return value;
+        }
+
+        /// <summary>
+        /// Check if the value is positive.
+        /// </summary>
+        /// <param name="value">The value to check.</param>
+        /// <param name="argumentName">The argument name for the ArgumentNullException</param>
+        /// <exception cref="ArgumentNullException">If <paramref name="value"/> is null.</exception>
+        /// <returns>The value.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static int RequirePositive(int value, string argumentName)
+        {
+            if (value <= 0)
+            {
+                throw new ArgumentOutOfRangeException(argumentName, value, "must be positive");
+            }
+            return value;
+        }
+
+        /// <summary>
+        /// Check if the value is positive.
+        /// </summary>
+        /// <param name="value">The value to check.</param>
+        /// <param name="argumentName">The argument name for the ArgumentNullException</param>
+        /// <exception cref="ArgumentNullException">If <paramref name="value"/> is null.</exception>
+        /// <returns>The value.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static long RequirePositive(long value, string argumentName)
+        {
+            if (value <= 0L)
+            {
+                throw new ArgumentOutOfRangeException(argumentName, value, "must be positive");
+            }
+            return value;
+        }
+
+        #endregion - ValidationHelper -
+
         /// <summary>
         /// Combine a row of the next elements from each async sequence via a zipper function.
         /// </summary>
@@ -22,6 +78,8 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<R> Zip<T, R>(Func<T[], R> zipper, params IAsyncEnumerable<T>[] sources)
         {
+            RequireNonNull(sources, nameof(sources));
+            RequireNonNull(zipper, nameof(zipper));
             return new ZipArray<T, R>(sources, zipper);
         }
 
@@ -33,6 +91,7 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<T> FromArray<T>(params T[] values)
         {
+            RequireNonNull(values, nameof(values));
             return new FromArray<T>(values);
         }
 
@@ -46,6 +105,7 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<T> Timeout<T>(this IAsyncEnumerable<T> source, TimeSpan timeout)
         {
+            RequireNonNull(source, nameof(source));
             return new Timeout<T>(source, timeout);
         }
 
@@ -86,6 +146,8 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<T> DoOnDispose<T>(this IAsyncEnumerable<T> source, Action handler)
         {
+            RequireNonNull(source, nameof(source));
+            RequireNonNull(handler, nameof(handler));
             return new DoOnDispose<T>(source, handler);
         }
 
@@ -99,6 +161,8 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<T> DoOnDisposeAsync<T>(this IAsyncEnumerable<T> source, Func<ValueTask> handler)
         {
+            RequireNonNull(source, nameof(source));
+            RequireNonNull(handler, nameof(handler));
             return new DoOnDisposeAsync<T>(source, handler);
         }
 
@@ -106,11 +170,12 @@ namespace async_enumerable_dotnet
         /// Signals the given Exception immediately.
         /// </summary>
         /// <typeparam name="T">The intended element type of the sequence.</typeparam>
-        /// <param name="ex">The exception to signal immediately.</param>
+        /// <param name="exception">The exception to signal immediately.</param>
         /// <returns>The new IAsyncEnumerable instance.</returns>
-        public static IAsyncEnumerable<T> Error<T>(Exception ex)
+        public static IAsyncEnumerable<T> Error<T>(Exception exception)
         {
-            return new Error<T>(ex);
+            RequireNonNull(exception, nameof(exception));
+            return new Error<T>(exception);
         }
 
         /// <summary>
@@ -127,6 +192,9 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<T> Using<T, R>(Func<R> resourceProvider, Func<R, IAsyncEnumerable<T>> sourceProvider, Action<R> resourceCleanup)
         {
+            RequireNonNull(resourceProvider, nameof(resourceProvider));
+            RequireNonNull(sourceProvider, nameof(sourceProvider));
+            RequireNonNull(resourceCleanup, nameof(resourceCleanup));
             return new Using<T, R>(resourceProvider, sourceProvider, resourceCleanup);
         }
 
@@ -138,6 +206,7 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<T> FromTask<T>(Func<Task<T>> func)
         {
+            RequireNonNull(func, nameof(func));
             return new FromTaskFunc<T>(func);
         }
 
@@ -150,6 +219,7 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<T> FromTask<T>(Task<T> task)
         {
+            RequireNonNull(task, nameof(task));
             return new FromTask<T>(task);
         }
 
@@ -164,6 +234,7 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<T> Create<T>(Func<IAsyncEmitter<T>, Task> handler)
         {
+            RequireNonNull(handler, nameof(handler));
             return new CreateEmitter<T>(handler);
         }
 
@@ -175,6 +246,7 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<T> Defer<T>(Func<IAsyncEnumerable<T>> func)
         {
+            RequireNonNull(func, nameof(func));
             return new Defer<T>(func);
         }
 
@@ -187,6 +259,7 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<T> Take<T>(this IAsyncEnumerable<T> source, long n)
         {
+            RequireNonNull(source, nameof(source));
             return new Take<T>(source, n);
         }
 
@@ -215,6 +288,10 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<R> FlatMap<T, R>(this IAsyncEnumerable<T> source, Func<T, IAsyncEnumerable<R>> mapper, int maxConcurrency = int.MaxValue, int prefetch = 32)
         {
+            RequireNonNull(source, nameof(source));
+            RequireNonNull(mapper, nameof(mapper));
+            RequirePositive(maxConcurrency, nameof(maxConcurrency));
+            RequirePositive(prefetch, nameof(prefetch));
             return new FlatMap<T, R>(source, mapper, maxConcurrency, prefetch);
         }
 
@@ -229,6 +306,8 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<R> Map<T, R>(this IAsyncEnumerable<T> source, Func<T, R> mapper)
         {
+            RequireNonNull(source, nameof(source));
+            RequireNonNull(mapper, nameof(mapper));
             return new Map<T, R>(source, mapper);
         }
 
@@ -243,6 +322,8 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<R> Map<T, R>(this IAsyncEnumerable<T> source, Func<T, Task<R>> mapper)
         {
+            RequireNonNull(source, nameof(source));
+            RequireNonNull(mapper, nameof(mapper));
             return new MapAsync<T, R>(source, mapper);
         }
 
@@ -255,6 +336,7 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<T> FromObservable<T>(IObservable<T> source)
         {
+            RequireNonNull(source, nameof(source));
             return new FromObservable<T>(source);
         }
 
@@ -267,6 +349,7 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<T> ToAsyncEnumerable<T>(this IObservable<T> source)
         {
+            RequireNonNull(source, nameof(source));
             return new FromObservable<T>(source);
         }
 
@@ -278,6 +361,7 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IObservable<T> ToObservable<T>(this IAsyncEnumerable<T> source)
         {
+            RequireNonNull(source, nameof(source));
             return new ToObservable<T>(source);
         }
 
@@ -291,6 +375,8 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<T> Filter<T>(this IAsyncEnumerable<T> source, Func<T, bool> predicate)
         {
+            RequireNonNull(source, nameof(source));
+            RequireNonNull(predicate, nameof(predicate));
             return new Filter<T>(source, predicate);
         }
 
@@ -304,6 +390,8 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<T> Filter<T>(this IAsyncEnumerable<T> source, Func<T, Task<bool>> predicate)
         {
+            RequireNonNull(source, nameof(source));
+            RequireNonNull(predicate, nameof(predicate));
             return new FilterAsync<T>(source, predicate);
         }
 
@@ -315,6 +403,7 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<T> FromEnumerable<T>(IEnumerable<T> source)
         {
+            RequireNonNull(source, nameof(source));
             return new FromEnumerable<T>(source);
         }
 
@@ -338,6 +427,7 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<T> Skip<T>(this IAsyncEnumerable<T> source, long n)
         {
+            RequireNonNull(source, nameof(source));
             return new Skip<T>(source, n);
         }
 
@@ -377,7 +467,8 @@ namespace async_enumerable_dotnet
         /// <returns>The task that completes when the sequence terminates.</returns>
         public static ValueTask ForEach<T>(this IAsyncEnumerable<T> source, Action<T> onNext = null, Action<Exception> onError = null, Action onComplete = null)
         {
-            return impl.ForEach.ForEachAction<T>(source, onNext, onError, onComplete);
+            RequireNonNull(source, nameof(source));
+            return impl.ForEach.ForEachAction(source, onNext, onError, onComplete);
         }
 
         /// <summary>
@@ -389,7 +480,8 @@ namespace async_enumerable_dotnet
         /// <returns>The task that completes with the first item of the sequence or fails.</returns>
         public static ValueTask<T> FirstAsync<T>(this IAsyncEnumerable<T> source)
         {
-            return impl.FirstLastSingleAsync.First(source, default, false);
+            RequireNonNull(source, nameof(source));
+            return FirstLastSingleAsync.First(source, default, false);
         }
 
         /// <summary>
@@ -402,7 +494,8 @@ namespace async_enumerable_dotnet
         /// <returns>The task that completes with the first/default item of the sequence or fails.</returns>
         public static ValueTask<T> FirstAsync<T>(this IAsyncEnumerable<T> source, T defaultItem)
         {
-            return impl.FirstLastSingleAsync.First(source, defaultItem, true);
+            RequireNonNull(source, nameof(source));
+            return FirstLastSingleAsync.First(source, defaultItem, true);
         }
 
         /// <summary>
@@ -414,7 +507,8 @@ namespace async_enumerable_dotnet
         /// <returns>The task that completes with the last item of the sequence or fails.</returns>
         public static ValueTask<T> LastAsync<T>(this IAsyncEnumerable<T> source)
         {
-            return impl.FirstLastSingleAsync.Last(source, default, false);
+            RequireNonNull(source, nameof(source));
+            return FirstLastSingleAsync.Last(source, default, false);
         }
 
         /// <summary>
@@ -427,7 +521,8 @@ namespace async_enumerable_dotnet
         /// <returns>The task that completes with the last/default item of the sequence or fails.</returns>
         public static ValueTask<T> LastAsync<T>(this IAsyncEnumerable<T> source, T defaultItem)
         {
-            return impl.FirstLastSingleAsync.Last(source, defaultItem, true);
+            RequireNonNull(source, nameof(source));
+            return FirstLastSingleAsync.Last(source, defaultItem, true);
         }
 
         /// <summary>
@@ -439,7 +534,8 @@ namespace async_enumerable_dotnet
         /// <returns>The task that completes with the only item of the sequence or fails.</returns>
         public static ValueTask<T> SingleAsync<T>(this IAsyncEnumerable<T> source)
         {
-            return impl.FirstLastSingleAsync.Single(source, default, false);
+            RequireNonNull(source, nameof(source));
+            return FirstLastSingleAsync.Single(source, default, false);
         }
 
         /// <summary>
@@ -452,7 +548,8 @@ namespace async_enumerable_dotnet
         /// <returns>The task that completes with the only/default item of the sequence or fails.</returns>
         public static ValueTask<T> SingleAsync<T>(this IAsyncEnumerable<T> source, T defaultItem)
         {
-            return impl.FirstLastSingleAsync.Single(source, defaultItem, true);
+            RequireNonNull(source, nameof(source));
+            return FirstLastSingleAsync.Single(source, defaultItem, true);
         }
 
         /// <summary>
@@ -466,6 +563,8 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<T> Reduce<T>(this IAsyncEnumerable<T> source, Func<T, T, T> reducer)
         {
+            RequireNonNull(source, nameof(source));
+            RequireNonNull(reducer, nameof(reducer));
             return new Reduce<T>(source, reducer);
         }
 
@@ -482,6 +581,9 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<R> Reduce<T, R>(this IAsyncEnumerable<T> source, Func<R> initialSupplier, Func<R, T, R> reducer)
         {
+            RequireNonNull(source, nameof(source));
+            RequireNonNull(initialSupplier, nameof(initialSupplier));
+            RequireNonNull(reducer, nameof(reducer));
             return new ReduceSeed<T, R>(source, initialSupplier, reducer);
         }
 
@@ -498,6 +600,9 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<C> Collect<T, C>(this IAsyncEnumerable<T> source, Func<C> collectionSupplier, Action<C, T> collector)
         {
+            RequireNonNull(source, nameof(source));
+            RequireNonNull(collectionSupplier, nameof(collectionSupplier));
+            RequireNonNull(collector, nameof(collector));
             return new Collect<T, C>(source, collectionSupplier, collector);
         }
 
@@ -511,6 +616,8 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<R> ConcatMap<T, R>(this IAsyncEnumerable<T> source, Func<T, IAsyncEnumerable<R>> mapper)
         {
+            RequireNonNull(source, nameof(source));
+            RequireNonNull(mapper, nameof(mapper));
             return new ConcatMap<T, R>(source, mapper);
         }
 
@@ -524,6 +631,8 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<R> ConcatMap<T, R>(this IAsyncEnumerable<T> source, Func<T, IEnumerable<R>> mapper)
         {
+            RequireNonNull(source, nameof(source));
+            RequireNonNull(mapper, nameof(mapper));
             return new ConcatMapEnumerable<T, R>(source, mapper);
         }
 
@@ -536,6 +645,8 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<T> DoOnNext<T>(this IAsyncEnumerable<T> source, Action<T> handler)
         {
+            RequireNonNull(source, nameof(source));
+            RequireNonNull(handler, nameof(handler));
             return new DoOnNext<T>(source, handler);
         }
 
@@ -549,6 +660,8 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<T> DoOnNext<T>(this IAsyncEnumerable<T> source, Func<T, Task> handler)
         {
+            RequireNonNull(source, nameof(source));
+            RequireNonNull(handler, nameof(handler));
             return new DoOnNextAsync<T>(source, handler);
         }
 
@@ -560,6 +673,7 @@ namespace async_enumerable_dotnet
         /// <returns>The new IEnumerable instance.</returns>
         public static IEnumerable<T> ToEnumerable<T>(this IAsyncEnumerable<T> source)
         {
+            RequireNonNull(source, nameof(source));
             return new ToEnumerable<T>(source);
         }
 
@@ -571,6 +685,7 @@ namespace async_enumerable_dotnet
         /// <returns>The task returning the new List instance.</returns>
         public static ValueTask<List<T>> ToListAsync<T>(this IAsyncEnumerable<T> source)
         {
+            RequireNonNull(source, nameof(source));
             return ToCollection.ToList(source);
         }
 
@@ -582,6 +697,7 @@ namespace async_enumerable_dotnet
         /// <returns>The task returning the new Array instance.</returns>
         public static ValueTask<T[]> ToArrayAsync<T>(this IAsyncEnumerable<T> source)
         {
+            RequireNonNull(source, nameof(source));
             return ToCollection.ToArray(source);
         }
 
@@ -596,6 +712,8 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<T> OnErrorResumeNext<T>(this IAsyncEnumerable<T> source, Func<Exception, IAsyncEnumerable<T>> handler)
         {
+            RequireNonNull(source, nameof(source));
+            RequireNonNull(handler, nameof(handler));
             return new OnErrorResumeNext<T>(source, handler);
         }
 
@@ -607,6 +725,7 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<T> Concat<T>(params IAsyncEnumerable<T>[] sources)
         {
+            RequireNonNull(sources, nameof(sources));
             return new Concat<T>(sources);
         }
 
@@ -618,6 +737,7 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<T> Concat<T>(IEnumerable<IAsyncEnumerable<T>> sources)
         {
+            RequireNonNull(sources, nameof(sources));
             return new ConcatEnumerable<T>(sources);
         }
 
@@ -630,6 +750,8 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<T> ConcatWith<T>(this IAsyncEnumerable<T> source, IAsyncEnumerable<T> other)
         {
+            RequireNonNull(source, nameof(source));
+            RequireNonNull(other, nameof(other));
             return Concat(source, other);
         }
 
@@ -644,6 +766,8 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<T> TakeUntil<T, U>(this IAsyncEnumerable<T> source, IAsyncEnumerable<U> other)
         {
+            RequireNonNull(source, nameof(source));
+            RequireNonNull(other, nameof(other));
             return new TakeUntil<T, U>(source, other);
         }
 
@@ -701,6 +825,7 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<T> Amb<T>(params IAsyncEnumerable<T>[] sources)
         {
+            RequireNonNull(sources, nameof(sources));
             return new Amb<T>(sources);
         }
 
@@ -712,6 +837,7 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<T> IgnoreElements<T>(this IAsyncEnumerable<T> source)
         {
+            RequireNonNull(source, nameof(source));
             return new IgnoreElements<T>(source);
         }
 
@@ -724,6 +850,7 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<T> DefaultIfEmpty<T>(this IAsyncEnumerable<T> source, T defaultItem)
         {
+            RequireNonNull(source, nameof(source));
             return new DefaultIfEmpty<T>(source, defaultItem);
         }
 
@@ -736,6 +863,8 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<T> SwitchIfEmpty<T>(this IAsyncEnumerable<T> source, IAsyncEnumerable<T> other)
         {
+            RequireNonNull(source, nameof(source));
+            RequireNonNull(other, nameof(other));
             return new SwitchIfEmpty<T>(source, other);
         }
 
@@ -748,6 +877,8 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<T> TakeWhile<T>(this IAsyncEnumerable<T> source, Func<T, bool> predicate)
         {
+            RequireNonNull(source, nameof(source));
+            RequireNonNull(predicate, nameof(predicate));
             return new TakeWhile<T>(source, predicate);
         }
 
@@ -760,6 +891,8 @@ namespace async_enumerable_dotnet
         /// <returns></returns>
         public static IAsyncEnumerable<T> SkipWhile<T>(this IAsyncEnumerable<T> source, Func<T, bool> predicate)
         {
+            RequireNonNull(source, nameof(source));
+            RequireNonNull(predicate, nameof(predicate));
             return new SkipWhile<T>(source, predicate);
         }
 
@@ -772,6 +905,7 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<T> Repeat<T>(this IAsyncEnumerable<T> source, long n = long.MaxValue)
         {
+            RequireNonNull(source, nameof(source));
             return new Repeat<T>(source, n, v => true);
         }
 
@@ -785,6 +919,8 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<T> Repeat<T>(this IAsyncEnumerable<T> source, Func<long, bool> condition)
         {
+            RequireNonNull(source, nameof(source));
+            RequireNonNull(condition, nameof(condition));
             return new Repeat<T>(source, long.MaxValue, condition);
         }
 
@@ -797,6 +933,7 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<T> Retry<T>(this IAsyncEnumerable<T> source, long n = long.MaxValue)
         {
+            RequireNonNull(source, nameof(source));
             return new Retry<T>(source, n, (a, b) => true);
         }
 
@@ -809,6 +946,8 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<T> Retry<T>(this IAsyncEnumerable<T> source, Func<long, Exception, bool> condition)
         {
+            RequireNonNull(source, nameof(source));
+            RequireNonNull(condition, nameof(condition));
             return new Retry<T>(source, long.MaxValue, condition);
         }
 
@@ -822,6 +961,7 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<T> SkipLast<T>(this IAsyncEnumerable<T> source, int n)
         {
+            RequireNonNull(source, nameof(source));
             if (n == 0)
             {
                 return source;
@@ -839,6 +979,7 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<T> TakeLast<T>(this IAsyncEnumerable<T> source, int n)
         {
+            RequireNonNull(source, nameof(source));
             if (n == 0)
             {
                 return IgnoreElements(source);
@@ -869,6 +1010,9 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<C> Buffer<T, C>(this IAsyncEnumerable<T> source, int size, Func<C> bufferSupplier) where C : ICollection<T>
         {
+            RequireNonNull(source, nameof(source));
+            RequireNonNull(bufferSupplier, nameof(bufferSupplier));
+            RequirePositive(size, nameof(size));
             return new BufferExact<T, C>(source, size, bufferSupplier);
         }
 
@@ -897,6 +1041,10 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<C> Buffer<T, C>(this IAsyncEnumerable<T> source, int size, int skip, Func<C> bufferSupplier) where C : ICollection<T>
         {
+            RequireNonNull(source, nameof(source));
+            RequireNonNull(bufferSupplier, nameof(bufferSupplier));
+            RequirePositive(size, nameof(size));
+            RequirePositive(skip, nameof(skip));
             if (size == skip)
             {
                 return new BufferExact<T, C>(source, size, bufferSupplier);
@@ -917,6 +1065,8 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<T> Scan<T>(this IAsyncEnumerable<T> source, Func<T, T, T> scanner)
         {
+            RequireNonNull(source, nameof(source));
+            RequireNonNull(scanner, nameof(scanner));
             return new Scan<T>(source, scanner);
         }
 
@@ -931,6 +1081,9 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<R> Scan<T, R>(this IAsyncEnumerable<T> source, Func<R> initialSupplier, Func<R, T, R> scanner)
         {
+            RequireNonNull(source, nameof(source));
+            RequireNonNull(initialSupplier, nameof(initialSupplier));
+            RequireNonNull(scanner, nameof(scanner));
             return new ScanSeed<T, R>(source, initialSupplier, scanner);
         }
 
@@ -942,6 +1095,7 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<T> First<T>(this IAsyncEnumerable<T> source)
         {
+            RequireNonNull(source, nameof(source));
             return new First<T>(source, default, false);
         }
 
@@ -954,6 +1108,7 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<T> First<T>(this IAsyncEnumerable<T> source, T defaultItem)
         {
+            RequireNonNull(source, nameof(source));
             return new First<T>(source, defaultItem, true);
         }
 
@@ -965,6 +1120,7 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<T> Last<T>(this IAsyncEnumerable<T> source)
         {
+            RequireNonNull(source, nameof(source));
             return new Last<T>(source, default, false);
         }
 
@@ -977,6 +1133,7 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<T> Last<T>(this IAsyncEnumerable<T> source, T defaultItem)
         {
+            RequireNonNull(source, nameof(source));
             return new Last<T>(source, defaultItem, true);
         }
 
@@ -988,6 +1145,7 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<T> Single<T>(this IAsyncEnumerable<T> source)
         {
+            RequireNonNull(source, nameof(source));
             return new Single<T>(source, default, false);
         }
 
@@ -1000,6 +1158,7 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<T> Single<T>(this IAsyncEnumerable<T> source, T defaultItem)
         {
+            RequireNonNull(source, nameof(source));
             return new Single<T>(source, defaultItem, true);
         }
 
@@ -1013,6 +1172,8 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<T> SkipUntil<T, U>(this IAsyncEnumerable<T> source, IAsyncEnumerable<U> other)
         {
+            RequireNonNull(source, nameof(source));
+            RequireNonNull(other, nameof(other));
             return new SkipUntil<T, U>(source, other);
         }
 
@@ -1027,6 +1188,8 @@ namespace async_enumerable_dotnet
         /// <returns>The task that is completed when the consumption terminates.</returns>
         public static ValueTask Consume<T>(this IAsyncEnumerable<T> source, IAsyncConsumer<T> consumer, CancellationToken ct = default)
         {
+            RequireNonNull(source, nameof(source));
+            RequireNonNull(consumer, nameof(consumer));
             return impl.ForEach.Consume(source, consumer, ct);
         }
 
@@ -1107,6 +1270,10 @@ namespace async_enumerable_dotnet
         /// </remarks>
         public static IAsyncEnumerable<IAsyncGroupedEnumerable<K, V>> GroupBy<T, K, V>(this IAsyncEnumerable<T> source, Func<T, K> keySelector, Func<T, V> valueSelector, IEqualityComparer<K> keyComparer)
         {
+            RequireNonNull(source, nameof(source));
+            RequireNonNull(keySelector, nameof(keySelector));
+            RequireNonNull(valueSelector, nameof(valueSelector));
+            RequireNonNull(keyComparer, nameof(keyComparer));
             return new GroupBy<T, K, V>(source, keySelector, valueSelector, keyComparer);
         }
 
@@ -1132,6 +1299,7 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable sequence.</returns>
         public static IAsyncEnumerable<T> Sample<T>(this IAsyncEnumerable<T> source, TimeSpan period, bool emitLast = false)
         {
+            RequireNonNull(source, nameof(source));
             return new Sample<T>(source, period, emitLast);
         }
 
@@ -1162,6 +1330,9 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable sequence.</returns>
         public static IAsyncEnumerable<T> Prefetch<T>(this IAsyncEnumerable<T> source, int prefetch, int limit)
         {
+            RequireNonNull(source, nameof(source));
+            RequirePositive(prefetch, nameof(prefetch));
+            RequirePositive(limit, nameof(limit));
             return new Prefetch<T>(source, prefetch, limit);
         }
 
@@ -1174,10 +1345,24 @@ namespace async_enumerable_dotnet
         /// <param name="delay">The time to wait after each item.</param>
         /// <param name="emitLast">If true, the very last item is emitted upon completion if
         /// the delay has not yet passed for it.</param>
-        /// <returns>The new AsyncEnumerable sequence.</returns>
+        /// <returns>The new IAsyncEnumerable sequence.</returns>
         public static IAsyncEnumerable<T> Debounce<T>(this IAsyncEnumerable<T> source, TimeSpan delay, bool emitLast = false)
         {
+            RequireNonNull(source, nameof(source));
             return new Debounce<T>(source, delay, emitLast);
+        }
+
+        /// <summary>
+        /// Runs the source async sequence as fast as it can and samples the items
+        /// as fast as the consumer can.
+        /// </summary>
+        /// <typeparam name="T">The element type of the sequence.</typeparam>
+        /// <param name="source">The source async sequence to sample via "backpressure".</param>
+        /// <returns>The new IAsyncEnumerable sequence.</returns>
+        public static IAsyncEnumerable<T> Latest<T>(this IAsyncEnumerable<T> source)
+        {
+            RequireNonNull(source, nameof(source));
+            return new Latest<T>(source);
         }
     }
 }

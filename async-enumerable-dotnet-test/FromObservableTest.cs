@@ -41,7 +41,7 @@ namespace async_enumerable_dotnet_test
             Assert.Equal(n, expected);
         }
 
-        sealed class ObservableRange : IObservable<int>
+        internal sealed class ObservableRange : IObservable<int>
         {
             readonly int start;
             readonly int end;
