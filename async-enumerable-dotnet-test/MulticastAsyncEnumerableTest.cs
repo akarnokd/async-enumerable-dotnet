@@ -161,5 +161,41 @@ namespace async_enumerable_dotnet_test
             await task1;
             await task2;
         }
+
+        [Fact]
+        public async void HasConsumers()
+        {
+            var push = new MulticastAsyncEnumerable<int>();
+
+            Assert.False(push.HasConsumers);
+
+            var en = push.GetAsyncEnumerator();
+
+            Assert.True(push.HasConsumers);
+
+            await en.DisposeAsync();
+
+            Assert.False(push.HasConsumers);
+        }
+
+        [Fact]
+        public async void Complete()
+        {
+            var push = new MulticastAsyncEnumerable<int>();
+
+            Assert.False(push.HasConsumers);
+
+            var en = push.GetAsyncEnumerator();
+
+            Assert.True(push.HasConsumers);
+
+            await push.Complete();
+
+            Assert.False(push.HasConsumers);
+
+            await en.DisposeAsync();
+
+            Assert.False(push.HasConsumers);
+        }
     }
 }

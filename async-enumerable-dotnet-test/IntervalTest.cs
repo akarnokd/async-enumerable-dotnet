@@ -16,6 +16,14 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
+        public async void Normal_initial()
+        {
+            await AsyncEnumerable.Interval(TimeSpan.FromMilliseconds(50), TimeSpan.FromMilliseconds(100))
+                .Take(5)
+                .AssertResult(0, 1, 2, 3, 4);
+        }
+
+        [Fact]
         public async void Range()
         {
             await AsyncEnumerable.Interval(1, 5, TimeSpan.FromMilliseconds(200), TimeSpan.FromMilliseconds(100))

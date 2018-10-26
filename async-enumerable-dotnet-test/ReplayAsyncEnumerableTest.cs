@@ -672,5 +672,41 @@ namespace async_enumerable_dotnet_test
 
             await t;
         }
+
+        [Fact]
+        public async void HasConsumers()
+        {
+            var push = new ReplayAsyncEnumerable<int>();
+
+            Assert.False(push.HasConsumers);
+
+            var en = push.GetAsyncEnumerator();
+
+            Assert.True(push.HasConsumers);
+
+            await en.DisposeAsync();
+
+            Assert.False(push.HasConsumers);
+        }
+
+        [Fact]
+        public async void Complete()
+        {
+            var push = new ReplayAsyncEnumerable<int>();
+
+            Assert.False(push.HasConsumers);
+
+            var en = push.GetAsyncEnumerator();
+
+            Assert.True(push.HasConsumers);
+
+            await push.Complete();
+
+            Assert.False(push.HasConsumers);
+
+            await en.DisposeAsync();
+
+            Assert.False(push.HasConsumers);
+        }
     }
 }

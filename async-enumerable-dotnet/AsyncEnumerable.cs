@@ -159,7 +159,7 @@ namespace async_enumerable_dotnet
         /// <param name="source">The source sequence to relay items of.</param>
         /// <param name="handler">The async handler called when the sequence is disposed.</param>
         /// <returns>The new IAsyncEnumerable instance.</returns>
-        public static IAsyncEnumerable<T> DoOnDisposeAsync<T>(this IAsyncEnumerable<T> source, Func<ValueTask> handler)
+        public static IAsyncEnumerable<T> DoOnDispose<T>(this IAsyncEnumerable<T> source, Func<ValueTask> handler)
         {
             RequireNonNull(source, nameof(source));
             RequireNonNull(handler, nameof(handler));

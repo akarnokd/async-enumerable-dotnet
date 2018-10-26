@@ -21,6 +21,28 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
+        public async void Normal_Same_Group_ValueSelector()
+        {
+            await AsyncEnumerable.Range(1, 10)
+                .GroupBy(k => 1, k => k * 2)
+                .FlatMap(v => v.ToList())
+                .AssertResult(
+                    ListOf(2, 4, 6, 8, 10, 12, 14, 16, 18, 20)
+                );
+        }
+
+        [Fact]
+        public async void Normal_Same_Group_KeyComparer()
+        {
+            await AsyncEnumerable.Range(1, 10)
+                .GroupBy(k => 1, EqualityComparer<int>.Default)
+                .FlatMap(v => v.ToList())
+                .AssertResult(
+                    ListOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+                );
+        }
+
+        [Fact]
         public async void Normal_Distinct_Group()
         {
             await AsyncEnumerable.Range(1, 10)

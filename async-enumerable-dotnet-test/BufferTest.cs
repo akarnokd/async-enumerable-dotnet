@@ -18,6 +18,18 @@ namespace async_enumerable_dotnet_test
                     new[] { 5 }
                 );
         }
+        
+        [Fact]
+        public async void Exact_Remainder_SizeSkip()
+        {
+            await AsyncEnumerable.Range(1, 5)
+                .Buffer(2, 2)
+                .AssertResult(
+                    new[] { 1, 2 },
+                    new[] { 3, 4 },
+                    new[] { 5 }
+                );
+        }
 
         [Fact]
         public async void Exact_Empty()

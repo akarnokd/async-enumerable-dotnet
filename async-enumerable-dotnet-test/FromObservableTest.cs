@@ -17,6 +17,14 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
+        public async void Normal_From()
+        {
+            var result = AsyncEnumerable.FromObservable(new ObservableRange(1, 6));
+
+            await result.AssertResult(1, 2, 3, 4, 5);
+        }
+
+        [Fact]
         public async void Long()
         {
             var n = 1_000_000;

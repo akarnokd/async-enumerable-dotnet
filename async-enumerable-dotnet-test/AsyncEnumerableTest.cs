@@ -99,6 +99,68 @@ namespace async_enumerable_dotnet_test
             }
         }
 
+        [Fact]
+        public void RequirePositiveInt0()
+        {
+            try
+            {
+                AsyncEnumerable.RequirePositive(0, "param");
+                Assert.False(true, "Should have thrown");
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                // expected
+            }
+        }
+
+        [Fact]
+        public void RequirePositiveInt_Minus1()
+        {
+            try
+            {
+                AsyncEnumerable.RequirePositive(-1, "param");
+                Assert.False(true, "Should have thrown");
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                // expected
+            }
+        }
+
+        [Fact]
+        public void RequirePositiveLong0()
+        {
+            try
+            {
+                AsyncEnumerable.RequirePositive(0L, "param");
+                Assert.False(true, "Should have thrown");
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                // expected
+            }
+        }
+
+        [Fact]
+        public void RequirePositiveLong_Minus1()
+        {
+            try
+            {
+                AsyncEnumerable.RequirePositive(-1L, "param");
+                Assert.False(true, "Should have thrown");
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                // expected
+            }
+        }
+
+        [Fact]
+        public void RequirePositiveLong_Plus1()
+        {
+            AsyncEnumerable.RequirePositive(1L, "param");
+        }
+
         static readonly Dictionary<Type, object> defaults = new Dictionary<Type, object>();
 
         static AsyncEnumerableTest()
