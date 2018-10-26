@@ -14,7 +14,7 @@ namespace async_enumerable_dotnet_test
             var t = 500;
             if (Environment.GetEnvironmentVariable("CI") != null)
             {
-                t = 1500;
+                t = 3000;
             }
             var disposedMain = 0;
             var disposedOther = 0;
