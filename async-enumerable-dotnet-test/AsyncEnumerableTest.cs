@@ -7,6 +7,9 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 
+
+[assembly: CollectionBehavior(DisableTestParallelization = true)]
+
 namespace async_enumerable_dotnet_test
 {
     public class AsyncEnumerableTest

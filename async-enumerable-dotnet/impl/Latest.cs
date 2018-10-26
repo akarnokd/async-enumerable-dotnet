@@ -124,16 +124,19 @@ namespace async_enumerable_dotnet.impl
                     {
                         error = ExceptionHelper.Unaggregate(t.Exception);
                         done = true;
+                        ResumeHelper.Signal(ref resumeWip, ref resumeTask);
                     }
                     else if (t.Result)
                     {
                         Interlocked.Exchange(ref latest, source.Current);
+                        ResumeHelper.Signal(ref resumeWip, ref resumeTask);
+                        MoveNext();
                     }
                     else
                     {
                         done = true;
+                        ResumeHelper.Signal(ref resumeWip, ref resumeTask);
                     }
-                    ResumeHelper.Signal(ref resumeWip, ref resumeTask);
                 }
             }
         }
