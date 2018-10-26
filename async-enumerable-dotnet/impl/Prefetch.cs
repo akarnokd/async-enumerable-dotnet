@@ -110,7 +110,7 @@ namespace async_enumerable_dotnet.impl
             {
                 if (Interlocked.Decrement(ref disposeWip) != 0)
                 {
-                    ResumeHelper.ResumeWhen(source.DisposeAsync(), disposeTask);
+                    ResumeHelper.ResumeWhen(source.DisposeAsync(), ref disposeTask);
                 }
                 else if (t.IsFaulted)
                 {

@@ -53,7 +53,7 @@ namespace async_enumerable_dotnet.impl
 
             int disposeWip;
 
-            readonly TaskCompletionSource<bool> disposeTask;
+            TaskCompletionSource<bool> disposeTask;
 
             public T Current { get; private set; }
 
@@ -77,7 +77,7 @@ namespace async_enumerable_dotnet.impl
                     Interlocked.Exchange(ref timerLatest, EmptyIndicator);
                     return source.DisposeAsync();
                 }
-                return new ValueTask(disposeTask.Task);
+                return new ValueTask(ResumeHelper.Resume(ref disposeTask).Task);
             }
 
             public async ValueTask<bool> MoveNextAsync()
@@ -160,7 +160,7 @@ namespace async_enumerable_dotnet.impl
                 if (Interlocked.Decrement(ref disposeWip) != 0)
                 {
                     Interlocked.Exchange(ref timerLatest, EmptyIndicator);
-                    ResumeHelper.ResumeWhen(source.DisposeAsync(), disposeTask);
+                    ResumeHelper.ResumeWhen(source.DisposeAsync(), ref disposeTask);
                 }
                 else if (t.IsFaulted)
                 {

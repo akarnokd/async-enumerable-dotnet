@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -8,126 +6,90 @@ namespace async_enumerable_dotnet.impl
 {
     internal sealed class ToObservable<T> : IObservable<T>
     {
-        readonly IAsyncEnumerable<T> source;
+        readonly IAsyncEnumerable<T> _source;
 
         public ToObservable(IAsyncEnumerable<T> source)
         {
-            this.source = source;
+            this._source = source;
         }
 
         public IDisposable Subscribe(IObserver<T> observer)
         {
-            var en = source.GetAsyncEnumerator();
+            var en = _source.GetAsyncEnumerator();
             var handler = new ToObservableHandler(observer, en);
             handler.MoveNext();
             return handler;
         }
 
-        internal sealed class ToObservableHandler : IDisposable
+        sealed class ToObservableHandler : IDisposable
         {
-            readonly IObserver<T> downstream;
+            readonly IObserver<T> _downstream;
 
-            readonly IAsyncEnumerator<T> source;
+            readonly IAsyncEnumerator<T> _source;
 
-            int wip;
+            readonly Action<Task<bool>> _handleMain;
+            
+            int _wip;
 
-            int dispose;
+            int _dispose;
 
             public ToObservableHandler(IObserver<T> downstream, IAsyncEnumerator<T> source)
             {
-                this.downstream = downstream;
-                this.source = source;
+                this._downstream = downstream;
+                this._source = source;
+                this._handleMain = t => HandleMain(t);
             }
 
             internal void MoveNext()
             {
-                if (Interlocked.Increment(ref wip) == 1)
+                if (Interlocked.Increment(ref _wip) == 1)
                 {
                     do
                     {
-                        if (Interlocked.Increment(ref dispose) == 1)
+                        if (Interlocked.Increment(ref _dispose) == 1)
                         {
-                            var vt = source.MoveNextAsync();
-
-                            if (vt.IsFaulted || vt.IsCompleted)
-                            {
-                                Handle(vt);
-                            }
-                            else
-                            {
-                                vt.AsTask().ContinueWith(t => Handle(t));
-                            }
+                            _source.MoveNextAsync()
+                                .AsTask()
+                                .ContinueWith(_handleMain);
                         }
                         else
                         {
                             break;
                         }
-                    } while (Interlocked.Decrement(ref wip) != 0);
+                    } while (Interlocked.Decrement(ref _wip) != 0);
                 }
             }
 
-            void Handle(ValueTask<bool> vtask)
+            void HandleMain(Task<bool> task)
             {
-                if (vtask.IsFaulted)
+                if (Interlocked.Decrement(ref _dispose) != 0)
                 {
-                    try
-                    {
-                        var v = vtask.Result;
-                    }
-                    catch (Exception ex)
-                    {
-                        downstream.OnError(ex);
-                    }
-                }
-                else
-                {
-                    if (vtask.Result)
-                    {
-                        downstream.OnNext(source.Current);
-                        MoveNext();
-                    }
-                    else
-                    {
-                        downstream.OnCompleted();
-                    }
-                }
-
-                if (Interlocked.Decrement(ref dispose) != 0)
-                {
-                    source.DisposeAsync();
-                }
-            }
-
-            void Handle(Task<bool> task)
-            {
+                    _source.DisposeAsync();
+                } else
                 if (task.IsFaulted)
                 {
-                    downstream.OnError(task.Exception);
+                    _downstream.OnError(ExceptionHelper.Unaggregate(task.Exception));
                 }
                 else
                 {
                     if (task.Result)
                     {
-                        downstream.OnNext(source.Current);
+                        _downstream.OnNext(_source.Current);
                         MoveNext();
                     }
                     else
                     {
-                        downstream.OnCompleted();
+                        _downstream.OnCompleted();
                     }
                 }
 
-                if (Interlocked.Decrement(ref dispose) != 0)
-                {
-                    source.DisposeAsync();
-                }
             }
 
             public void Dispose()
             {
-                if (Interlocked.Increment(ref dispose) == 1)
+                if (Interlocked.Increment(ref _dispose) == 1)
                 {
-                    source.DisposeAsync();
+                    _source.DisposeAsync();
                 }
             }
         }

@@ -16,13 +16,33 @@ namespace async_enumerable_dotnet_test
 
             var consumer = new BasicObserver<int>();
 
-            result.Subscribe(consumer);
+            using (result.Subscribe(consumer))
+            {
+                await consumer.TerminateTask;
 
-            await consumer.TerminateTask;
+                Assert.Equal(new List<int>(new[] {1, 2, 3, 4, 5}), consumer.values);
+                Assert.Null(consumer.error);
+                Assert.True(consumer.completed);
+            }
+        }
+        
+        [Fact]
+        public async void Error()
+        {
+            var ex = new InvalidOperationException();
+            var result = AsyncEnumerable.Error<int>(ex)
+                .ToObservable();
 
-            Assert.Equal(new List<int>(new[] { 1, 2, 3, 4, 5 }), consumer.values);
-            Assert.Null(consumer.error);
-            Assert.True(consumer.completed);
+            var consumer = new BasicObserver<int>();
+
+            using (result.Subscribe(consumer))
+            {
+                await consumer.TerminateTask;
+
+                Assert.Empty(consumer.values);
+                Assert.Same(ex, consumer.error);
+                Assert.False(consumer.completed);
+            }
         }
 
         internal sealed class BasicObserver<T> : IObserver<T>

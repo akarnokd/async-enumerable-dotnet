@@ -8,7 +8,7 @@ namespace async_enumerable_dotnet.impl
     /// <summary>
     /// Helper methods for aggregating multiple Exceptions atomically.
     /// </summary>
-    internal sealed class ExceptionHelper
+    internal static class ExceptionHelper
     {
         /// <summary>
         /// The singleton exception indicating a terminal state so
@@ -36,7 +36,7 @@ namespace async_enumerable_dotnet.impl
                 var b = default(Exception);
                 if (a == null)
                 {
-                    b = a;
+                    b = ex;
                 }
                 else if (a is AggregateException g)
                 {
@@ -69,7 +69,7 @@ namespace async_enumerable_dotnet.impl
         /// <summary>
         /// An exception indicating a terminal state within an Exception field.
         /// </summary>
-        sealed class TerminatedException : Exception
+        private sealed class TerminatedException : Exception
         {
             internal TerminatedException() : base("No further exceptions.")
             {
