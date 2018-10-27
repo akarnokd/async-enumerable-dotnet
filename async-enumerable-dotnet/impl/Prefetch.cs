@@ -108,29 +108,34 @@ namespace async_enumerable_dotnet.impl
 
             void SourceHandler(Task<bool> t)
             {
-                if (Interlocked.Decrement(ref disposeWip) != 0)
-                {
-                    ResumeHelper.ResumeWhen(source.DisposeAsync(), ref disposeTask);
-                }
-                else if (t.IsFaulted)
+                var next = false;
+                if (t.IsFaulted)
                 {
                     error = ExceptionHelper.Unaggregate(t.Exception);
                     done = true;
-                    Signal();
                 }
                 else if (t.Result)
                 {
                     queue.Enqueue(source.Current);
-                    Signal();
-                    if (Interlocked.Decrement(ref outstanding) != 0)
-                    {
-                        MoveNext();
-                    }
+                    next = true;
                 }
                 else
                 {
                     done = true;
+                }
+                // release the MoveNext, just in case
+                if (Interlocked.Decrement(ref disposeWip) != 0)
+                {
+                    ResumeHelper.ResumeWhen(source.DisposeAsync(), ref disposeTask);
+                }
+                else
+                {
                     Signal();
+
+                    if (next && Interlocked.Decrement(ref outstanding) != 0)
+                    {
+                        MoveNext();
+                    }
                 }
             }
 
