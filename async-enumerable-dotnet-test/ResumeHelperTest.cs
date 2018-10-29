@@ -1,5 +1,8 @@
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
 using System;
-using System.Threading;
 using Xunit;
 using System.Threading.Tasks;
 using async_enumerable_dotnet.impl;
@@ -62,7 +65,7 @@ namespace async_enumerable_dotnet_test
             }
             catch (Exception)
             {
-                
+                // ignored
             }
 
             Assert.True(_tcs.Task.IsCanceled);

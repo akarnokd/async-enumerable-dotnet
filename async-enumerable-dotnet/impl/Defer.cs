@@ -1,24 +1,26 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
+using System;
 
 namespace async_enumerable_dotnet.impl
 {
     internal sealed class Defer<T> : IAsyncEnumerable<T>
     {
-        readonly Func<IAsyncEnumerable<T>> func;
+        private readonly Func<IAsyncEnumerable<T>> _func;
 
         public Defer(Func<IAsyncEnumerable<T>> func)
         {
-            this.func = func;
+            _func = func;
         }
 
         public IAsyncEnumerator<T> GetAsyncEnumerator()
         {
-            var en = default(IAsyncEnumerator<T>);
+            IAsyncEnumerator<T> en;
             try
             {
-                en = func().GetAsyncEnumerator();
+                en = _func().GetAsyncEnumerator();
             }
             catch (Exception ex)
             {

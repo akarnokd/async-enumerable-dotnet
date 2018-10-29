@@ -1,3 +1,7 @@
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
 using System;
 using Xunit;
 using async_enumerable_dotnet;
@@ -20,9 +24,9 @@ namespace async_enumerable_dotnet_test
             {
                 await consumer.TerminateTask;
 
-                Assert.Equal(new List<int>(new[] {1, 2, 3, 4, 5}), consumer.values);
-                Assert.Null(consumer.error);
-                Assert.True(consumer.completed);
+                Assert.Equal(new List<int>(new[] {1, 2, 3, 4, 5}), consumer.Values);
+                Assert.Null(consumer.Error);
+                Assert.True(consumer.Completed);
             }
         }
         
@@ -39,38 +43,38 @@ namespace async_enumerable_dotnet_test
             {
                 await consumer.TerminateTask;
 
-                Assert.Empty(consumer.values);
-                Assert.Same(ex, consumer.error);
-                Assert.False(consumer.completed);
+                Assert.Empty(consumer.Values);
+                Assert.Same(ex, consumer.Error);
+                Assert.False(consumer.Completed);
             }
         }
 
-        internal sealed class BasicObserver<T> : IObserver<T>
+        private sealed class BasicObserver<T> : IObserver<T>
         {
-            internal readonly IList<T> values = new List<T>();
-            internal bool completed;
-            internal Exception error;
+            internal readonly IList<T> Values = new List<T>();
+            internal bool Completed;
+            internal Exception Error;
 
-            readonly TaskCompletionSource<bool> terminate = new TaskCompletionSource<bool>();
+            private readonly TaskCompletionSource<bool> _terminate = new TaskCompletionSource<bool>();
 
             public void OnCompleted()
             {
-                completed = true;
-                terminate.TrySetResult(true);
+                Completed = true;
+                _terminate.TrySetResult(true);
             }
 
             public void OnError(Exception error)
             {
-                this.error = error;
-                terminate.TrySetResult(true);
+                Error = error;
+                _terminate.TrySetResult(true);
             }
 
             public void OnNext(T value)
             {
-                values.Add(value);
+                Values.Add(value);
             }
 
-            public Task TerminateTask => terminate.Task;
+            public Task TerminateTask => _terminate.Task;
         }
     }
 }

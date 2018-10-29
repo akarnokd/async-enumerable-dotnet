@@ -1,80 +1,82 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
+using System;
 using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet.impl
 {
     internal sealed class Repeat<T> : IAsyncEnumerable<T>
     {
-        readonly IAsyncEnumerable<T> source;
+        private readonly IAsyncEnumerable<T> _source;
 
-        readonly long n;
+        private readonly long _n;
 
-        readonly Func<long, bool> condition;
+        private readonly Func<long, bool> _condition;
 
         public Repeat(IAsyncEnumerable<T> source, long n, Func<long, bool> condition)
         {
-            this.source = source;
-            this.n = n;
-            this.condition = condition;
+            _source = source;
+            _n = n;
+            _condition = condition;
         }
 
         public IAsyncEnumerator<T> GetAsyncEnumerator()
         {
-            return new RepeatEnumerator(source, condition, source.GetAsyncEnumerator(), n);
+            return new RepeatEnumerator(_source, _condition, _source.GetAsyncEnumerator(), _n);
         }
 
-        internal sealed class RepeatEnumerator : IAsyncEnumerator<T>
+        private sealed class RepeatEnumerator : IAsyncEnumerator<T>
         {
-            readonly IAsyncEnumerable<T> source;
+            private readonly IAsyncEnumerable<T> _source;
 
-            readonly Func<long, bool> condition;
+            private readonly Func<long, bool> _condition;
 
-            IAsyncEnumerator<T> current;
+            private IAsyncEnumerator<T> _current;
 
-            long remaining;
+            private long _remaining;
 
-            long index;
+            private long _index;
 
-            public T Current => current.Current;
+            public T Current => _current.Current;
 
             public RepeatEnumerator(IAsyncEnumerable<T> source, Func<long, bool> condition, IAsyncEnumerator<T> current, long remaining)
             {
-                this.source = source;
-                this.condition = condition;
-                this.current = current;
-                this.remaining = remaining;
+                _source = source;
+                _condition = condition;
+                _current = current;
+                _remaining = remaining;
             }
 
             public ValueTask DisposeAsync()
             {
-                return current.DisposeAsync();
+                return _current.DisposeAsync();
             }
 
             public async ValueTask<bool> MoveNextAsync()
             {
                 for (; ;)
                 {
-                    if (await current.MoveNextAsync())
+                    if (await _current.MoveNextAsync())
                     {
                         return true;
                     }
 
-                    var n = remaining - 1;
+                    var n = _remaining - 1;
 
                     if (n <= 0)
                     {
                         return false;
                     }
 
-                    if (condition(index++))
+                    if (_condition(_index++))
                     {
-                        await current.DisposeAsync();
+                        await _current.DisposeAsync();
 
-                        current = source.GetAsyncEnumerator();
+                        _current = _source.GetAsyncEnumerator();
 
-                        remaining = n;
+                        _remaining = n;
                     }
                     else
                     {

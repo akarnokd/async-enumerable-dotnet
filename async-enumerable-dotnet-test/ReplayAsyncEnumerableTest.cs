@@ -1,3 +1,7 @@
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
 using System;
 using Xunit;
 using async_enumerable_dotnet;
@@ -12,7 +16,7 @@ namespace async_enumerable_dotnet_test
         {
             var push = new ReplayAsyncEnumerable<int>();
 
-            for (int i = 1; i <= 5; i++)
+            for (var i = 1; i <= 5; i++)
             {
                 await push.Next(i);
             }
@@ -28,7 +32,7 @@ namespace async_enumerable_dotnet_test
         {
             var push = new ReplayAsyncEnumerable<int>();
 
-            for (int i = 1; i <= 5; i++)
+            for (var i = 1; i <= 5; i++)
             {
                 await push.Next(i);
             }
@@ -51,7 +55,7 @@ namespace async_enumerable_dotnet_test
                 await en1.AssertResult(1, 2, 3, 4, 5);
             });
 
-            for (int i = 1; i <= 5; i++)
+            for (var i = 1; i <= 5; i++)
             {
                 await push.Next(i);
             }
@@ -72,7 +76,7 @@ namespace async_enumerable_dotnet_test
                 await en1.AssertFailure(typeof(InvalidOperationException), 1, 2, 3, 4, 5);
             });
 
-            for (int i = 1; i <= 5; i++)
+            for (var i = 1; i <= 5; i++)
             {
                 await push.Next(i);
             }
@@ -98,7 +102,7 @@ namespace async_enumerable_dotnet_test
                 await en2.AssertResult(1, 2, 3, 4, 5);
             });
 
-            for (int i = 1; i <= 5; i++)
+            for (var i = 1; i <= 5; i++)
             {
                 await push.Next(i);
             }
@@ -125,7 +129,7 @@ namespace async_enumerable_dotnet_test
                 await en2.AssertFailure(typeof(InvalidOperationException), 1, 2, 3, 4, 5);
             });
 
-            for (int i = 1; i <= 5; i++)
+            for (var i = 1; i <= 5; i++)
             {
                 await push.Next(i);
             }
@@ -164,7 +168,7 @@ namespace async_enumerable_dotnet_test
         {
             var push = new ReplayAsyncEnumerable<int>(10);
 
-            for (int i = 1; i <= 5; i++)
+            for (var i = 1; i <= 5; i++)
             {
                 await push.Next(i);
             }
@@ -180,7 +184,7 @@ namespace async_enumerable_dotnet_test
         {
             var push = new ReplayAsyncEnumerable<int>(10);
 
-            for (int i = 1; i <= 5; i++)
+            for (var i = 1; i <= 5; i++)
             {
                 await push.Next(i);
             }
@@ -203,7 +207,7 @@ namespace async_enumerable_dotnet_test
                 await en1.AssertResult(1, 2, 3, 4, 5);
             });
 
-            for (int i = 1; i <= 5; i++)
+            for (var i = 1; i <= 5; i++)
             {
                 await push.Next(i);
             }
@@ -224,7 +228,7 @@ namespace async_enumerable_dotnet_test
                 await en1.AssertFailure(typeof(InvalidOperationException), 1, 2, 3, 4, 5);
             });
 
-            for (int i = 1; i <= 5; i++)
+            for (var i = 1; i <= 5; i++)
             {
                 await push.Next(i);
             }
@@ -250,7 +254,7 @@ namespace async_enumerable_dotnet_test
                 await en2.AssertResult(1, 2, 3, 4, 5);
             });
 
-            for (int i = 1; i <= 5; i++)
+            for (var i = 1; i <= 5; i++)
             {
                 await push.Next(i);
             }
@@ -277,7 +281,7 @@ namespace async_enumerable_dotnet_test
                 await en2.AssertFailure(typeof(InvalidOperationException), 1, 2, 3, 4, 5);
             });
 
-            for (int i = 1; i <= 5; i++)
+            for (var i = 1; i <= 5; i++)
             {
                 await push.Next(i);
             }
@@ -340,7 +344,7 @@ namespace async_enumerable_dotnet_test
         {
             var push = new ReplayAsyncEnumerable<int>(10, TimeSpan.FromHours(1));
 
-            for (int i = 1; i <= 5; i++)
+            for (var i = 1; i <= 5; i++)
             {
                 await push.Next(i);
             }
@@ -356,7 +360,7 @@ namespace async_enumerable_dotnet_test
         {
             var push = new ReplayAsyncEnumerable<int>(10, TimeSpan.FromHours(1));
 
-            for (int i = 1; i <= 5; i++)
+            for (var i = 1; i <= 5; i++)
             {
                 await push.Next(i);
             }
@@ -379,7 +383,7 @@ namespace async_enumerable_dotnet_test
                 await en1.AssertResult(1, 2, 3, 4, 5);
             });
 
-            for (int i = 1; i <= 5; i++)
+            for (var i = 1; i <= 5; i++)
             {
                 await push.Next(i);
             }
@@ -400,7 +404,7 @@ namespace async_enumerable_dotnet_test
                 await en1.AssertFailure(typeof(InvalidOperationException), 1, 2, 3, 4, 5);
             });
 
-            for (int i = 1; i <= 5; i++)
+            for (var i = 1; i <= 5; i++)
             {
                 await push.Next(i);
             }
@@ -426,7 +430,7 @@ namespace async_enumerable_dotnet_test
                 await en2.AssertResult(1, 2, 3, 4, 5);
             });
 
-            for (int i = 1; i <= 5; i++)
+            for (var i = 1; i <= 5; i++)
             {
                 await push.Next(i);
             }
@@ -453,7 +457,7 @@ namespace async_enumerable_dotnet_test
                 await en2.AssertFailure(typeof(InvalidOperationException), 1, 2, 3, 4, 5);
             });
 
-            for (int i = 1; i <= 5; i++)
+            for (var i = 1; i <= 5; i++)
             {
                 await push.Next(i);
             }
@@ -490,27 +494,27 @@ namespace async_enumerable_dotnet_test
         [Fact]
         public async void Timed_Bounded_1_Normal()
         {
-            var timeNow = 0L;
+            var timeNow = new [] { 0L };
 
-            var push = new ReplayAsyncEnumerable<int>(10, TimeSpan.FromMilliseconds(100), () => timeNow);
+            var push = new ReplayAsyncEnumerable<int>(10, TimeSpan.FromMilliseconds(100), () => timeNow[0]);
 
             await push.Next(1);
 
-            timeNow += 100;
+            timeNow[0] += 100;
 
             await push.Next(2);
 
             var t1 = push.AssertResult(2, 3, 4, 5);
 
-            timeNow += 100;
+            timeNow[0] += 100;
 
             await push.Next(3);
 
-            timeNow += 100;
+            timeNow[0] += 100;
 
             await push.Next(4);
 
-            timeNow += 100;
+            timeNow[0] += 100;
 
             await push.Next(5);
 
@@ -520,7 +524,7 @@ namespace async_enumerable_dotnet_test
 
             await push.AssertResult(5);
 
-            timeNow += 100;
+            timeNow[0] += 100;
 
             await push.AssertResult();
         }
@@ -528,7 +532,7 @@ namespace async_enumerable_dotnet_test
         [Fact]
         public async void Unbounded_Long()
         {
-            long n = 1_000_000;
+            const long n = 1_000_000;
             var push = new ReplayAsyncEnumerable<long>();
             var t = push
                 .Reduce((a, b) => a + b)
@@ -547,7 +551,7 @@ namespace async_enumerable_dotnet_test
         [Fact]
         public async void Unbounded_Long_Halfway()
         {
-            long n = 1_000_000;
+            const long n = 1_000_000;
             var push = new ReplayAsyncEnumerable<long>();
             var t = default(ValueTask);
 
@@ -571,7 +575,7 @@ namespace async_enumerable_dotnet_test
         [Fact]
         public async void Sized_Long()
         {
-            long n = 1_000_000;
+            const long n = 1_000_000;
             var push = new ReplayAsyncEnumerable<long>(10);
             var t = push
                 .Reduce((a, b) => a + b)
@@ -590,7 +594,7 @@ namespace async_enumerable_dotnet_test
         [Fact]
         public async void Timed_Long()
         {
-            long n = 1_000_000;
+            const long n = 1_000_000;
             var push = new ReplayAsyncEnumerable<long>(TimeSpan.FromHours(1));
             var t = push
                 .Reduce((a, b) => a + b)
@@ -609,7 +613,7 @@ namespace async_enumerable_dotnet_test
         [Fact]
         public async void SizedTimed_Long()
         {
-            long n = 1_000_000;
+            const long n = 1_000_000;
             var push = new ReplayAsyncEnumerable<long>(10, TimeSpan.FromHours(1));
             var t = push
                 .Reduce((a, b) => a + b)
@@ -628,7 +632,7 @@ namespace async_enumerable_dotnet_test
         [Fact]
         public async void Sized_Long_Halfway()
         {
-            long n = 1_000_000;
+            const long n = 1_000_000;
             var push = new ReplayAsyncEnumerable<long>((int)n);
             var t = default(ValueTask);
 
@@ -652,7 +656,7 @@ namespace async_enumerable_dotnet_test
         [Fact]
         public async void TimedSized_Long_Halfway()
         {
-            long n = 1_000_000;
+            const long n = 1_000_000;
             var push = new ReplayAsyncEnumerable<long>((int)n, TimeSpan.FromHours(1));
             var t = default(ValueTask);
 

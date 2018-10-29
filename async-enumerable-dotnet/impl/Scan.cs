@@ -1,66 +1,66 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
+using System;
 using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet.impl
 {
     internal sealed class Scan<T> : IAsyncEnumerable<T>
     {
-        readonly IAsyncEnumerable<T> source;
+        private readonly IAsyncEnumerable<T> _source;
 
-        readonly Func<T, T, T> scanner;
+        private readonly Func<T, T, T> _scanner;
 
         public Scan(IAsyncEnumerable<T> source, Func<T, T, T> scanner)
         {
-            this.source = source;
-            this.scanner = scanner;
+            _source = source;
+            _scanner = scanner;
         }
 
         public IAsyncEnumerator<T> GetAsyncEnumerator()
         {
-            return new ScanEnumerator(source.GetAsyncEnumerator(), scanner);
+            return new ScanEnumerator(_source.GetAsyncEnumerator(), _scanner);
         }
 
-        internal sealed class ScanEnumerator : IAsyncEnumerator<T>
+        private sealed class ScanEnumerator : IAsyncEnumerator<T>
         {
-            readonly IAsyncEnumerator<T> source;
+            private readonly IAsyncEnumerator<T> _source;
 
-            readonly Func<T, T, T> scanner;
+            private readonly Func<T, T, T> _scanner;
 
-            bool once;
+            private bool _once;
 
-            T current;
-
-            public T Current => current;
+            public T Current { get; private set; }
 
             public ScanEnumerator(IAsyncEnumerator<T> source, Func<T, T, T> scanner)
             {
-                this.source = source;
-                this.scanner = scanner;
+                _source = source;
+                _scanner = scanner;
             }
 
             public ValueTask DisposeAsync()
             {
-                current = default;
-                return source.DisposeAsync();
+                Current = default;
+                return _source.DisposeAsync();
             }
 
             public async ValueTask<bool> MoveNextAsync()
             {
-                if (!once)
+                if (!_once)
                 {
-                    once = true;
-                    if (await source.MoveNextAsync())
+                    _once = true;
+                    if (await _source.MoveNextAsync())
                     {
-                        current = source.Current;
+                        Current = _source.Current;
                         return true;
                     }
                     return false;
                 }
-                if (await source.MoveNextAsync())
+                if (await _source.MoveNextAsync())
                 {
-                    current = scanner(current, source.Current);
+                    Current = _scanner(Current, _source.Current);
                     return true;
                 }
                 return false;
@@ -68,72 +68,70 @@ namespace async_enumerable_dotnet.impl
         }
     }
 
-    internal sealed class ScanSeed<T, R> : IAsyncEnumerable<R>
+    internal sealed class ScanSeed<TSource, TResult> : IAsyncEnumerable<TResult>
     {
-        readonly IAsyncEnumerable<T> source;
+        private readonly IAsyncEnumerable<TSource> _source;
 
-        readonly Func<R> initialSupplier;
+        private readonly Func<TResult> _initialSupplier;
 
-        readonly Func<R, T, R> scanner;
+        private readonly Func<TResult, TSource, TResult> _scanner;
 
-        public ScanSeed(IAsyncEnumerable<T> source, Func<R> initialSupplier, Func<R, T, R> scanner)
+        public ScanSeed(IAsyncEnumerable<TSource> source, Func<TResult> initialSupplier, Func<TResult, TSource, TResult> scanner)
         {
-            this.source = source;
-            this.initialSupplier = initialSupplier;
-            this.scanner = scanner;
+            _source = source;
+            _initialSupplier = initialSupplier;
+            _scanner = scanner;
         }
 
-        public IAsyncEnumerator<R> GetAsyncEnumerator()
+        public IAsyncEnumerator<TResult> GetAsyncEnumerator()
         {
-            var initial = default(R);
+            TResult initial;
             try
             {
-                initial = initialSupplier();
+                initial = _initialSupplier();
             }
             catch (Exception ex)
             {
-                return new Error<R>.ErrorEnumerator(ex);
+                return new Error<TResult>.ErrorEnumerator(ex);
             }
 
-            return new ScanSeedEnumerator(source.GetAsyncEnumerator(), scanner, initial);
+            return new ScanSeedEnumerator(_source.GetAsyncEnumerator(), _scanner, initial);
         }
 
-        internal sealed class ScanSeedEnumerator : IAsyncEnumerator<R>
+        private sealed class ScanSeedEnumerator : IAsyncEnumerator<TResult>
         {
-            readonly IAsyncEnumerator<T> source;
+            private readonly IAsyncEnumerator<TSource> _source;
 
-            readonly Func<R, T, R> scanner;
+            private readonly Func<TResult, TSource, TResult> _scanner;
 
-            R current;
+            public TResult Current { get; private set; }
 
-            public R Current => current;
+            private bool _once;
 
-            bool once;
-
-            public ScanSeedEnumerator(IAsyncEnumerator<T> source, Func<R, T, R> scanner, R current)
+            public ScanSeedEnumerator(IAsyncEnumerator<TSource> source, Func<TResult, TSource, TResult> scanner, TResult current)
             {
-                this.source = source;
-                this.scanner = scanner;
-                this.current = current;
+                _source = source;
+                _scanner = scanner;
+                Current = current;
             }
 
             public ValueTask DisposeAsync()
             {
-                current = default;
-                return source.DisposeAsync();
+                Current = default;
+                return _source.DisposeAsync();
             }
 
             public async ValueTask<bool> MoveNextAsync()
             {
-                if (!once)
+                if (!_once)
                 {
-                    once = true;
+                    _once = true;
                     return true;
                 }
 
-                if (await source.MoveNextAsync())
+                if (await _source.MoveNextAsync())
                 {
-                    current = scanner(current, source.Current);
+                    Current = _scanner(Current, _source.Current);
                     return true;
                 }
                 return false;

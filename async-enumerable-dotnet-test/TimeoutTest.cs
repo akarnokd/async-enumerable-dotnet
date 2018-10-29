@@ -1,3 +1,7 @@
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
 using async_enumerable_dotnet;
 using System;
 using Xunit;

@@ -1,8 +1,10 @@
-using System;
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
 using Xunit;
 using async_enumerable_dotnet;
-using System.Threading.Tasks;
-using System.Collections.Generic;
+using System.Linq;
 
 namespace async_enumerable_dotnet_test
 {
@@ -11,11 +13,7 @@ namespace async_enumerable_dotnet_test
         [Fact]
         public void Normal()
         {
-            var list = new List<int>();
-            foreach (var v in AsyncEnumerable.Range(1, 5).ToEnumerable())
-            {
-                list.Add(v);
-            }
+            var list = AsyncEnumerable.Range(1, 5).ToEnumerable().ToList();
 
             Assert.Equal(new[] { 1, 2, 3, 4, 5 }, list);
         }

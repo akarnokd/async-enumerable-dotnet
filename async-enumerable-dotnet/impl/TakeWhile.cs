@@ -1,51 +1,53 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
+using System;
 using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet.impl
 {
     internal sealed class TakeWhile<T> : IAsyncEnumerable<T>
     {
-        readonly IAsyncEnumerable<T> source;
+        private readonly IAsyncEnumerable<T> _source;
 
-        readonly Func<T, bool> predicate;
+        private readonly Func<T, bool> _predicate;
 
         public TakeWhile(IAsyncEnumerable<T> source, Func<T, bool> predicate)
         {
-            this.source = source;
-            this.predicate = predicate;
+            _source = source;
+            _predicate = predicate;
         }
 
         public IAsyncEnumerator<T> GetAsyncEnumerator()
         {
-            return new TakeWhileEnumerator(source.GetAsyncEnumerator(), predicate);
+            return new TakeWhileEnumerator(_source.GetAsyncEnumerator(), _predicate);
         }
 
-        internal sealed class TakeWhileEnumerator : IAsyncEnumerator<T>
+        private sealed class TakeWhileEnumerator : IAsyncEnumerator<T>
         {
-            readonly IAsyncEnumerator<T> source;
+            private readonly IAsyncEnumerator<T> _source;
 
-            readonly Func<T, bool> predicate;
+            private readonly Func<T, bool> _predicate;
 
-            public T Current => source.Current;
+            public T Current => _source.Current;
 
             public TakeWhileEnumerator(IAsyncEnumerator<T> source, Func<T, bool> predicate)
             {
-                this.source = source;
-                this.predicate = predicate;
+                _source = source;
+                _predicate = predicate;
             }
 
             public ValueTask DisposeAsync()
             {
-                return source.DisposeAsync();
+                return _source.DisposeAsync();
             }
 
             public async ValueTask<bool> MoveNextAsync()
             {
-                if (await source.MoveNextAsync())
+                if (await _source.MoveNextAsync())
                 {
-                    return predicate(source.Current);
+                    return _predicate(_source.Current);
                 }
                 return false;
             }

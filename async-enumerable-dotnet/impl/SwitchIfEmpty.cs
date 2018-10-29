@@ -1,76 +1,75 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
 using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet.impl
 {
     internal sealed class SwitchIfEmpty<T> : IAsyncEnumerable<T>
     {
-        readonly IAsyncEnumerable<T> source;
+        private readonly IAsyncEnumerable<T> _source;
 
-        readonly IAsyncEnumerable<T> other;
+        private readonly IAsyncEnumerable<T> _other;
 
         public SwitchIfEmpty(IAsyncEnumerable<T> source, IAsyncEnumerable<T> other)
         {
-            this.source = source;
-            this.other = other;
+            _source = source;
+            _other = other;
         }
 
         public IAsyncEnumerator<T> GetAsyncEnumerator()
         {
-            return new SwitchIfEmptyEnumerator(source.GetAsyncEnumerator(), other);
+            return new SwitchIfEmptyEnumerator(_source.GetAsyncEnumerator(), _other);
         }
 
-        internal sealed class SwitchIfEmptyEnumerator : IAsyncEnumerator<T>
+        private sealed class SwitchIfEmptyEnumerator : IAsyncEnumerator<T>
         {
-            readonly IAsyncEnumerable<T> other;
+            private readonly IAsyncEnumerable<T> _other;
 
-            IAsyncEnumerator<T> source;
+            private IAsyncEnumerator<T> _source;
 
-            bool once;
+            private bool _once;
 
-            bool hasItems;
+            private bool _hasItems;
 
-            public T Current => source.Current;
+            public T Current => _source.Current;
 
             public SwitchIfEmptyEnumerator(IAsyncEnumerator<T> source, IAsyncEnumerable<T> other)
             {
-                this.source = source;
-                this.other = other;
+                _source = source;
+                _other = other;
             }
 
             public ValueTask DisposeAsync()
             {
-                return source.DisposeAsync();
+                return _source.DisposeAsync();
             }
 
             public async ValueTask<bool> MoveNextAsync()
             {
-                if (once)
+                if (_once)
                 {
-                    return await source.MoveNextAsync();
+                    return await _source.MoveNextAsync();
                 }
-                else
+
+                if (await _source.MoveNextAsync())
                 {
-                    if (await source.MoveNextAsync())
-                    {
-                        hasItems = true;
-                        return true;
-                    }
-
-                    if (hasItems)
-                    {
-                        return false;
-                    }
-
-                    await source.DisposeAsync();
-
-                    source = other.GetAsyncEnumerator();
-                    once = true;
-
-                    return await source.MoveNextAsync();
+                    _hasItems = true;
+                    return true;
                 }
+
+                if (_hasItems)
+                {
+                    return false;
+                }
+
+                await _source.DisposeAsync();
+
+                _source = _other.GetAsyncEnumerator();
+                _once = true;
+
+                return await _source.MoveNextAsync();
             }
         }
     }

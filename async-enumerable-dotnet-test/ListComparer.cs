@@ -1,7 +1,9 @@
-﻿using System;
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace async_enumerable_dotnet_test
 {
@@ -20,10 +22,7 @@ namespace async_enumerable_dotnet_test
 
             unchecked
             {
-                foreach (var t in obj)
-                {
-                    hash = hash * 31 + (t != null ? t.GetHashCode() : 0);
-                }
+                hash = obj.Aggregate(hash, (current, t) => current * 31 + (t != null ? t.GetHashCode() : 0));
             }
 
             return hash;

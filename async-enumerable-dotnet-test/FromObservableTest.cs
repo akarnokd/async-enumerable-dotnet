@@ -1,3 +1,7 @@
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
 using System;
 using Xunit;
 using async_enumerable_dotnet;
@@ -27,7 +31,7 @@ namespace async_enumerable_dotnet_test
         [Fact]
         public async void Long()
         {
-            var n = 1_000_000;
+            const int n = 1_000_000;
             var result = new ObservableRange(1, n).ToAsyncEnumerable();
 
             var expected = 1;
@@ -49,15 +53,15 @@ namespace async_enumerable_dotnet_test
             Assert.Equal(n, expected);
         }
 
-        internal sealed class ObservableRange : IObservable<int>
+        private sealed class ObservableRange : IObservable<int>
         {
-            readonly int start;
-            readonly int end;
+            private readonly int _start;
+            private readonly int _end;
 
             public ObservableRange(int start, int end)
             {
-                this.start = start;
-                this.end = end;
+                _start = start;
+                _end = end;
             }
 
             public IDisposable Subscribe(IObserver<int> observer)
@@ -66,7 +70,7 @@ namespace async_enumerable_dotnet_test
 
                 Task.Factory.StartNew(() =>
                 {
-                    for (var i = start; i != end && !cancel.IsCancellationRequested; i++)
+                    for (var i = _start; i != _end && !cancel.IsCancellationRequested; i++)
                     {
                         observer.OnNext(i);
                     }
@@ -80,18 +84,18 @@ namespace async_enumerable_dotnet_test
                 return new Disposer(cancel);
             }
 
-            sealed class Disposer : IDisposable
+            private sealed class Disposer : IDisposable
             {
-                readonly CancellationTokenSource cts;
+                private readonly CancellationTokenSource _cts;
 
                 public Disposer(CancellationTokenSource cts)
                 {
-                    this.cts = cts;
+                    _cts = cts;
                 }
 
                 public void Dispose()
                 {
-                    cts.Cancel();
+                    _cts.Cancel();
                 }
             }
         }

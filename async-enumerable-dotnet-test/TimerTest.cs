@@ -1,3 +1,7 @@
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
 using System;
 using System.Threading;
 using Xunit;
@@ -21,10 +25,12 @@ namespace async_enumerable_dotnet_test
                 .MoveNextAsync();
 #pragma warning restore 4014
 
+            // ReSharper disable once MethodSupportsCancellation
             await Task.Delay(100);
             
             cts.Cancel();
 
+            // ReSharper disable once MethodSupportsCancellation
             await Task.Delay(200);
             
             Assert.Equal(0, value);

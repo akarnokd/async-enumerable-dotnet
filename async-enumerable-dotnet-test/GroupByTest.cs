@@ -1,9 +1,10 @@
-using System;
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
 using Xunit;
 using async_enumerable_dotnet;
-using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace async_enumerable_dotnet_test
 {
@@ -136,9 +137,25 @@ namespace async_enumerable_dotnet_test
             Assert.Equal(1, disposed);
         }
 
-        static List<int> ListOf(params int[] values)
+        private static List<int> ListOf(params int[] values)
         {
             return new List<int>(values);
+        }
+
+        [Fact]
+        public async void Key_Value_Equality()
+        {
+            await AsyncEnumerable.Range(1, 10)
+                .GroupBy(k => 1, v => 1, EqualityComparer<int>.Default)
+                .FlatMap(v => v.ToList())
+                .AssertResult(
+                    ListOf(
+                        1, 1, 
+                        1, 1, 
+                        1, 1, 
+                        1, 1, 
+                        1, 1)
+                );
         }
     }
 }

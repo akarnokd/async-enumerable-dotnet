@@ -1,71 +1,72 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
 using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet.impl
 {
     internal sealed class SkipLast<T> : IAsyncEnumerable<T>
     {
-        readonly IAsyncEnumerable<T> source;
+        private readonly IAsyncEnumerable<T> _source;
 
-        readonly int n;
+        private readonly int _n;
 
         public SkipLast(IAsyncEnumerable<T> source, int n)
         {
-            this.source = source;
-            this.n = n;
+            _source = source;
+            _n = n;
         }
 
         public IAsyncEnumerator<T> GetAsyncEnumerator()
         {
-            return new SkipLastEnumerable(source.GetAsyncEnumerator(), n);
+            return new SkipLastEnumerable(_source.GetAsyncEnumerator(), _n);
         }
 
-        internal sealed class SkipLastEnumerable : IAsyncEnumerator<T>
+        private sealed class SkipLastEnumerable : IAsyncEnumerator<T>
         {
-            readonly IAsyncEnumerator<T> source;
+            private readonly IAsyncEnumerator<T> _source;
 
-            int size;
+            private int _size;
 
-            ArrayQueue<T> queue;
+            private ArrayQueue<T> _queue;
 
-            T current;
+            private T _current;
 
-            public T Current => current;
+            public T Current => _current;
 
             public SkipLastEnumerable(IAsyncEnumerator<T> source, int n)
             {
-                this.source = source;
-                this.size = n;
-                this.queue = new ArrayQueue<T>(16);
+                _source = source;
+                _size = n;
+                _queue = new ArrayQueue<T>(16);
             }
 
             public ValueTask DisposeAsync()
             {
-                return source.DisposeAsync();
+                return _source.DisposeAsync();
             }
 
             public async ValueTask<bool> MoveNextAsync()
             {
-                while (size != 0)
+                while (_size != 0)
                 {
-                    if (await source.MoveNextAsync())
+                    if (await _source.MoveNextAsync())
                     {
-                        queue.Enqueue(source.Current);
-                        size--;
+                        _queue.Enqueue(_source.Current);
+                        _size--;
                     }
                     else
                     {
-                        size = 0;
+                        _size = 0;
                         return false;
                     }
                 }
 
-                if (await source.MoveNextAsync())
+                if (await _source.MoveNextAsync())
                 {
-                    queue.Dequeue(out current);
-                    queue.Enqueue(source.Current);
+                    _queue.Dequeue(out _current);
+                    _queue.Enqueue(_source.Current);
                     return true;
                 }
                 return false;

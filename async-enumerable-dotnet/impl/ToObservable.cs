@@ -1,4 +1,8 @@
-﻿﻿using System;
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
+ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -21,17 +25,17 @@ namespace async_enumerable_dotnet.impl
             return handler;
         }
 
-        sealed class ToObservableHandler : IDisposable
+        private sealed class ToObservableHandler : IDisposable
         {
-            readonly IObserver<T> _downstream;
+            private readonly IObserver<T> _downstream;
 
-            readonly IAsyncEnumerator<T> _source;
+            private readonly IAsyncEnumerator<T> _source;
 
-            readonly Action<Task<bool>> _handleMain;
-            
-            int _wip;
+            private readonly Action<Task<bool>> _handleMain;
 
-            int _dispose;
+            private int _wip;
+
+            private int _dispose;
 
             public ToObservableHandler(IObserver<T> downstream, IAsyncEnumerator<T> source)
             {

@@ -1,43 +1,47 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
 using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet.impl
 {
     internal sealed class IgnoreElements<T> : IAsyncEnumerable<T>
     {
-        readonly IAsyncEnumerable<T> source;
+        private readonly IAsyncEnumerable<T> _source;
 
         public IgnoreElements(IAsyncEnumerable<T> source)
         {
-            this.source = source;
+            _source = source;
         }
 
         public IAsyncEnumerator<T> GetAsyncEnumerator()
         {
-            return new IgnoreElementsEnumerator(source.GetAsyncEnumerator());
+            return new IgnoreElementsEnumerator(_source.GetAsyncEnumerator());
         }
 
-        internal sealed class IgnoreElementsEnumerator : IAsyncEnumerator<T>
+        private sealed class IgnoreElementsEnumerator : IAsyncEnumerator<T>
         {
-            readonly IAsyncEnumerator<T> source;
+            private readonly IAsyncEnumerator<T> _source;
 
             public IgnoreElementsEnumerator(IAsyncEnumerator<T> source)
             {
-                this.source = source;
+                _source = source;
             }
 
             public T Current => default;
 
             public ValueTask DisposeAsync()
             {
-                return source.DisposeAsync();
+                return _source.DisposeAsync();
             }
 
             public async ValueTask<bool> MoveNextAsync()
             {
-                while (await source.MoveNextAsync()) ;
+                while (await _source.MoveNextAsync())
+                {
+                    // deliberately ignoring items
+                }
 
                 return false;
             }

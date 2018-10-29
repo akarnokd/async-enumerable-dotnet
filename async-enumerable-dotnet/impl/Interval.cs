@@ -1,6 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -8,60 +10,58 @@ namespace async_enumerable_dotnet.impl
 {
     internal sealed class Interval : IAsyncEnumerable<long>
     {
-        readonly long start;
+        private readonly long _start;
 
-        readonly long end;
+        private readonly long _end;
 
-        readonly TimeSpan initialDelay;
+        private readonly TimeSpan _initialDelay;
 
-        readonly TimeSpan period;
+        private readonly TimeSpan _period;
 
         public Interval(long start, long end, TimeSpan initialDelay, TimeSpan period)
         {
-            this.start = start;
-            this.end = end;
-            this.initialDelay = initialDelay;
-            this.period = period;
+            _start = start;
+            _end = end;
+            _initialDelay = initialDelay;
+            _period = period;
         }
 
         public IAsyncEnumerator<long> GetAsyncEnumerator()
         {
-            var en = new IntervalEnumerator(period, start, end);
-            en.StartFirst(initialDelay);
+            var en = new IntervalEnumerator(_period, _start, _end);
+            en.StartFirst(_initialDelay);
             return en;
         }
 
-        internal sealed class IntervalEnumerator : IAsyncEnumerator<long>
+        private sealed class IntervalEnumerator : IAsyncEnumerator<long>
         {
-            readonly long end;
+            private readonly long _end;
 
-            readonly TimeSpan period;
+            private readonly TimeSpan _period;
 
-            readonly CancellationTokenSource cts;
+            private readonly CancellationTokenSource _cts;
 
-            long available;
+            private long _available;
 
-            long index;
+            private long _index;
 
-            long current;
+            private TaskCompletionSource<bool> _resume;
 
-            TaskCompletionSource<bool> resume;
-
-            public long Current => current;
+            public long Current { get; private set; }
 
             public IntervalEnumerator(TimeSpan period, long start, long end)
             {
-                this.period = period;
-                this.end = end;
-                this.available = start;
-                this.index = start;
-                this.cts = new CancellationTokenSource();
-                Volatile.Write(ref available, start);
+                _period = period;
+                _end = end;
+                _available = start;
+                _index = start;
+                _cts = new CancellationTokenSource();
+                Volatile.Write(ref _available, start);
             }
 
             public ValueTask DisposeAsync()
             {
-                cts.Cancel();
+                _cts.Cancel();
                 return new ValueTask();
             }
 
@@ -69,45 +69,48 @@ namespace async_enumerable_dotnet.impl
             {
                 for (; ;)
                 {
-                    var a = Volatile.Read(ref available);
-                    var b = index;
+                    var a = Volatile.Read(ref _available);
+                    var b = _index;
 
                     if (a != b)
                     {
-                        current = b;
-                        index = b + 1;
+                        Current = b;
+                        _index = b + 1;
                         return true;
                     }
-                    if (b == end)
+                    if (b == _end)
                     {
                         return false;
                     }
 
-                    await ResumeHelper.Await(ref resume);
-                    ResumeHelper.Clear(ref resume);
+                    await ResumeHelper.Await(ref _resume);
+                    ResumeHelper.Clear(ref _resume);
                 }
             }
 
             internal void StartFirst(TimeSpan initialDelay)
             {
-                Task.Delay(initialDelay, cts.Token)
-                    .ContinueWith(t => Next(t));
+                Task.Delay(initialDelay, _cts.Token)
+                    .ContinueWith(NextAction, this, _cts.Token);
             }
 
-            void Next(Task t)
+            private static readonly Action<Task, object> NextAction = (t, state) =>
+                ((IntervalEnumerator) state).Next(t);
+
+            private void Next(Task t)
             {
-                if (t.IsCanceled || cts.IsCancellationRequested)
+                if (t.IsCanceled || _cts.IsCancellationRequested)
                 {
                     return;
                 }
-                var value = Interlocked.Increment(ref available);
-                ResumeHelper.Resume(ref resume);
+                var value = Interlocked.Increment(ref _available);
+                ResumeHelper.Resume(ref _resume);
 
-                if (value != end)
+                if (value != _end)
                 {
                     // FIXME compensate for drifts
-                    Task.Delay(period, cts.Token)
-                        .ContinueWith(x => Next(x));
+                    Task.Delay(_period, _cts.Token)
+                        .ContinueWith(NextAction, this, _cts.Token);
                 }
             }
 

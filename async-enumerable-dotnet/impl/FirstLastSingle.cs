@@ -1,73 +1,73 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
+using System;
 using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet.impl
 {
     internal sealed class First<T> : IAsyncEnumerable<T>
     {
-        readonly IAsyncEnumerable<T> source;
+        private readonly IAsyncEnumerable<T> _source;
 
-        readonly T defaultItem;
+        private readonly T _defaultItem;
 
-        readonly bool hasDefault;
+        private readonly bool _hasDefault;
 
         public First(IAsyncEnumerable<T> source, T defaultItem, bool hasDefault)
         {
-            this.source = source;
-            this.defaultItem = defaultItem;
-            this.hasDefault = hasDefault;
+            _source = source;
+            _defaultItem = defaultItem;
+            _hasDefault = hasDefault;
         }
 
         public IAsyncEnumerator<T> GetAsyncEnumerator()
         {
-            return new FirstEnumerator(source.GetAsyncEnumerator(), defaultItem, hasDefault);
+            return new FirstEnumerator(_source.GetAsyncEnumerator(), _defaultItem, _hasDefault);
         }
 
-        internal sealed class FirstEnumerator : IAsyncEnumerator<T>
+        private sealed class FirstEnumerator : IAsyncEnumerator<T>
         {
-            readonly IAsyncEnumerator<T> source;
+            private readonly IAsyncEnumerator<T> _source;
 
-            readonly T defaultItem;
+            private readonly T _defaultItem;
 
-            readonly bool hasDefault;
+            private readonly bool _hasDefault;
 
-            T current;
+            public T Current { get; private set; }
 
-            public T Current => current;
-
-            bool done;
+            private bool _done;
 
             public FirstEnumerator(IAsyncEnumerator<T> source, T defaultItem, bool hasDefault)
             {
-                this.source = source;
-                this.defaultItem = defaultItem;
-                this.hasDefault = hasDefault;
+                _source = source;
+                _defaultItem = defaultItem;
+                _hasDefault = hasDefault;
             }
 
             public ValueTask DisposeAsync()
             {
-                current = default;
-                return source.DisposeAsync();
+                Current = default;
+                return _source.DisposeAsync();
             }
 
             public async ValueTask<bool> MoveNextAsync()
             {
-                if (done)
+                if (_done)
                 {
                     return false;
                 }
-                done = true;
+                _done = true;
 
-                if (await source.MoveNextAsync())
+                if (await _source.MoveNextAsync())
                 {
-                    current = source.Current;
+                    Current = _source.Current;
                     return true;
                 }
-                if (hasDefault)
+                if (_hasDefault)
                 {
-                    current = defaultItem;
+                    Current = _defaultItem;
                     return true;
                 }
                 throw new IndexOutOfRangeException("The source is empty");
@@ -77,74 +77,72 @@ namespace async_enumerable_dotnet.impl
 
     internal sealed class Last<T> : IAsyncEnumerable<T>
     {
-        readonly IAsyncEnumerable<T> source;
+        private readonly IAsyncEnumerable<T> _source;
 
-        readonly T defaultItem;
+        private readonly T _defaultItem;
 
-        readonly bool hasDefault;
+        private readonly bool _hasDefault;
 
         public Last(IAsyncEnumerable<T> source, T defaultItem, bool hasDefault)
         {
-            this.source = source;
-            this.defaultItem = defaultItem;
-            this.hasDefault = hasDefault;
+            _source = source;
+            _defaultItem = defaultItem;
+            _hasDefault = hasDefault;
         }
 
         public IAsyncEnumerator<T> GetAsyncEnumerator()
         {
-            return new LastEnumerator(source.GetAsyncEnumerator(), defaultItem, hasDefault);
+            return new LastEnumerator(_source.GetAsyncEnumerator(), _defaultItem, _hasDefault);
         }
 
-        internal sealed class LastEnumerator : IAsyncEnumerator<T>
+        private sealed class LastEnumerator : IAsyncEnumerator<T>
         {
-            readonly IAsyncEnumerator<T> source;
+            private readonly IAsyncEnumerator<T> _source;
 
-            readonly T defaultItem;
+            private readonly T _defaultItem;
 
-            readonly bool hasDefault;
+            private readonly bool _hasDefault;
 
-            T current;
+            public T Current { get; private set; }
 
-            public T Current => current;
-
-            bool done;
+            private bool _done;
 
             public LastEnumerator(IAsyncEnumerator<T> source, T defaultItem, bool hasDefault)
             {
-                this.source = source;
-                this.defaultItem = defaultItem;
-                this.hasDefault = hasDefault;
+                _source = source;
+                _defaultItem = defaultItem;
+                _hasDefault = hasDefault;
             }
 
             public ValueTask DisposeAsync()
             {
-                current = default;
-                return source.DisposeAsync();
+                Current = default;
+                return _source.DisposeAsync();
             }
 
             public async ValueTask<bool> MoveNextAsync()
             {
-                if (done)
+                if (_done)
                 {
                     return false;
                 }
-                done = true;
+                _done = true;
                 var hasValue = false;
                 var last = default(T); 
-                while (await source.MoveNextAsync())
+                while (await _source.MoveNextAsync())
                 {
                     hasValue = true;
-                    last = source.Current;
+                    last = _source.Current;
                 }
 
                 if (hasValue)
                 {
-                    current = last;
+                    Current = last;
                     return true;
                 }
-                if (hasDefault)
+                if (_hasDefault)
                 {
-                    current = defaultItem;
+                    Current = _defaultItem;
                     return true;
                 }
                 throw new IndexOutOfRangeException("The source is empty");
@@ -154,72 +152,71 @@ namespace async_enumerable_dotnet.impl
 
     internal sealed class Single<T> : IAsyncEnumerable<T>
     {
-        readonly IAsyncEnumerable<T> source;
+        private readonly IAsyncEnumerable<T> _source;
 
-        readonly T defaultItem;
+        private readonly T _defaultItem;
 
-        readonly bool hasDefault;
+        private readonly bool _hasDefault;
 
         public Single(IAsyncEnumerable<T> source, T defaultItem, bool hasDefault)
         {
-            this.source = source;
-            this.defaultItem = defaultItem;
-            this.hasDefault = hasDefault;
+            _source = source;
+            _defaultItem = defaultItem;
+            _hasDefault = hasDefault;
         }
 
         public IAsyncEnumerator<T> GetAsyncEnumerator()
         {
-            return new SingleEnumerator(source.GetAsyncEnumerator(), defaultItem, hasDefault);
+            return new SingleEnumerator(_source.GetAsyncEnumerator(), _defaultItem, _hasDefault);
         }
-        internal sealed class SingleEnumerator : IAsyncEnumerator<T>
+
+        private sealed class SingleEnumerator : IAsyncEnumerator<T>
         {
-            readonly IAsyncEnumerator<T> source;
+            private readonly IAsyncEnumerator<T> _source;
 
-            readonly T defaultItem;
+            private readonly T _defaultItem;
 
-            readonly bool hasDefault;
+            private readonly bool _hasDefault;
 
-            T current;
+            public T Current { get; private set; }
 
-            public T Current => current;
-
-            bool done;
+            private bool _done;
 
             public SingleEnumerator(IAsyncEnumerator<T> source, T defaultItem, bool hasDefault)
             {
-                this.source = source;
-                this.defaultItem = defaultItem;
-                this.hasDefault = hasDefault;
+                _source = source;
+                _defaultItem = defaultItem;
+                _hasDefault = hasDefault;
             }
 
             public ValueTask DisposeAsync()
             {
-                current = default;
-                return source.DisposeAsync();
+                Current = default;
+                return _source.DisposeAsync();
             }
 
             public async ValueTask<bool> MoveNextAsync()
             {
-                if (done)
+                if (_done)
                 {
                     return false;
                 }
-                done = true;
+                _done = true;
 
-                if (await source.MoveNextAsync())
+                if (await _source.MoveNextAsync())
                 {
-                    var single = source.Current;
-                    if (await source.MoveNextAsync())
+                    var single = _source.Current;
+                    if (await _source.MoveNextAsync())
                     {
                         throw new IndexOutOfRangeException("The source has more than one item");
                     }
-                    current = single;
+                    Current = single;
                     return true;
                 }
 
-                if (hasDefault)
+                if (_hasDefault)
                 {
-                    current = defaultItem;
+                    Current = _defaultItem;
                     return true;
                 }
                 throw new IndexOutOfRangeException("The source is empty");

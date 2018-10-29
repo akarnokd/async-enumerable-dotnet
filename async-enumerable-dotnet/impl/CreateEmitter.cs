@@ -1,104 +1,104 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading;
+﻿// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
+using System;
 using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet.impl
 {
     internal sealed class CreateEmitter<T> : IAsyncEnumerable<T>
     {
-        readonly Func<IAsyncEmitter<T>, Task> handler;
+        private readonly Func<IAsyncEmitter<T>, Task> _handler;
 
         public CreateEmitter(Func<IAsyncEmitter<T>, Task> handler)
         {
-            this.handler = handler;
+            _handler = handler;
         }
 
         public IAsyncEnumerator<T> GetAsyncEnumerator()
         {
             var en = new CreateEmitterEnumerator();
-            en.SetTask(handler(en));
+            en.SetTask(_handler(en));
             return en;
         }
 
-        internal sealed class CreateEmitterEnumerator : IAsyncEnumerator<T>, IAsyncEmitter<T>
+        private sealed class CreateEmitterEnumerator : IAsyncEnumerator<T>, IAsyncEmitter<T>
         {
-            Task task;
+            private Task _task;
 
-            volatile bool disposeRequested;
+            private volatile bool _disposeRequested;
 
-            volatile bool taskComplete;
+            private volatile bool _taskComplete;
 
-            public bool DisposeAsyncRequested => disposeRequested;
+            public bool DisposeAsyncRequested => _disposeRequested;
 
-            public T Current => current;
+            public T Current { get; private set; }
 
-            TaskCompletionSource<bool> valueReady;
+            private TaskCompletionSource<bool> _valueReady;
 
-            TaskCompletionSource<bool> consumed;
-
-            T current;
+            private TaskCompletionSource<bool> _consumed;
 
             internal void SetTask(Task task)
             {
-                this.task = task;
+                _task = task;
                 task.ContinueWith(t =>
                 {
-                    taskComplete = true;
-                    ResumeHelper.Resume(ref valueReady);
+                    _taskComplete = true;
+                    ResumeHelper.Resume(ref _valueReady);
                 });
             }
 
             public ValueTask DisposeAsync()
             {
-                disposeRequested = true;
-                ResumeHelper.Resume(ref consumed);
-                return new ValueTask(task);
+                _disposeRequested = true;
+                ResumeHelper.Resume(ref _consumed);
+                return new ValueTask(_task);
             }
 
             public async ValueTask<bool> MoveNextAsync()
             {
-                if (taskComplete)
+                if (_taskComplete)
                 {
-                    if (task.IsFaulted)
+                    if (_task.IsFaulted)
                     {
-                        throw task.Exception;
+                        throw _task.Exception;
                     }
                     return false;
                 }
-                ResumeHelper.Resume(ref consumed);
+                ResumeHelper.Resume(ref _consumed);
 
-                await ResumeHelper.Await(ref valueReady);
-                ResumeHelper.Clear(ref valueReady);
+                await ResumeHelper.Await(ref _valueReady);
+                ResumeHelper.Clear(ref _valueReady);
 
-                if (!taskComplete)
+                if (!_taskComplete)
                 {
                     return true;
                 }
-                else if (task.IsFaulted)
+
+                if (_task.IsFaulted)
                 {
-                    throw task.Exception;
+                    throw _task.Exception;
                 }
                 return false;
             }
 
             public async ValueTask Next(T value)
             {
-                if (disposeRequested)
+                if (_disposeRequested)
                 {
                     return;
                 }
-                await ResumeHelper.Await(ref consumed);
-                ResumeHelper.Clear(ref consumed);
-                if (disposeRequested)
+                await ResumeHelper.Await(ref _consumed);
+                ResumeHelper.Clear(ref _consumed);
+                if (_disposeRequested)
                 {
                     return;
                 }
 
-                current = value;
+                Current = value;
 
-                ResumeHelper.Resume(ref valueReady);
+                ResumeHelper.Resume(ref _valueReady);
             }
         }
     }

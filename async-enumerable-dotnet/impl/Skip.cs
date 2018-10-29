@@ -1,67 +1,68 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
 using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet.impl
 {
     internal sealed class Skip<T> : IAsyncEnumerable<T>
     {
-        readonly IAsyncEnumerable<T> source;
+        private readonly IAsyncEnumerable<T> _source;
 
-        readonly long n;
+        private readonly long _n;
 
         public Skip(IAsyncEnumerable<T> source, long n)
         {
-            this.source = source;
-            this.n = n;
+            _source = source;
+            _n = n;
         }
 
         public IAsyncEnumerator<T> GetAsyncEnumerator()
         {
-            return new SkipEnumerator(source.GetAsyncEnumerator(), n);
+            return new SkipEnumerator(_source.GetAsyncEnumerator(), _n);
         }
 
-        internal sealed class SkipEnumerator : IAsyncEnumerator<T>
+        private sealed class SkipEnumerator : IAsyncEnumerator<T>
         {
-            readonly IAsyncEnumerator<T> source;
+            private readonly IAsyncEnumerator<T> _source;
 
-            long remaining;
+            private long _remaining;
 
-            public T Current => source.Current;
+            public T Current => _source.Current;
 
             public SkipEnumerator(IAsyncEnumerator<T> source, long remaining)
             {
-                this.source = source;
-                this.remaining = remaining;
+                _source = source;
+                _remaining = remaining;
             }
 
             public ValueTask DisposeAsync()
             {
-                return source.DisposeAsync();
+                return _source.DisposeAsync();
             }
 
             public async ValueTask<bool> MoveNextAsync()
             {
-                var n = remaining;
+                var n = _remaining;
                 if (n != 0)
                 {
                     while (n != 0)
                     {
-                        if (await source.MoveNextAsync())
+                        if (await _source.MoveNextAsync())
                         {
                             n--;
                         }
                         else
                         {
-                            remaining = 0;
+                            _remaining = 0;
                             return false;
                         }
                     }
-                    remaining = 0;
+                    _remaining = 0;
                 }
 
-                return await source.MoveNextAsync();
+                return await _source.MoveNextAsync();
             }
         }
     }

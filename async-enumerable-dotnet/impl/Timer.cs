@@ -1,6 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -8,27 +10,27 @@ namespace async_enumerable_dotnet.impl
 {
     internal sealed class Timer : IAsyncEnumerable<long>
     {
-        readonly TimeSpan delay;
+        private readonly TimeSpan _delay;
 
         public Timer(TimeSpan delay)
         {
-            this.delay = delay;
+            _delay = delay;
         }
 
         public IAsyncEnumerator<long> GetAsyncEnumerator()
         {
-            return new TimerEnumerator(delay);
+            return new TimerEnumerator(_delay);
         }
 
-        internal sealed class TimerEnumerator : IAsyncEnumerator<long>
+        private sealed class TimerEnumerator : IAsyncEnumerator<long>
         {
-            readonly TimeSpan delay;
+            private readonly TimeSpan _delay;
 
-            bool once;
+            private bool _once;
 
             public TimerEnumerator(TimeSpan delay)
             {
-                this.delay = delay;
+                _delay = delay;
             }
 
             public long Current => 0;
@@ -40,13 +42,13 @@ namespace async_enumerable_dotnet.impl
 
             public async ValueTask<bool> MoveNextAsync()
             {
-                if (once)
+                if (_once)
                 {
                     return false;
                 }
-                once = true;
+                _once = true;
 
-                await Task.Delay(delay).ConfigureAwait(false);
+                await Task.Delay(_delay).ConfigureAwait(false);
                 return true;
             }
         }
@@ -54,33 +56,33 @@ namespace async_enumerable_dotnet.impl
 
     internal sealed class TimerCancellable : IAsyncEnumerable<long>
     {
-        readonly TimeSpan delay;
+        private readonly TimeSpan _delay;
 
-        readonly CancellationToken token;
+        private readonly CancellationToken _token;
 
         public TimerCancellable(TimeSpan delay, CancellationToken token)
         {
-            this.delay = delay;
-            this.token = token;
+            _delay = delay;
+            _token = token;
         }
 
         public IAsyncEnumerator<long> GetAsyncEnumerator()
         {
-            return new TimerEnumerator(delay, token);
+            return new TimerEnumerator(_delay, _token);
         }
 
-        internal sealed class TimerEnumerator : IAsyncEnumerator<long>
+        private sealed class TimerEnumerator : IAsyncEnumerator<long>
         {
-            readonly TimeSpan delay;
+            private readonly TimeSpan _delay;
 
-            readonly CancellationToken token;
+            private readonly CancellationToken _token;
 
-            bool once;
+            private bool _once;
 
             public TimerEnumerator(TimeSpan delay, CancellationToken token)
             {
-                this.delay = delay;
-                this.token = token;
+                _delay = delay;
+                _token = token;
             }
 
             public long Current => 0;
@@ -92,13 +94,13 @@ namespace async_enumerable_dotnet.impl
 
             public async ValueTask<bool> MoveNextAsync()
             {
-                if (once)
+                if (_once)
                 {
                     return false;
                 }
-                once = true;
+                _once = true;
 
-                await Task.Delay(delay, token).ConfigureAwait(false);
+                await Task.Delay(_delay, _token).ConfigureAwait(false);
                 return true;
             }
         }

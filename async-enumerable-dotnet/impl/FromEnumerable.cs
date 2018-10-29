@@ -1,44 +1,46 @@
-﻿using System;
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet.impl
 {
     internal sealed class FromEnumerable<T> : IAsyncEnumerable<T>
     {
-        readonly IEnumerable<T> source;
+        private readonly IEnumerable<T> _source;
 
         public FromEnumerable(IEnumerable<T> source)
         {
-            this.source = source;
+            _source = source;
         }
 
         public IAsyncEnumerator<T> GetAsyncEnumerator()
         {
-            return new FromEnumerableEnumerator(source.GetEnumerator());
+            return new FromEnumerableEnumerator(_source.GetEnumerator());
         }
 
-        internal sealed class FromEnumerableEnumerator : IAsyncEnumerator<T>
+        private sealed class FromEnumerableEnumerator : IAsyncEnumerator<T>
         {
-            readonly IEnumerator<T> source;
+            private readonly IEnumerator<T> _source;
 
-            public T Current => source.Current;
+            public T Current => _source.Current;
 
             public FromEnumerableEnumerator(IEnumerator<T> source)
             {
-                this.source = source;
+                _source = source;
             }
 
             public ValueTask DisposeAsync()
             {
-                source.Dispose();
+                _source.Dispose();
                 return new ValueTask();
             }
 
             public ValueTask<bool> MoveNextAsync()
             {
-                if (source.MoveNext())
+                if (_source.MoveNext())
                 {
                     return new ValueTask<bool>(true);
                 }

@@ -1,173 +1,170 @@
-﻿using System;
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
+using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet.impl
 {
-    internal sealed class BufferExact<T, C> : IAsyncEnumerable<C> where C : ICollection<T>
+    internal sealed class BufferExact<TSource, TCollection> : IAsyncEnumerable<TCollection> where TCollection : ICollection<TSource>
     {
-        readonly IAsyncEnumerable<T> source;
+        private readonly IAsyncEnumerable<TSource> _source;
 
-        readonly int n;
+        private readonly int _n;
 
-        readonly Func<C> bufferSupplier;
+        private readonly Func<TCollection> _bufferSupplier;
 
-        public BufferExact(IAsyncEnumerable<T> source, int n, Func<C> bufferSupplier)
+        public BufferExact(IAsyncEnumerable<TSource> source, int n, Func<TCollection> bufferSupplier)
         {
-            this.source = source;
-            this.n = n;
-            this.bufferSupplier = bufferSupplier;
+            _source = source;
+            _n = n;
+            _bufferSupplier = bufferSupplier;
         }
 
-        public IAsyncEnumerator<C> GetAsyncEnumerator()
+        public IAsyncEnumerator<TCollection> GetAsyncEnumerator()
         {
-            return new BufferExactEnumerator(source.GetAsyncEnumerator(), n, bufferSupplier);
+            return new BufferExactEnumerator(_source.GetAsyncEnumerator(), _n, _bufferSupplier);
         }
 
-        internal sealed class BufferExactEnumerator : IAsyncEnumerator<C>
+        private sealed class BufferExactEnumerator : IAsyncEnumerator<TCollection>
         {
+            private readonly IAsyncEnumerator<TSource> _source;
 
-            readonly IAsyncEnumerator<T> source;
+            private readonly int _n;
 
-            readonly int n;
+            private readonly Func<TCollection> _bufferSupplier;
 
-            readonly Func<C> bufferSupplier;
+            public TCollection Current { get; private set; }
 
-            C buffer;
+            private int _count;
 
-            public C Current => buffer;
+            private bool _done;
 
-            int count;
-
-            bool done;
-
-            public BufferExactEnumerator(IAsyncEnumerator<T> source, int n, Func<C> bufferSupplier)
+            public BufferExactEnumerator(IAsyncEnumerator<TSource> source, int n, Func<TCollection> bufferSupplier)
             {
-                this.source = source;
-                this.n = n;
-                this.bufferSupplier = bufferSupplier;
+                _source = source;
+                _n = n;
+                _bufferSupplier = bufferSupplier;
             }
 
             public ValueTask DisposeAsync()
             {
-                buffer = default;
-                return source.DisposeAsync();
+                Current = default;
+                return _source.DisposeAsync();
             }
 
             public async ValueTask<bool> MoveNextAsync()
             {
-                if (done)
+                if (_done)
                 {
                     return false;
                 }
-                var buf = bufferSupplier();
+                var buf = _bufferSupplier();
 
-                while (count != n)
+                while (_count != _n)
                 {
-                    if (await source.MoveNextAsync())
+                    if (await _source.MoveNextAsync())
                     {
-                        buf.Add(source.Current);
-                        count++;
+                        buf.Add(_source.Current);
+                        _count++;
                     }
                     else
                     {
-                        done = true;
+                        _done = true;
                         break;
                     }
                 }
 
-                if (count == 0)
+                if (_count == 0)
                 {
                     return false;
                 }
 
-                count = 0;
-                buffer = buf;
+                _count = 0;
+                Current = buf;
                 return true;
             }
         }
     }
 
-    internal sealed class BufferSkip<T, C> : IAsyncEnumerable<C> where C : ICollection<T>
+    internal sealed class BufferSkip<TSource, TCollection> : IAsyncEnumerable<TCollection> where TCollection : ICollection<TSource>
     {
-        readonly IAsyncEnumerable<T> source;
+        private readonly IAsyncEnumerable<TSource> _source;
 
-        readonly int size;
+        private readonly int _size;
 
-        readonly int skip;
+        private readonly int _skip;
 
-        readonly Func<C> bufferSupplier;
+        private readonly Func<TCollection> _bufferSupplier;
 
-        public BufferSkip(IAsyncEnumerable<T> source, int size, int skip, Func<C> bufferSupplier)
+        public BufferSkip(IAsyncEnumerable<TSource> source, int size, int skip, Func<TCollection> bufferSupplier)
         {
-            this.source = source;
-            this.size = size;
-            this.skip = skip;
-            this.bufferSupplier = bufferSupplier;
+            _source = source;
+            _size = size;
+            _skip = skip;
+            _bufferSupplier = bufferSupplier;
         }
 
-        public IAsyncEnumerator<C> GetAsyncEnumerator()
+        public IAsyncEnumerator<TCollection> GetAsyncEnumerator()
         {
-            return new BufferSkipEnumerator(source.GetAsyncEnumerator(), size, skip, bufferSupplier);
+            return new BufferSkipEnumerator(_source.GetAsyncEnumerator(), _size, _skip, _bufferSupplier);
         }
 
-        internal sealed class BufferSkipEnumerator : IAsyncEnumerator<C>
+        private sealed class BufferSkipEnumerator : IAsyncEnumerator<TCollection>
         {
+            private readonly IAsyncEnumerator<TSource> _source;
 
-            readonly IAsyncEnumerator<T> source;
+            private readonly int _size;
 
-            readonly int size;
+            private readonly int _skip;
 
-            readonly int skip;
+            private readonly Func<TCollection> _bufferSupplier;
 
-            readonly Func<C> bufferSupplier;
+            public TCollection Current { get; private set; }
 
-            C buffer;
+            private int _count;
 
-            public C Current => buffer;
+            private bool _once;
 
-            int count;
-
-            bool once;
-
-            public BufferSkipEnumerator(IAsyncEnumerator<T> source, int size, int skip, Func<C> bufferSupplier)
+            public BufferSkipEnumerator(IAsyncEnumerator<TSource> source, int size, int skip, Func<TCollection> bufferSupplier)
             {
-                this.source = source;
-                this.size = size;
-                this.skip = skip;
-                this.bufferSupplier = bufferSupplier;
+                _source = source;
+                _size = size;
+                _skip = skip;
+                _bufferSupplier = bufferSupplier;
             }
 
             public ValueTask DisposeAsync()
             {
-                buffer = default;
-                return source.DisposeAsync();
+                Current = default;
+                return _source.DisposeAsync();
             }
 
             public async ValueTask<bool> MoveNextAsync()
             {
-                if (once)
+                if (_once)
                 {
-                    while (count++ != skip)
+                    while (_count++ != _skip)
                     {
-                        if (!await source.MoveNextAsync())
+                        if (!await _source.MoveNextAsync())
                         {
                             return false;
                         }
                     }
                 }
 
-                once = true;
+                _once = true;
 
-                var buf = bufferSupplier();
-                count = 0;
-                while (count != size)
+                var buf = _bufferSupplier();
+                _count = 0;
+                while (_count != _size)
                 {
-                    if (await source.MoveNextAsync())
+                    if (await _source.MoveNextAsync())
                     {
-                        buf.Add(source.Current);
-                        count++;
+                        buf.Add(_source.Current);
+                        _count++;
                     }
                     else
                     {
@@ -175,86 +172,85 @@ namespace async_enumerable_dotnet.impl
                     }
                 }
 
-                if (count == 0)
+                if (_count == 0)
                 {
                     return false;
                 }
 
-                buffer = buf;
+                Current = buf;
                 return true;
             }
         }
     }
 
-    internal sealed class BufferOverlap<T, C> : IAsyncEnumerable<C> where C : ICollection<T>
+    internal sealed class BufferOverlap<TSource, TCollection> : IAsyncEnumerable<TCollection> where TCollection : ICollection<TSource>
     {
-        readonly IAsyncEnumerable<T> source;
+        private readonly IAsyncEnumerable<TSource> _source;
 
-        readonly int size;
+        private readonly int _size;
 
-        readonly int skip;
+        private readonly int _skip;
 
-        readonly Func<C> bufferSupplier;
+        private readonly Func<TCollection> _bufferSupplier;
 
-        public BufferOverlap(IAsyncEnumerable<T> source, int size, int skip, Func<C> bufferSupplier)
+        public BufferOverlap(IAsyncEnumerable<TSource> source, int size, int skip, Func<TCollection> bufferSupplier)
         {
-            this.source = source;
-            this.size = size;
-            this.skip = skip;
-            this.bufferSupplier = bufferSupplier;
+            _source = source;
+            _size = size;
+            _skip = skip;
+            _bufferSupplier = bufferSupplier;
         }
 
-        public IAsyncEnumerator<C> GetAsyncEnumerator()
+        public IAsyncEnumerator<TCollection> GetAsyncEnumerator()
         {
-            return new BufferOverlapEnumerator(source.GetAsyncEnumerator(), size, skip, bufferSupplier);
+            return new BufferOverlapEnumerator(_source.GetAsyncEnumerator(), _size, _skip, _bufferSupplier);
         }
 
-        internal sealed class BufferOverlapEnumerator : IAsyncEnumerator<C>
+        private sealed class BufferOverlapEnumerator : IAsyncEnumerator<TCollection>
         {
+            private readonly IAsyncEnumerator<TSource> _source;
 
-            readonly IAsyncEnumerator<T> source;
+            private readonly int _size;
 
-            readonly int size;
+            private readonly int _skip;
 
-            readonly int skip;
+            private readonly Func<TCollection> _bufferSupplier;
 
-            readonly Func<C> bufferSupplier;
+            private TCollection _buffer;
 
-            C buffer;
+            public TCollection Current => _buffer;
 
-            public C Current => buffer;
+            private int _index;
 
-            int index;
+            private int _count;
 
-            int count;
+            private bool _done;
 
-            bool done;
+            private ArrayQueue<TCollection> _buffers;
 
-            ArrayQueue<C> buffers;
-
-            public BufferOverlapEnumerator(IAsyncEnumerator<T> source, int size, int skip, Func<C> bufferSupplier)
+            public BufferOverlapEnumerator(IAsyncEnumerator<TSource> source, int size, int skip, Func<TCollection> bufferSupplier)
             {
-                this.source = source;
-                this.size = size;
-                this.skip = skip;
-                this.bufferSupplier = bufferSupplier;
-                this.buffers = new ArrayQueue<C>(16);
+                _source = source;
+                _size = size;
+                _skip = skip;
+                _bufferSupplier = bufferSupplier;
+                _buffers = new ArrayQueue<TCollection>(16);
             }
 
             public ValueTask DisposeAsync()
             {
-                buffer = default;
-                buffers.Release();
-                return source.DisposeAsync();
+                _buffer = default;
+                _buffers.Release();
+                return _source.DisposeAsync();
             }
 
             public async ValueTask<bool> MoveNextAsync()
             {
                 for (; ; )
                 {
-                    if (done)
+                    if (_done)
                     {
-                        if (buffers.Dequeue(out buffer))
+                        if (_buffers.Dequeue(out _buffer))
                         {
                             return true;
                         }
@@ -262,31 +258,31 @@ namespace async_enumerable_dotnet.impl
                     }
 
 
-                    if (await source.MoveNextAsync())
+                    if (await _source.MoveNextAsync())
                     {
-                        if (index == 0)
+                        if (_index == 0)
                         {
-                            buffers.Enqueue(bufferSupplier());
+                            _buffers.Enqueue(_bufferSupplier());
                         }
 
-                        index++;
-                        count++;
-                        buffers.ForEach(source.Current, (b, v) => b.Add(v));
+                        _index++;
+                        _count++;
+                        _buffers.ForEach(_source.Current, (b, v) => b.Add(v));
                     }
                     else
                     {
-                        done = true;
+                        _done = true;
                         continue;
                     }
 
-                    if (index == skip)
+                    if (_index == _skip)
                     {
-                        index = 0;
+                        _index = 0;
                     }
-                    if (count == size)
+                    if (_count == _size)
                     {
-                        count -= skip;
-                        buffers.Dequeue(out buffer);
+                        _count -= _skip;
+                        _buffers.Dequeue(out _buffer);
                         return true;
                     }
                 }

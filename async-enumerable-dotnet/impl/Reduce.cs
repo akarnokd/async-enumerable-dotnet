@@ -1,72 +1,72 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
+using System;
 using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet.impl
 {
     internal sealed class Reduce<T> : IAsyncEnumerable<T>
     {
-        readonly IAsyncEnumerable<T> source;
+        private readonly IAsyncEnumerable<T> _source;
 
-        readonly Func<T, T, T> reducer;
+        private readonly Func<T, T, T> _reducer;
 
         public Reduce(IAsyncEnumerable<T> source, Func<T, T, T> reducer)
         {
-            this.source = source;
-            this.reducer = reducer;
+            _source = source;
+            _reducer = reducer;
         }
 
         public IAsyncEnumerator<T> GetAsyncEnumerator()
         {
-            return new ReduceEnumerator(source.GetAsyncEnumerator(), reducer);
+            return new ReduceEnumerator(_source.GetAsyncEnumerator(), _reducer);
         }
 
-        internal sealed class ReduceEnumerator : IAsyncEnumerator<T>
+        private sealed class ReduceEnumerator : IAsyncEnumerator<T>
         {
-            readonly IAsyncEnumerator<T> source;
+            private readonly IAsyncEnumerator<T> _source;
 
-            readonly Func<T, T, T> reducer;
+            private readonly Func<T, T, T> _reducer;
 
-            public T Current => current;
+            public T Current { get; private set; }
 
-            bool once;
-
-            T current;
+            private bool _once;
 
             public ReduceEnumerator(IAsyncEnumerator<T> source, Func<T, T, T> reducer)
             {
-                this.source = source;
-                this.reducer = reducer;
+                _source = source;
+                _reducer = reducer;
             }
 
             public ValueTask DisposeAsync()
             {
-                return source.DisposeAsync();
+                return _source.DisposeAsync();
             }
 
             public async ValueTask<bool> MoveNextAsync()
             {
-                if (once)
+                if (_once)
                 {
-                    current = default;
+                    Current = default;
                     return false;
                 }
-                once = true;
+                _once = true;
 
                 var first = true;
                 var accumulator = default(T);
 
-                while (await source.MoveNextAsync())
+                while (await _source.MoveNextAsync())
                 {
                     if (first)
                     {
-                        accumulator = source.Current;
+                        accumulator = _source.Current;
                         first = false;
                     }
                     else
                     {
-                        accumulator = reducer(accumulator, source.Current);
+                        accumulator = _reducer(accumulator, _source.Current);
                     }
                 }
 
@@ -74,77 +74,75 @@ namespace async_enumerable_dotnet.impl
                 {
                     return false;
                 }
-                current = accumulator;
+                Current = accumulator;
                 return true;
             }
         }
     }
 
-    internal sealed class ReduceSeed<T, R> : IAsyncEnumerable<R>
+    internal sealed class ReduceSeed<TSource, TResult> : IAsyncEnumerable<TResult>
     {
-        readonly IAsyncEnumerable<T> source;
+        private readonly IAsyncEnumerable<TSource> _source;
 
-        readonly Func<R> initialSupplier;
+        private readonly Func<TResult> _initialSupplier;
 
-        readonly Func<R, T, R> reducer;
+        private readonly Func<TResult, TSource, TResult> _reducer;
 
-        public ReduceSeed(IAsyncEnumerable<T> source, Func<R> initialSupplier, Func<R, T, R> reducer)
+        public ReduceSeed(IAsyncEnumerable<TSource> source, Func<TResult> initialSupplier, Func<TResult, TSource, TResult> reducer)
         {
-            this.source = source;
-            this.initialSupplier = initialSupplier;
-            this.reducer = reducer;
+            _source = source;
+            _initialSupplier = initialSupplier;
+            _reducer = reducer;
         }
 
-        public IAsyncEnumerator<R> GetAsyncEnumerator()
+        public IAsyncEnumerator<TResult> GetAsyncEnumerator()
         {
-            var initial = default(R);
+            TResult initial;
             try
             {
-                initial = initialSupplier();
+                initial = _initialSupplier();
             }
             catch (Exception ex)
             {
-                return new Error<R>.ErrorEnumerator(ex);
+                return new Error<TResult>.ErrorEnumerator(ex);
             }
-            return new ReduceEnumerator(source.GetAsyncEnumerator(), initial, reducer);
+            return new ReduceEnumerator(_source.GetAsyncEnumerator(), initial, _reducer);
         }
 
-        internal sealed class ReduceEnumerator : IAsyncEnumerator<R>
+        private sealed class ReduceEnumerator : IAsyncEnumerator<TResult>
         {
-            readonly IAsyncEnumerator<T> source;
+            private readonly IAsyncEnumerator<TSource> _source;
 
-            readonly Func<R, T, R> reducer;
+            private readonly Func<TResult, TSource, TResult> _reducer;
 
-            public R Current => accumulator;
+            public TResult Current { get; private set; }
 
-            bool once;
+            private bool _once;
 
-            R accumulator;
-
-            public ReduceEnumerator(IAsyncEnumerator<T> source, R initial, Func<R, T, R> reducer)
+            public ReduceEnumerator(IAsyncEnumerator<TSource> source, TResult initial, Func<TResult, TSource, TResult> reducer)
             {
-                this.source = source;
-                this.accumulator = initial;
-                this.reducer = reducer;
+                _source = source;
+                Current = initial;
+                _reducer = reducer;
             }
 
             public ValueTask DisposeAsync()
             {
-                return source.DisposeAsync();
+                return _source.DisposeAsync();
             }
 
             public async ValueTask<bool> MoveNextAsync()
             {
-                if (once)
+                if (_once)
                 {
-                    accumulator = default;
+                    Current = default;
                     return false;
                 }
-                once = true;
+                _once = true;
 
-                while (await source.MoveNextAsync())
+                while (await _source.MoveNextAsync())
                 {
-                    accumulator = reducer(accumulator, source.Current);
+                    Current = _reducer(Current, _source.Current);
                 }
 
                 return true;

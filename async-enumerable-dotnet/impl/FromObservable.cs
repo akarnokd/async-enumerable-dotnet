@@ -1,7 +1,9 @@
-﻿using System;
+﻿// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
+using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -9,39 +11,37 @@ namespace async_enumerable_dotnet.impl
 {
     internal sealed class FromObservable<T> : IAsyncEnumerable<T>
     {
-        readonly IObservable<T> source;
+        private readonly IObservable<T> _source;
 
         public FromObservable(IObservable<T> source)
         {
-            this.source = source;
+            _source = source;
         }
 
         public IAsyncEnumerator<T> GetAsyncEnumerator()
         {
             var consumer = new FromObservableEnumerator();
-            var d = source.Subscribe(consumer);
+            var d = _source.Subscribe(consumer);
             consumer.SetDisposable(d);
             return consumer;
         }
 
-        internal sealed class FromObservableEnumerator : IAsyncEnumerator<T>, IObserver<T>, IDisposable
+        private sealed class FromObservableEnumerator : IAsyncEnumerator<T>, IObserver<T>, IDisposable
         {
-            readonly ConcurrentQueue<T> queue;
+            private readonly ConcurrentQueue<T> _queue;
 
-            volatile bool done;
-            Exception error;
+            private volatile bool _done;
+            private Exception _error;
 
-            IDisposable upstream;
+            private IDisposable _upstream;
 
-            public T Current => current;
+            public T Current { get; private set; }
 
-            T current;
-
-            TaskCompletionSource<bool> resume;
+            private TaskCompletionSource<bool> _resume;
 
             public FromObservableEnumerator()
             {
-                this.queue = new ConcurrentQueue<T>();
+                _queue = new ConcurrentQueue<T>();
             }
 
             public void Dispose()
@@ -51,8 +51,8 @@ namespace async_enumerable_dotnet.impl
 
             public ValueTask DisposeAsync()
             {
-                current = default;
-                Interlocked.Exchange(ref upstream, this)?.Dispose();
+                Current = default;
+                Interlocked.Exchange(ref _upstream, this)?.Dispose();
                 return new ValueTask();
             }
 
@@ -60,59 +60,59 @@ namespace async_enumerable_dotnet.impl
             {
                 for (; ; )
                 {
-                    var d = done;
-                    var success = queue.TryDequeue(out var v);
+                    var d = _done;
+                    var success = _queue.TryDequeue(out var v);
 
                     if (d && !success)
                     {
-                        if (error != null)
+                        if (_error != null)
                         {
-                            throw error;
+                            throw _error;
                         }
                         return false;
                     }
-                    else
+
                     if (success)
                     {
-                        current = v;
+                        Current = v;
                         return true;
                     }
 
-                    await ResumeHelper.Await(ref resume);
-                    ResumeHelper.Clear(ref resume);
+                    await ResumeHelper.Await(ref _resume);
+                    ResumeHelper.Clear(ref _resume);
                 }
             }
 
             public void OnCompleted()
             {
-                this.done = true;
+                _done = true;
                 Signal();
             }
 
             public void OnError(Exception error)
             {
-                this.error = error;
-                this.done = true;
+                _error = error;
+                _done = true;
                 Signal();
             }
 
             public void OnNext(T value)
             {
-                queue.Enqueue(value);
+                _queue.Enqueue(value);
                 Signal();
             }
 
             internal void SetDisposable(IDisposable d)
             {
-                if (Interlocked.CompareExchange(ref upstream, d, null) != null)
+                if (Interlocked.CompareExchange(ref _upstream, d, null) != null)
                 {
                     d?.Dispose();
                 } 
             }
 
-            void Signal()
+            private void Signal()
             {
-                ResumeHelper.Resume(ref resume);
+                ResumeHelper.Resume(ref _resume);
             }
         }
     }

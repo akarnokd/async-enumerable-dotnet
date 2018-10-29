@@ -1,64 +1,65 @@
-﻿using System;
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
+using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet.impl
 {
-    internal sealed class ConcatMap<T, R> : IAsyncEnumerable<R>
+    internal sealed class ConcatMap<TSource, TResult> : IAsyncEnumerable<TResult>
     {
-        readonly IAsyncEnumerable<T> source;
+        private readonly IAsyncEnumerable<TSource> _source;
 
-        readonly Func<T, IAsyncEnumerable<R>> mapper;
+        private readonly Func<TSource, IAsyncEnumerable<TResult>> _mapper;
 
-        public ConcatMap(IAsyncEnumerable<T> source, Func<T, IAsyncEnumerable<R>> mapper)
+        public ConcatMap(IAsyncEnumerable<TSource> source, Func<TSource, IAsyncEnumerable<TResult>> mapper)
         {
-            this.source = source;
-            this.mapper = mapper;
+            _source = source;
+            _mapper = mapper;
         }
 
-        public IAsyncEnumerator<R> GetAsyncEnumerator()
+        public IAsyncEnumerator<TResult> GetAsyncEnumerator()
         {
-            return new ConcatMapEnumerator(source.GetAsyncEnumerator(), mapper);
+            return new ConcatMapEnumerator(_source.GetAsyncEnumerator(), _mapper);
         }
 
-        internal sealed class ConcatMapEnumerator : IAsyncEnumerator<R>
+        private sealed class ConcatMapEnumerator : IAsyncEnumerator<TResult>
         {
-            readonly IAsyncEnumerator<T> source;
+            private readonly IAsyncEnumerator<TSource> _source;
 
-            readonly Func<T, IAsyncEnumerable<R>> mapper;
+            private readonly Func<TSource, IAsyncEnumerable<TResult>> _mapper;
 
-            public R Current => current;
+            public TResult Current { get; private set; }
 
-            R current;
+            private IAsyncEnumerator<TResult> _inner;
 
-            IAsyncEnumerator<R> inner;
-
-            public ConcatMapEnumerator(IAsyncEnumerator<T> source, Func<T, IAsyncEnumerable<R>> mapper)
+            public ConcatMapEnumerator(IAsyncEnumerator<TSource> source, Func<TSource, IAsyncEnumerable<TResult>> mapper)
             {
-                this.source = source;
-                this.mapper = mapper;
+                _source = source;
+                _mapper = mapper;
             }
 
             public async ValueTask DisposeAsync()
             {
-                if (inner != null)
+                if (_inner != null)
                 {
-                    await inner.DisposeAsync();
+                    await _inner.DisposeAsync();
                 }
-                await source.DisposeAsync();
+                await _source.DisposeAsync();
             }
 
             public async ValueTask<bool> MoveNextAsync()
             {
-                current = default;
+                Current = default;
                 for (; ;)
                 {
-                    if (inner == null)
+                    if (_inner == null)
                     {
-                        if (await source.MoveNextAsync())
+                        if (await _source.MoveNextAsync())
                         {
-                            inner = mapper(source.Current).GetAsyncEnumerator();
+                            _inner = _mapper(_source.Current).GetAsyncEnumerator();
                         }
                         else
                         {
@@ -66,78 +67,74 @@ namespace async_enumerable_dotnet.impl
                         }
                     }
 
-                    if (await inner.MoveNextAsync())
+                    if (await _inner.MoveNextAsync())
                     {
-                        current = inner.Current;
+                        Current = _inner.Current;
                         return true;
                     }
-                    else
-                    {
-                        await inner.DisposeAsync();
-                        inner = null;
-                    }
+
+                    await _inner.DisposeAsync();
+                    _inner = null;
                 }
             }
         }
     }
 
-    internal sealed class ConcatMapEnumerable<T, R> : IAsyncEnumerable<R>
+    internal sealed class ConcatMapEnumerable<TSource, TResult> : IAsyncEnumerable<TResult>
     {
-        readonly IAsyncEnumerable<T> source;
+        private readonly IAsyncEnumerable<TSource> _source;
 
-        readonly Func<T, IEnumerable<R>> mapper;
+        private readonly Func<TSource, IEnumerable<TResult>> _mapper;
 
-        public ConcatMapEnumerable(IAsyncEnumerable<T> source, Func<T, IEnumerable<R>> mapper)
+        public ConcatMapEnumerable(IAsyncEnumerable<TSource> source, Func<TSource, IEnumerable<TResult>> mapper)
         {
-            this.source = source;
-            this.mapper = mapper;
+            _source = source;
+            _mapper = mapper;
         }
 
-        public IAsyncEnumerator<R> GetAsyncEnumerator()
+        public IAsyncEnumerator<TResult> GetAsyncEnumerator()
         {
-            return new ConcatMapEnumerator(source.GetAsyncEnumerator(), mapper);
+            return new ConcatMapEnumerator(_source.GetAsyncEnumerator(), _mapper);
         }
 
-        internal sealed class ConcatMapEnumerator : IAsyncEnumerator<R>
+        private sealed class ConcatMapEnumerator : IAsyncEnumerator<TResult>
         {
-            readonly IAsyncEnumerator<T> source;
+            private readonly IAsyncEnumerator<TSource> _source;
 
-            readonly Func<T, IEnumerable<R>> mapper;
+            private readonly Func<TSource, IEnumerable<TResult>> _mapper;
 
-            public R Current => current;
+            public TResult Current { get; private set; }
 
-            R current;
+            private IEnumerator<TResult> _inner;
 
-            IEnumerator<R> inner;
-
-            public ConcatMapEnumerator(IAsyncEnumerator<T> source, Func<T, IEnumerable<R>> mapper)
+            public ConcatMapEnumerator(IAsyncEnumerator<TSource> source, Func<TSource, IEnumerable<TResult>> mapper)
             {
-                this.source = source;
-                this.mapper = mapper;
+                _source = source;
+                _mapper = mapper;
             }
 
             public async ValueTask DisposeAsync()
             {
                 try
                 {
-                    inner?.Dispose();
+                    _inner?.Dispose();
                 }
                 finally
                 {
-                    await source.DisposeAsync();
+                    await _source.DisposeAsync();
                 }
             }
 
             public async ValueTask<bool> MoveNextAsync()
             {
-                current = default;
+                Current = default;
                 for (; ; )
                 {
-                    if (inner == null)
+                    if (_inner == null)
                     {
-                        if (await source.MoveNextAsync())
+                        if (await _source.MoveNextAsync())
                         {
-                            inner = mapper(source.Current).GetEnumerator();
+                            _inner = _mapper(_source.Current).GetEnumerator();
                         }
                         else
                         {
@@ -145,16 +142,14 @@ namespace async_enumerable_dotnet.impl
                         }
                     }
 
-                    if (inner.MoveNext())
+                    if (_inner.MoveNext())
                     {
-                        current = inner.Current;
+                        Current = _inner.Current;
                         return true;
                     }
-                    else
-                    {
-                        inner.Dispose();
-                        inner = null;
-                    }
+
+                    _inner.Dispose();
+                    _inner = null;
                 }
             }
         }

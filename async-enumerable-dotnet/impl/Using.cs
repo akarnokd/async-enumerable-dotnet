@@ -1,85 +1,87 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
+using System;
 using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet.impl
 {
-    internal sealed class Using<T, R> : IAsyncEnumerable<T>
+    internal sealed class Using<TSource, TResource> : IAsyncEnumerable<TSource>
     {
-        readonly Func<R> resourceProvider;
+        private readonly Func<TResource> _resourceProvider;
 
-        readonly Func<R, IAsyncEnumerable<T>> sourceProvider;
+        private readonly Func<TResource, IAsyncEnumerable<TSource>> _sourceProvider;
 
-        readonly Action<R> resourceCleanup;
+        private readonly Action<TResource> _resourceCleanup;
 
-        public Using(Func<R> resourceProvider, Func<R, IAsyncEnumerable<T>> sourceProvider, Action<R> resourceCleanup)
+        public Using(Func<TResource> resourceProvider, Func<TResource, IAsyncEnumerable<TSource>> sourceProvider, Action<TResource> resourceCleanup)
         {
-            this.resourceProvider = resourceProvider;
-            this.sourceProvider = sourceProvider;
-            this.resourceCleanup = resourceCleanup;
+            _resourceProvider = resourceProvider;
+            _sourceProvider = sourceProvider;
+            _resourceCleanup = resourceCleanup;
         }
 
-        public IAsyncEnumerator<T> GetAsyncEnumerator()
+        public IAsyncEnumerator<TSource> GetAsyncEnumerator()
         {
-            var resource = default(R);
+            TResource resource;
             try
             {
-                resource = resourceProvider();
+                resource = _resourceProvider();
             }
             catch (Exception ex)
             {
-                return new Error<T>.ErrorEnumerator(ex);
+                return new Error<TSource>.ErrorEnumerator(ex);
             }
-            var source = default(IAsyncEnumerable<T>);
+            IAsyncEnumerable<TSource> source;
             try
             {
-                source = sourceProvider(resource);
+                source = _sourceProvider(resource);
             } catch (Exception ex)
             {
                 try
                 {
-                    resourceCleanup(resource);
+                    _resourceCleanup(resource);
                 }
                 catch (Exception exc)
                 {
-                    return new Error<T>.ErrorEnumerator(new AggregateException(ex, exc));
+                    return new Error<TSource>.ErrorEnumerator(new AggregateException(ex, exc));
                 }
-                return new Error<T>.ErrorEnumerator(ex);
+                return new Error<TSource>.ErrorEnumerator(ex);
             }
 
-            return new UsingEnumerator(source.GetAsyncEnumerator(), resource, resourceCleanup);
+            return new UsingEnumerator(source.GetAsyncEnumerator(), resource, _resourceCleanup);
         }
 
-        internal sealed class UsingEnumerator : IAsyncEnumerator<T>
+        private sealed class UsingEnumerator : IAsyncEnumerator<TSource>
         {
-            readonly IAsyncEnumerator<T> source;
+            private readonly IAsyncEnumerator<TSource> _source;
 
-            readonly R resource;
+            private readonly TResource _resource;
 
-            readonly Action<R> resourceCleanup;
+            private readonly Action<TResource> _resourceCleanup;
 
-            public UsingEnumerator(IAsyncEnumerator<T> source, R resource, Action<R> resourceCleanup)
+            public UsingEnumerator(IAsyncEnumerator<TSource> source, TResource resource, Action<TResource> resourceCleanup)
             {
-                this.source = source;
-                this.resource = resource;
-                this.resourceCleanup = resourceCleanup;
+                _source = source;
+                _resource = resource;
+                _resourceCleanup = resourceCleanup;
             }
 
-            public T Current => source.Current;
+            public TSource Current => _source.Current;
 
             public async ValueTask DisposeAsync()
             {
                 var error = default(Exception);
                 try
                 {
-                    resourceCleanup(resource);
+                    _resourceCleanup(_resource);
                 }
                 catch (Exception ex)
                 {
                     error = ex;
                 }
-                await source.DisposeAsync();
+                await _source.DisposeAsync();
                 if (error != null)
                 {
                     throw error;
@@ -88,7 +90,7 @@ namespace async_enumerable_dotnet.impl
 
             public ValueTask<bool> MoveNextAsync()
             {
-                return source.MoveNextAsync();
+                return _source.MoveNextAsync();
             }
         }
     }

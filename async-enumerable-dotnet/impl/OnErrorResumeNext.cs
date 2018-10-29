@@ -1,76 +1,76 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
+using System;
 using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet.impl
 {
     internal sealed class OnErrorResumeNext<T> : IAsyncEnumerable<T>
     {
-        readonly IAsyncEnumerable<T> source;
+        private readonly IAsyncEnumerable<T> _source;
 
-        readonly Func<Exception, IAsyncEnumerable<T>> handler;
+        private readonly Func<Exception, IAsyncEnumerable<T>> _handler;
 
         public OnErrorResumeNext(IAsyncEnumerable<T> source, Func<Exception, IAsyncEnumerable<T>> handler)
         {
-            this.source = source;
-            this.handler = handler;
+            _source = source;
+            _handler = handler;
         }
 
         public IAsyncEnumerator<T> GetAsyncEnumerator()
         {
-            return new OnErrorResumeNextEnumerator(source.GetAsyncEnumerator(), handler);
+            return new OnErrorResumeNextEnumerator(_source.GetAsyncEnumerator(), _handler);
         }
 
-        internal sealed class OnErrorResumeNextEnumerator : IAsyncEnumerator<T>
+        private sealed class OnErrorResumeNextEnumerator : IAsyncEnumerator<T>
         {
-            IAsyncEnumerator<T> source;
+            private IAsyncEnumerator<T> _source;
 
-            Func<Exception, IAsyncEnumerable<T>> handler;
+            private Func<Exception, IAsyncEnumerable<T>> _handler;
 
             public OnErrorResumeNextEnumerator(IAsyncEnumerator<T> source, Func<Exception, IAsyncEnumerable<T>> handler)
             {
-                this.source = source;
-                this.handler = handler;
+                _source = source;
+                _handler = handler;
             }
 
-            public T Current => source.Current;
+            public T Current => _source.Current;
 
             public ValueTask DisposeAsync()
             {
-                return source.DisposeAsync();
+                return _source.DisposeAsync();
             }
 
             public async ValueTask<bool> MoveNextAsync()
             {
-                if (handler == null)
+                if (_handler == null)
                 {
-                    return await source.MoveNextAsync();
+                    return await _source.MoveNextAsync();
                 }
-                else
+
+                try
                 {
+                    return await _source.MoveNextAsync();
+                }
+                catch (Exception ex)
+                {
+                    IAsyncEnumerator<T> en;
+
                     try
                     {
-                        return await source.MoveNextAsync();
+                        en = _handler(ex).GetAsyncEnumerator();
                     }
-                    catch (Exception ex)
+                    catch (Exception exc)
                     {
-                        var en = default(IAsyncEnumerator<T>);
-
-                        try
-                        {
-                            en = handler(ex).GetAsyncEnumerator();
-                        }
-                        catch (Exception exc)
-                        {
-                            throw new AggregateException(ex, exc);
-                        }
-
-                        handler = null;
-                        source = en;
-
-                        return await en.MoveNextAsync();
+                        throw new AggregateException(ex, exc);
                     }
+
+                    _handler = null;
+                    _source = en;
+
+                    return await en.MoveNextAsync();
                 }
             }
         }

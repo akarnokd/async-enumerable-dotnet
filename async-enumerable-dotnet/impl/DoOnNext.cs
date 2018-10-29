@@ -1,51 +1,53 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
+using System;
 using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet.impl
 {
     internal sealed class DoOnNext<T> : IAsyncEnumerable<T>
     {
-        readonly IAsyncEnumerable<T> source;
+        private readonly IAsyncEnumerable<T> _source;
 
-        readonly Action<T> handler;
+        private readonly Action<T> _handler;
 
         public DoOnNext(IAsyncEnumerable<T> source, Action<T> handler)
         {
-            this.source = source;
-            this.handler = handler;
+            _source = source;
+            _handler = handler;
         }
 
         public IAsyncEnumerator<T> GetAsyncEnumerator()
         {
-            return new DoOnNextEnumerator(source.GetAsyncEnumerator(), handler);
+            return new DoOnNextEnumerator(_source.GetAsyncEnumerator(), _handler);
         }
 
-        internal sealed class DoOnNextEnumerator : IAsyncEnumerator<T>
+        private sealed class DoOnNextEnumerator : IAsyncEnumerator<T>
         {
-            readonly IAsyncEnumerator<T> source;
+            private readonly IAsyncEnumerator<T> _source;
 
-            readonly Action<T> handler;
+            private readonly Action<T> _handler;
 
             public DoOnNextEnumerator(IAsyncEnumerator<T> source, Action<T> handler)
             {
-                this.source = source;
-                this.handler = handler;
+                _source = source;
+                _handler = handler;
             }
 
-            public T Current => source.Current;
+            public T Current => _source.Current;
 
             public ValueTask DisposeAsync()
             {
-                return source.DisposeAsync();
+                return _source.DisposeAsync();
             }
 
             public async ValueTask<bool> MoveNextAsync()
             {
-                if (await source.MoveNextAsync())
+                if (await _source.MoveNextAsync())
                 {
-                    handler(source.Current);
+                    _handler(_source.Current);
                     return true;
                 }
                 return false;
@@ -55,45 +57,45 @@ namespace async_enumerable_dotnet.impl
 
     internal sealed class DoOnNextAsync<T> : IAsyncEnumerable<T>
     {
-        readonly IAsyncEnumerable<T> source;
+        private readonly IAsyncEnumerable<T> _source;
 
-        readonly Func<T, Task> handler;
+        private readonly Func<T, Task> _handler;
 
         public DoOnNextAsync(IAsyncEnumerable<T> source, Func<T, Task> handler)
         {
-            this.source = source;
-            this.handler = handler;
+            _source = source;
+            _handler = handler;
         }
 
         public IAsyncEnumerator<T> GetAsyncEnumerator()
         {
-            return new DoOnNextAsyncEnumerator(source.GetAsyncEnumerator(), handler);
+            return new DoOnNextAsyncEnumerator(_source.GetAsyncEnumerator(), _handler);
         }
 
-        internal sealed class DoOnNextAsyncEnumerator : IAsyncEnumerator<T>
+        private sealed class DoOnNextAsyncEnumerator : IAsyncEnumerator<T>
         {
-            readonly IAsyncEnumerator<T> source;
+            private readonly IAsyncEnumerator<T> _source;
 
-            readonly Func<T, Task> handler;
+            private readonly Func<T, Task> _handler;
 
             public DoOnNextAsyncEnumerator(IAsyncEnumerator<T> source, Func<T, Task> handler)
             {
-                this.source = source;
-                this.handler = handler;
+                _source = source;
+                _handler = handler;
             }
 
-            public T Current => source.Current;
+            public T Current => _source.Current;
 
             public ValueTask DisposeAsync()
             {
-                return source.DisposeAsync();
+                return _source.DisposeAsync();
             }
 
             public async ValueTask<bool> MoveNextAsync()
             {
-                if (await source.MoveNextAsync())
+                if (await _source.MoveNextAsync())
                 {
-                    await handler(source.Current);
+                    await _handler(_source.Current);
                     return true;
                 }
                 return false;

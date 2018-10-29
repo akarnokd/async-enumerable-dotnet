@@ -1,44 +1,46 @@
-﻿using System;
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet.impl
 {
     internal sealed class Concat<T> : IAsyncEnumerable<T>
     {
-        readonly IAsyncEnumerable<T>[] sources;
+        private readonly IAsyncEnumerable<T>[] _sources;
 
         public Concat(IAsyncEnumerable<T>[] sources)
         {
-            this.sources = sources;
+            _sources = sources;
         }
 
         public IAsyncEnumerator<T> GetAsyncEnumerator()
         {
-            return new ConcatEnumerator(sources);
+            return new ConcatEnumerator(_sources);
         }
 
-        internal sealed class ConcatEnumerator : IAsyncEnumerator<T>
+        private sealed class ConcatEnumerator : IAsyncEnumerator<T>
         {
-            readonly IAsyncEnumerable<T>[] sources;
+            private readonly IAsyncEnumerable<T>[] _sources;
 
-            int index;
+            private int _index;
 
-            IAsyncEnumerator<T> current;
+            private IAsyncEnumerator<T> _current;
 
             public ConcatEnumerator(IAsyncEnumerable<T>[] sources)
             {
-                this.sources = sources;
+                _sources = sources;
             }
 
-            public T Current => current.Current;
+            public T Current => _current.Current;
 
             public ValueTask DisposeAsync()
             {
-                if (current != null)
+                if (_current != null)
                 {
-                    return current.DisposeAsync();
+                    return _current.DisposeAsync();
                 }
                 return new ValueTask();
             }
@@ -47,25 +49,25 @@ namespace async_enumerable_dotnet.impl
             {
                 for (; ; )
                 {
-                    if (current == null)
+                    if (_current == null)
                     {
-                        var idx = index;
-                        if (idx == sources.Length)
+                        var idx = _index;
+                        if (idx == _sources.Length)
                         {
                             return false;
                         }
 
-                        index = idx + 1;
-                        current = sources[idx].GetAsyncEnumerator();
+                        _index = idx + 1;
+                        _current = _sources[idx].GetAsyncEnumerator();
                     }
 
-                    if (await current.MoveNextAsync())
+                    if (await _current.MoveNextAsync())
                     {
                         return true;
                     }
 
-                    await current.DisposeAsync();
-                    current = null;
+                    await _current.DisposeAsync();
+                    _current = null;
                 }
             }
         }
@@ -73,37 +75,37 @@ namespace async_enumerable_dotnet.impl
 
     internal sealed class ConcatEnumerable<T> : IAsyncEnumerable<T>
     {
-        readonly IEnumerable<IAsyncEnumerable<T>> sources;
+        private readonly IEnumerable<IAsyncEnumerable<T>> _sources;
 
         public ConcatEnumerable(IEnumerable<IAsyncEnumerable<T>> sources)
         {
-            this.sources = sources;
+            _sources = sources;
         }
 
         public IAsyncEnumerator<T> GetAsyncEnumerator()
         {
-            return new ConcatEnumerator(sources.GetEnumerator());
+            return new ConcatEnumerator(_sources.GetEnumerator());
         }
 
-        internal sealed class ConcatEnumerator : IAsyncEnumerator<T>
+        private sealed class ConcatEnumerator : IAsyncEnumerator<T>
         {
-            readonly IEnumerator<IAsyncEnumerable<T>> sources;
+            private readonly IEnumerator<IAsyncEnumerable<T>> _sources;
 
-            IAsyncEnumerator<T> current;
+            private IAsyncEnumerator<T> _current;
 
             public ConcatEnumerator(IEnumerator<IAsyncEnumerable<T>> sources)
             {
-                this.sources = sources;
+                _sources = sources;
             }
 
-            public T Current => current.Current;
+            public T Current => _current.Current;
 
             public ValueTask DisposeAsync()
             {
-                sources.Dispose();
-                if (current != null)
+                _sources.Dispose();
+                if (_current != null)
                 {
-                    return current.DisposeAsync();
+                    return _current.DisposeAsync();
                 }
                 return new ValueTask();
             }
@@ -112,11 +114,11 @@ namespace async_enumerable_dotnet.impl
             {
                 for (; ; )
                 {
-                    if (current == null)
+                    if (_current == null)
                     {
-                        if (sources.MoveNext())
+                        if (_sources.MoveNext())
                         {
-                            current = sources.Current.GetAsyncEnumerator();
+                            _current = _sources.Current.GetAsyncEnumerator();
                         }
                         else
                         {
@@ -124,13 +126,13 @@ namespace async_enumerable_dotnet.impl
                         }
                     }
 
-                    if (await current.MoveNextAsync())
+                    if (await _current.MoveNextAsync())
                     {
                         return true;
                     }
 
-                    await current.DisposeAsync();
-                    current = null;
+                    await _current.DisposeAsync();
+                    _current = null;
                 }
             }
         }

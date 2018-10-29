@@ -1,6 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -8,223 +10,224 @@ namespace async_enumerable_dotnet.impl
 {
     internal sealed class Debounce<T> : IAsyncEnumerable<T>
     {
-        readonly IAsyncEnumerable<T> source;
+        private readonly IAsyncEnumerable<T> _source;
 
-        readonly TimeSpan delay;
+        private readonly TimeSpan _delay;
 
-        readonly bool emitLast;
+        private readonly bool _emitLast;
 
         public Debounce(IAsyncEnumerable<T> source, TimeSpan delay, bool emitLast)
         {
-            this.source = source;
-            this.delay = delay;
-            this.emitLast = emitLast;
+            _source = source;
+            _delay = delay;
+            _emitLast = emitLast;
         }
 
         public IAsyncEnumerator<T> GetAsyncEnumerator()
         {
-            var en = new DebounceEnumerator(source.GetAsyncEnumerator(), delay, emitLast);
+            var en = new DebounceEnumerator(_source.GetAsyncEnumerator(), _delay, _emitLast);
             en.MoveNext();
             return en;
         }
 
-        internal sealed class DebounceEnumerator : IAsyncEnumerator<T>
+        private sealed class DebounceEnumerator : IAsyncEnumerator<T>
         {
-            readonly IAsyncEnumerator<T> source;
+            private readonly IAsyncEnumerator<T> _source;
 
-            readonly TimeSpan delay;
+            private readonly TimeSpan _delay;
 
-            readonly Action<Task<bool>> mainHandler;
+            private readonly Action<Task<bool>> _mainHandler;
 
-            readonly bool emitLast;
+            private readonly bool _emitLast;
 
             public T Current { get; private set; }
 
-            int disposeWip;
+            private int _disposeWip;
 
-            TaskCompletionSource<bool> disposeTask;
+            private TaskCompletionSource<bool> _disposeTask;
 
-            int sourceWip;
+            private int _sourceWip;
 
-            TaskCompletionSource<bool> resume;
+            private TaskCompletionSource<bool> _resume;
 
-            volatile bool done;
-            Exception error;
+            private volatile bool _done;
+            private Exception _error;
 
-            Node latest;
+            private Node _latest;
 
-            T emitLastItem;
+            private T _emitLastItem;
 
-            long sourceIndex;
+            private long _sourceIndex;
 
-            CancellationTokenSource cts;
+            private CancellationTokenSource _cts;
 
             public DebounceEnumerator(IAsyncEnumerator<T> source, TimeSpan delay, bool emitLast)
             {
-                this.source = source;
-                this.delay = delay;
-                this.mainHandler = t => HandleMain(t);
-                this.emitLast = emitLast;
+                _source = source;
+                _delay = delay;
+                _mainHandler = HandleMain;
+                _emitLast = emitLast;
             }
 
             public ValueTask DisposeAsync()
             {
-                CancellationHelper.Cancel(ref cts);
-                if (Interlocked.Increment(ref disposeWip) == 1)
+                CancellationHelper.Cancel(ref _cts);
+                if (Interlocked.Increment(ref _disposeWip) == 1)
                 {
-                    if (emitLast)
+                    if (_emitLast)
                     {
-                        emitLastItem = default;
+                        _emitLastItem = default;
                     }
-                    return source.DisposeAsync();
+                    return _source.DisposeAsync();
                 }
-                return ResumeHelper.Await(ref disposeTask);
+                return ResumeHelper.Await(ref _disposeTask);
             }
 
             public async ValueTask<bool> MoveNextAsync()
             {
                 for (; ; )
                 {
-                    var d = done;
-                    var v = Interlocked.Exchange(ref latest, null);
+                    var d = _done;
+                    var v = Interlocked.Exchange(ref _latest, null);
 
                     if (d && v == null)
                     {
-                        if (error != null)
+                        if (_error != null)
                         {
-                            throw error;
+                            throw _error;
                         }
                         return false;
                     }
-                    else if (v != null)
+
+                    if (v != null)
                     {
-                        Current = v.value;
+                        Current = v.Value;
                         return true;
                     }
 
-                    await ResumeHelper.Await(ref resume);
-                    ResumeHelper.Clear(ref resume);
+                    await ResumeHelper.Await(ref _resume);
+                    ResumeHelper.Clear(ref _resume);
                 }
             }
 
             internal void MoveNext()
             {
-                if (Interlocked.Increment(ref sourceWip) == 1)
+                if (Interlocked.Increment(ref _sourceWip) == 1)
                 {
                     do
                     {
-                        if (Interlocked.Increment(ref disposeWip) == 1)
+                        if (Interlocked.Increment(ref _disposeWip) == 1)
                         {
-                            source.MoveNextAsync()
+                            _source.MoveNextAsync()
                                 .AsTask()
-                                .ContinueWith(mainHandler);
+                                .ContinueWith(_mainHandler);
                         }
                         else
                         {
                             break;
                         }
                     }
-                    while (Interlocked.Decrement(ref sourceWip) != 0);
+                    while (Interlocked.Decrement(ref _sourceWip) != 0);
                 }
             }
 
-            bool TryDispose()
+            private bool TryDispose()
             {
-                if (Interlocked.Decrement(ref disposeWip) != 0)
+                if (Interlocked.Decrement(ref _disposeWip) != 0)
                 {
-                    if (emitLast)
+                    if (_emitLast)
                     {
-                        emitLastItem = default;
+                        _emitLastItem = default;
                     }
-                    ResumeHelper.Complete(ref disposeTask, source.DisposeAsync());
+                    ResumeHelper.Complete(ref _disposeTask, _source.DisposeAsync());
                     return false;
                 }
                 return true;
             }
 
-            void HandleMain(Task<bool> t)
+            private void HandleMain(Task<bool> t)
             {
                 if (t.IsFaulted)
                 {
-                    CancellationHelper.Cancel(ref cts);
-                    if (emitLast)
+                    CancellationHelper.Cancel(ref _cts);
+                    if (_emitLast)
                     {
-                        var idx = sourceIndex;
+                        var idx = _sourceIndex;
                         if (idx != 0)
                         {
-                            SetLatest(emitLastItem, idx + 1);
-                            emitLastItem = default;
+                            SetLatest(_emitLastItem, idx + 1);
+                            _emitLastItem = default;
                         }
                     }
-                    error = ExceptionHelper.Extract(t.Exception);
-                    done = true;
+                    _error = ExceptionHelper.Extract(t.Exception);
+                    _done = true;
                     if (TryDispose())
                     {
-                        ResumeHelper.Resume(ref resume);
+                        ResumeHelper.Resume(ref _resume);
                     }
                 }
                 else if (t.Result)
                 {
-                    Volatile.Read(ref cts)?.Cancel();
+                    Volatile.Read(ref _cts)?.Cancel();
 
-                    var v = source.Current;
+                    var v = _source.Current;
                     if (TryDispose())
                     {
-                        if (emitLast)
+                        if (_emitLast)
                         {
-                            emitLastItem = v;
+                            _emitLastItem = v;
                         }
-                        var idx = ++sourceIndex;
+                        var idx = ++_sourceIndex;
                         var newCts = new CancellationTokenSource();
-                        if (CancellationHelper.Replace(ref cts, newCts))
+                        if (CancellationHelper.Replace(ref _cts, newCts))
                         {
-                            Task.Delay(delay, newCts.Token)
-                                .ContinueWith(tt => TimerHandler(tt, v, idx));
+                            Task.Delay(_delay, newCts.Token)
+                                .ContinueWith(tt => TimerHandler(tt, v, idx), newCts.Token);
                             MoveNext();
                         }
                     }
                 }
                 else
                 {
-                    CancellationHelper.Cancel(ref cts);
-                    if (emitLast)
+                    CancellationHelper.Cancel(ref _cts);
+                    if (_emitLast)
                     {
-                        var idx = sourceIndex;
+                        var idx = _sourceIndex;
                         if (idx != 0)
                         {
-                            SetLatest(emitLastItem, idx + 1);
-                            emitLastItem = default;
+                            SetLatest(_emitLastItem, idx + 1);
+                            _emitLastItem = default;
                         }
                     }
-                    done = true;
+                    _done = true;
                     if (TryDispose())
                     {
-                        ResumeHelper.Resume(ref resume);
+                        ResumeHelper.Resume(ref _resume);
                     }
                 }
             }
 
-            void TimerHandler(Task t, T value, long idx)
+            private void TimerHandler(Task t, T value, long idx)
             {
                 if (!t.IsCanceled && SetLatest(value, idx))
                 {
-                    ResumeHelper.Resume(ref resume);
+                    ResumeHelper.Resume(ref _resume);
                 }
             }
 
-            bool SetLatest(T value, long idx)
+            private bool SetLatest(T value, long idx)
             {
                 var b = default(Node);
                 for (; ; )
                 {
-                    var a = Volatile.Read(ref latest);
-                    if (a == null || a.index < idx)
+                    var a = Volatile.Read(ref _latest);
+                    if (a == null || a.Index < idx)
                     {
                         if (b == null)
                         {
                             b = new Node(idx, value);
                         }
-                        if (Interlocked.CompareExchange(ref latest, b, a) == a)
+                        if (Interlocked.CompareExchange(ref _latest, b, a) == a)
                         {
                             return true;
                         }
@@ -236,15 +239,15 @@ namespace async_enumerable_dotnet.impl
                 }
             }
 
-            internal sealed class Node
+            private sealed class Node
             {
-                internal readonly long index;
-                internal readonly T value;
+                internal readonly long Index;
+                internal readonly T Value;
 
                 public Node(long index, T value)
                 {
-                    this.index = index;
-                    this.value = value;
+                    Index = index;
+                    Value = value;
                 }
             }
         }

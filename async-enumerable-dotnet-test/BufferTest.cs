@@ -1,7 +1,10 @@
-using System;
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
+using System.Collections.Generic;
 using Xunit;
 using async_enumerable_dotnet;
-using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet_test
 {
@@ -171,6 +174,32 @@ namespace async_enumerable_dotnet_test
             await AsyncEnumerable.Empty<int>()
                 .Buffer(3, 2)
                 .AssertResult();
+        }
+
+        [Fact]
+        public async void Overlap_Custom_Collection()
+        {
+            await AsyncEnumerable.Range(1, 5)
+                .Buffer(2, 1, () => new HashSet<int>())
+                .AssertResult(
+                    new HashSet<int>(new[] { 1, 2 }),
+                    new HashSet<int>(new[] { 2, 3 }),
+                    new HashSet<int>(new[] { 3, 4 }),
+                    new HashSet<int>(new[] { 4, 5 }),
+                    new HashSet<int>(new[] { 5 })
+                );
+        }
+
+        [Fact]
+        public async void Exact_Custom_Collection()
+        {
+            await AsyncEnumerable.Range(1, 5)
+                .Buffer(2, () => new HashSet<int>())
+                .AssertResult(
+                    new HashSet<int>(new[] { 1, 2 }),
+                    new HashSet<int>(new[] { 3, 4 }),
+                    new HashSet<int>(new[] { 5 })
+                );
         }
 
     }

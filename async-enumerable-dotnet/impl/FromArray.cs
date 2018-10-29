@@ -1,36 +1,37 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
 using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet.impl
 {
     internal sealed class FromArray<T> : IAsyncEnumerable<T>
     {
-        readonly T[] values;
+        private readonly T[] _values;
 
         public FromArray(T[] values)
         {
-            this.values = values;
+            _values = values;
         }
 
         public IAsyncEnumerator<T> GetAsyncEnumerator()
         {
-            return new FromArrayEnumerator(values);
+            return new FromArrayEnumerator(_values);
         }
 
-        internal sealed class FromArrayEnumerator : IAsyncEnumerator<T>
+        private sealed class FromArrayEnumerator : IAsyncEnumerator<T>
         {
-            readonly T[] values;
+            private readonly T[] _values;
 
-            int index;
+            private int _index;
 
-            public T Current => values[index];
+            public T Current => _values[_index];
 
             public FromArrayEnumerator(T[] values)
             {
-                this.values = values;
-                this.index = -1;
+                _values = values;
+                _index = -1;
             }
 
             public ValueTask DisposeAsync()
@@ -40,10 +41,10 @@ namespace async_enumerable_dotnet.impl
 
             public ValueTask<bool> MoveNextAsync()
             {
-                var idx = index + 1;
-                if (idx < values.Length)
+                var idx = _index + 1;
+                if (idx < _values.Length)
                 {
-                    index = idx;
+                    _index = idx;
                     return new ValueTask<bool>(true);
                 }
                 return new ValueTask<bool>(false);

@@ -1,3 +1,7 @@
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
 using System;
 using Xunit;
 using async_enumerable_dotnet.impl;
@@ -63,7 +67,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public void Unaggregate_Aggregated_Solo()
+        public void Extract_Aggregated_Solo()
         {
             var ex = new InvalidOperationException();
 
@@ -71,7 +75,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public void Unaggregate_Aggregated_Not_Solo()
+        public void Extract_Aggregated_Not_Solo()
         {
             var ex = new InvalidOperationException();
             var ex2 = new IndexOutOfRangeException();
@@ -82,7 +86,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public void Unaggregate_Not_Aggregated()
+        public void Extract_Not_Aggregated()
         {
             var ex = new InvalidOperationException();
 

@@ -1,4 +1,8 @@
-using System;
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
+using System.Linq;
 using Xunit;
 using async_enumerable_dotnet;
 
@@ -11,17 +15,9 @@ namespace async_enumerable_dotnet_test
         {
             var source = AsyncEnumerable.FromArray(1, 2, 3, 4);
 
-            var result = AsyncEnumerable.Zip(v =>
-            {
-                var sum = 0;
-                foreach (var a in v)
-                {
-                    sum += a;
-                }
-                return sum;
-            }, source, source, source);
+            var result = AsyncEnumerable.Zip(v => v.Sum(), source, source, source);
 
-            await TestHelper.AssertResult(result, 3, 6, 9, 12);
+            await result.AssertResult(3, 6, 9, 12);
         }
 
         [Fact]
@@ -31,17 +27,9 @@ namespace async_enumerable_dotnet_test
             var source2 = AsyncEnumerable.FromArray(1, 2, 3);
             var source3 = AsyncEnumerable.FromArray(1, 2, 3, 4, 5);
 
-            var result = AsyncEnumerable.Zip(v =>
-            {
-                var sum = 0;
-                foreach (var a in v)
-                {
-                    sum += a;
-                }
-                return sum;
-            }, source1, source2, source3);
+            var result = AsyncEnumerable.Zip(v => v.Sum(), source1, source2, source3);
 
-            await TestHelper.AssertResult(result, 3, 6, 9);
+            await result.AssertResult(3, 6, 9);
         }
     }
 }

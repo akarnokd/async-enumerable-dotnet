@@ -1,55 +1,57 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
+using System;
 using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet.impl
 {
     internal sealed class Retry<T> : IAsyncEnumerable<T>
     {
-        readonly IAsyncEnumerable<T> source;
+        private readonly IAsyncEnumerable<T> _source;
 
-        readonly long n;
+        private readonly long _n;
 
-        readonly Func<long, Exception, bool> condition;
+        private readonly Func<long, Exception, bool> _condition;
 
         public Retry(IAsyncEnumerable<T> source, long n, Func<long, Exception, bool> condition)
         {
-            this.source = source;
-            this.n = n;
-            this.condition = condition;
+            _source = source;
+            _n = n;
+            _condition = condition;
         }
 
         public IAsyncEnumerator<T> GetAsyncEnumerator()
         {
-            return new RetryEnumerator(source, source.GetAsyncEnumerator(), n, condition);
+            return new RetryEnumerator(_source, _source.GetAsyncEnumerator(), _n, _condition);
         }
 
-        internal sealed class RetryEnumerator : IAsyncEnumerator<T>
+        private sealed class RetryEnumerator : IAsyncEnumerator<T>
         {
-            readonly IAsyncEnumerable<T> source;
+            private readonly IAsyncEnumerable<T> _source;
 
-            IAsyncEnumerator<T> current;
+            private IAsyncEnumerator<T> _current;
 
-            long remaining;
+            private long _remaining;
 
-            Func<long, Exception, bool> condition;
+            private readonly Func<long, Exception, bool> _condition;
 
-            public T Current => current.Current;
+            public T Current => _current.Current;
 
-            long index;
+            private long _index;
 
             public RetryEnumerator(IAsyncEnumerable<T> source, IAsyncEnumerator<T> current, long remaining, Func<long, Exception, bool> condition)
             {
-                this.source = source;
-                this.current = current;
-                this.remaining = remaining;
-                this.condition = condition;
+                _source = source;
+                _current = current;
+                _remaining = remaining;
+                _condition = condition;
             }
 
             public ValueTask DisposeAsync()
             {
-                return current.DisposeAsync();
+                return _current.DisposeAsync();
             }
 
             public async ValueTask<bool> MoveNextAsync()
@@ -58,27 +60,27 @@ namespace async_enumerable_dotnet.impl
                 {
                     try
                     {
-                        return await current.MoveNextAsync();
+                        return await _current.MoveNextAsync();
                     }
                     catch (Exception ex)
                     {
-                        var n = remaining - 1;
+                        var n = _remaining - 1;
                         if (n <= 0)
                         {
-                            throw ex;
+                            throw;
                         }
 
-                        if (condition(index++, ex))
+                        if (_condition(_index++, ex))
                         {
-                            remaining = n;
+                            _remaining = n;
 
-                            await current.DisposeAsync();
+                            await _current.DisposeAsync();
 
-                            current = source.GetAsyncEnumerator();
+                            _current = _source.GetAsyncEnumerator();
                         }
                         else
                         {
-                            throw ex;
+                            throw;
                         }
                     }
                 }

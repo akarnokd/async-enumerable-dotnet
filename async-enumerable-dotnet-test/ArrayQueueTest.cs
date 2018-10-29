@@ -1,8 +1,9 @@
-using System;
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
 using Xunit;
-using async_enumerable_dotnet;
 using async_enumerable_dotnet.impl;
-using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet_test
 {
@@ -23,7 +24,7 @@ namespace async_enumerable_dotnet_test
                         Assert.Equal(i, v);
                     }
 
-                    Assert.False(q.Dequeue(out var _));
+                    Assert.False(q.Dequeue(out _));
                 }
             }
         }
@@ -48,7 +49,7 @@ namespace async_enumerable_dotnet_test
                         Assert.Equal(i, v);
                     }
 
-                    Assert.False(q.Dequeue(out var _));
+                    Assert.False(q.Dequeue(out _));
                 }
             }
         }

@@ -1,75 +1,75 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
+using System;
 using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet.impl
 {
-    internal sealed class Collect<T, C> : IAsyncEnumerable<C>
+    internal sealed class Collect<TSource, TCollection> : IAsyncEnumerable<TCollection>
     {
-        readonly IAsyncEnumerable<T> source;
+        private readonly IAsyncEnumerable<TSource> _source;
 
-        readonly Func<C> collectionSupplier;
+        private readonly Func<TCollection> _collectionSupplier;
 
-        readonly Action<C, T> collector;
+        private readonly Action<TCollection, TSource> _collector;
 
-        public Collect(IAsyncEnumerable<T> source, Func<C> collectionSupplier, Action<C, T> collector)
+        public Collect(IAsyncEnumerable<TSource> source, Func<TCollection> collectionSupplier, Action<TCollection, TSource> collector)
         {
-            this.source = source;
-            this.collectionSupplier = collectionSupplier;
-            this.collector = collector;
+            _source = source;
+            _collectionSupplier = collectionSupplier;
+            _collector = collector;
         }
 
-        public IAsyncEnumerator<C> GetAsyncEnumerator()
+        public IAsyncEnumerator<TCollection> GetAsyncEnumerator()
         {
-            var initial = default(C);
+            TCollection initial;
             try
             {
-                initial = collectionSupplier();
+                initial = _collectionSupplier();
             }
             catch (Exception ex)
             {
-                return new Error<C>.ErrorEnumerator(ex);
+                return new Error<TCollection>.ErrorEnumerator(ex);
             }
-            return new CollectEnumerator(source.GetAsyncEnumerator(), initial, collector);
+            return new CollectEnumerator(_source.GetAsyncEnumerator(), initial, _collector);
         }
 
-        internal sealed class CollectEnumerator : IAsyncEnumerator<C>
+        private sealed class CollectEnumerator : IAsyncEnumerator<TCollection>
         {
-            readonly IAsyncEnumerator<T> source;
+            private readonly IAsyncEnumerator<TSource> _source;
 
-            readonly Action<C, T> collector;
+            private readonly Action<TCollection, TSource> _collector;
 
-            C collection;
+            private bool _once;
 
-            bool once;
+            public TCollection Current { get; private set; }
 
-            public C Current => collection;
-
-            public CollectEnumerator(IAsyncEnumerator<T> source, C collection, Action<C, T> collector)
+            public CollectEnumerator(IAsyncEnumerator<TSource> source, TCollection collection, Action<TCollection, TSource> collector)
             {
-                this.source = source;
-                this.collection = collection;
-                this.collector = collector;
+                _source = source;
+                Current = collection;
+                _collector = collector;
             }
 
             public ValueTask DisposeAsync()
             {
-                return source.DisposeAsync();
+                return _source.DisposeAsync();
             }
 
             public async ValueTask<bool> MoveNextAsync()
             {
-                if (once)
+                if (_once)
                 {
-                    collection = default;
+                    Current = default;
                     return false;
                 }
-                once = true;
+                _once = true;
 
-                while (await source.MoveNextAsync())
+                while (await _source.MoveNextAsync())
                 {
-                    collector(collection, source.Current);
+                    _collector(Current, _source.Current);
                 }
 
                 return true;

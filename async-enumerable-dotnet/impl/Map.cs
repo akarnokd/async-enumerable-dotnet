@@ -1,54 +1,54 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
+using System;
 using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet.impl
 {
-    internal sealed class Map<T, R> : IAsyncEnumerable<R>
+    internal sealed class Map<TSource, TResult> : IAsyncEnumerable<TResult>
     {
-        readonly IAsyncEnumerable<T> source;
+        private readonly IAsyncEnumerable<TSource> _source;
 
-        readonly Func<T, R> mapper;
+        private readonly Func<TSource, TResult> _mapper;
 
-        public Map(IAsyncEnumerable<T> source, Func<T, R> mapper)
+        public Map(IAsyncEnumerable<TSource> source, Func<TSource, TResult> mapper)
         {
-            this.source = source;
-            this.mapper = mapper;
+            _source = source;
+            _mapper = mapper;
         }
 
-        public IAsyncEnumerator<R> GetAsyncEnumerator()
+        public IAsyncEnumerator<TResult> GetAsyncEnumerator()
         {
-            return new MapEnumerator(source.GetAsyncEnumerator(), mapper);
+            return new MapEnumerator(_source.GetAsyncEnumerator(), _mapper);
         }
 
-        internal sealed class MapEnumerator : IAsyncEnumerator<R>
+        private sealed class MapEnumerator : IAsyncEnumerator<TResult>
         {
-            readonly IAsyncEnumerator<T> source;
+            private readonly IAsyncEnumerator<TSource> _source;
 
-            readonly Func<T, R> mapper;
+            private readonly Func<TSource, TResult> _mapper;
 
-            public MapEnumerator(IAsyncEnumerator<T> source, Func<T, R> mapper)
+            public MapEnumerator(IAsyncEnumerator<TSource> source, Func<TSource, TResult> mapper)
             {
-                this.source = source;
-                this.mapper = mapper;
+                _source = source;
+                _mapper = mapper;
             }
 
-            public R Current => current;
-
-            R current;
+            public TResult Current { get; private set; }
 
             public ValueTask DisposeAsync()
             {
-                current = default;
-                return source.DisposeAsync();
+                Current = default;
+                return _source.DisposeAsync();
             }
 
             public async ValueTask<bool> MoveNextAsync()
             {
-                if (await source.MoveNextAsync())
+                if (await _source.MoveNextAsync())
                 {
-                    current = mapper(source.Current);
+                    Current = _mapper(_source.Current);
                     return true;
                 }
                 return false;
@@ -56,50 +56,48 @@ namespace async_enumerable_dotnet.impl
         }
     }
 
-    internal sealed class MapAsync<T, R> : IAsyncEnumerable<R>
+    internal sealed class MapAsync<TSource, TResult> : IAsyncEnumerable<TResult>
     {
-        readonly IAsyncEnumerable<T> source;
+        private readonly IAsyncEnumerable<TSource> _source;
 
-        readonly Func<T, Task<R>> mapper;
+        private readonly Func<TSource, Task<TResult>> _mapper;
 
-        public MapAsync(IAsyncEnumerable<T> source, Func<T, Task<R>> mapper)
+        public MapAsync(IAsyncEnumerable<TSource> source, Func<TSource, Task<TResult>> mapper)
         {
-            this.source = source;
-            this.mapper = mapper;
+            _source = source;
+            _mapper = mapper;
         }
 
-        public IAsyncEnumerator<R> GetAsyncEnumerator()
+        public IAsyncEnumerator<TResult> GetAsyncEnumerator()
         {
-            return new MapAsyncEnumerator(source.GetAsyncEnumerator(), mapper);
+            return new MapAsyncEnumerator(_source.GetAsyncEnumerator(), _mapper);
         }
 
-        internal sealed class MapAsyncEnumerator : IAsyncEnumerator<R>
+        private sealed class MapAsyncEnumerator : IAsyncEnumerator<TResult>
         {
-            readonly IAsyncEnumerator<T> source;
+            private readonly IAsyncEnumerator<TSource> _source;
 
-            readonly Func<T, Task<R>> mapper;
+            private readonly Func<TSource, Task<TResult>> _mapper;
 
-            public MapAsyncEnumerator(IAsyncEnumerator<T> source, Func<T, Task<R>> mapper)
+            public MapAsyncEnumerator(IAsyncEnumerator<TSource> source, Func<TSource, Task<TResult>> mapper)
             {
-                this.source = source;
-                this.mapper = mapper;
+                _source = source;
+                _mapper = mapper;
             }
 
-            public R Current => current;
-
-            R current;
+            public TResult Current { get; private set; }
 
             public ValueTask DisposeAsync()
             {
-                current = default;
-                return source.DisposeAsync();
+                Current = default;
+                return _source.DisposeAsync();
             }
 
             public async ValueTask<bool> MoveNextAsync()
             {
-                if (await source.MoveNextAsync())
+                if (await _source.MoveNextAsync())
                 {
-                    current = await mapper(source.Current);
+                    Current = await _mapper(_source.Current);
                     return true;
                 }
                 return false;

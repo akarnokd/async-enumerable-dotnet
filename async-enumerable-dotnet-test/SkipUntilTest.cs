@@ -1,7 +1,10 @@
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
 using System;
 using Xunit;
 using async_enumerable_dotnet;
-using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet_test
 {
@@ -27,13 +30,14 @@ namespace async_enumerable_dotnet_test
         [Fact]
         public async void Skip_Some()
         {
-            int scale = 200;
+            var scale = 200;
             if (Environment.GetEnvironmentVariable("CI") != null)
             {
                 scale = 2000;
             }
             await AsyncEnumerable.Range(1, 5)
                 .FlatMap(v => AsyncEnumerable.Timer(TimeSpan.FromMilliseconds(v * scale)).Map(w => v))
+                // ReSharper disable once PossibleLossOfFraction
                 .SkipUntil(AsyncEnumerable.Timer(TimeSpan.FromMilliseconds(5 * scale / 2)))
                 .AssertResult(3, 4, 5);
         }

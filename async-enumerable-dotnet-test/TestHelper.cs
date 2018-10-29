@@ -1,4 +1,8 @@
-﻿using async_enumerable_dotnet;
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
+using async_enumerable_dotnet;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -16,6 +20,7 @@ namespace async_enumerable_dotnet_test
             return AssertResult(source.GetAsyncEnumerator(), values);
         }
 
+        // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Global
         public static async ValueTask AssertResult<T>(this IAsyncEnumerator<T> source, params T[] values)
         {
             var idx = 0;
@@ -62,7 +67,7 @@ namespace async_enumerable_dotnet_test
             }
         }
 
-        static string AsString(object obj)
+        private static string AsString(object obj)
         {
             if (obj is IEnumerable en)
             {
@@ -88,6 +93,7 @@ namespace async_enumerable_dotnet_test
             return AssertFailure(source.GetAsyncEnumerator(), exception, values);
         }
 
+        // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Global
         public static async ValueTask AssertFailure<T>(this IAsyncEnumerator<T> source, Type exception, params T[] values)
         {
             var idx = 0;

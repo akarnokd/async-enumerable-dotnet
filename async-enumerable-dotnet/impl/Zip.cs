@@ -1,4 +1,8 @@
-﻿using System;
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
+using System;
 using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet.impl
@@ -25,7 +29,7 @@ namespace async_enumerable_dotnet.impl
             return new ZipArrayEnumerator(enumerators, _zipper);
         }
 
-        sealed class ZipArrayEnumerator : IAsyncEnumerator<TResult>
+        private sealed class ZipArrayEnumerator : IAsyncEnumerator<TResult>
         {
             private readonly IAsyncEnumerator<TSource>[] _enumerators;
 

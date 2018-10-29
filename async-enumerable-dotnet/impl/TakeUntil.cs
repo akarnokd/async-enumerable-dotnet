@@ -1,92 +1,94 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet.impl
 {
-    internal sealed class TakeUntil<T, U> : IAsyncEnumerable<T>
+    internal sealed class TakeUntil<TSource, TOther> : IAsyncEnumerable<TSource>
     {
-        readonly IAsyncEnumerable<T> source;
+        private readonly IAsyncEnumerable<TSource> _source;
 
-        readonly IAsyncEnumerable<U> other;
+        private readonly IAsyncEnumerable<TOther> _other;
 
-        public TakeUntil(IAsyncEnumerable<T> source, IAsyncEnumerable<U> other)
+        public TakeUntil(IAsyncEnumerable<TSource> source, IAsyncEnumerable<TOther> other)
         {
-            this.source = source;
-            this.other = other;
+            _source = source;
+            _other = other;
         }
 
-        public IAsyncEnumerator<T> GetAsyncEnumerator()
+        public IAsyncEnumerator<TSource> GetAsyncEnumerator()
         {
-            var en = new TakeUntilEnumerator(source.GetAsyncEnumerator(), other.GetAsyncEnumerator());
+            var en = new TakeUntilEnumerator(_source.GetAsyncEnumerator(), _other.GetAsyncEnumerator());
             en.MoveNextOther();
             return en;
         }
 
-        internal sealed class TakeUntilEnumerator : IAsyncEnumerator<T>
+        private sealed class TakeUntilEnumerator : IAsyncEnumerator<TSource>
         {
-            readonly IAsyncEnumerator<T> source;
+            private readonly IAsyncEnumerator<TSource> _source;
 
-            readonly IAsyncEnumerator<U> other;
+            private readonly IAsyncEnumerator<TOther> _other;
 
-            public T Current => source.Current;
+            private readonly TaskCompletionSource<bool> _disposeReady;
 
-            TaskCompletionSource<bool> currentTask;
+            public TSource Current => _source.Current;
 
-            Exception otherError;
-            static readonly TaskCompletionSource<bool> UntilTask = new TaskCompletionSource<bool>();
+            private TaskCompletionSource<bool> _currentTask;
 
-            int disposeMain;
+            private Exception _otherError;
 
-            int disposeOther;
+            private int _disposeMain;
 
-            int disposed;
-            TaskCompletionSource<bool> disposeReady;
+            private int _disposeOther;
 
-            Exception disposeException;
+            private int _disposed;
 
-            public TakeUntilEnumerator(IAsyncEnumerator<T> source, IAsyncEnumerator<U> other)
+            private Exception _disposeException;
+
+            public TakeUntilEnumerator(IAsyncEnumerator<TSource> source, IAsyncEnumerator<TOther> other)
             {
-                this.source = source;
-                this.other = other;
-                this.disposeReady = new TaskCompletionSource<bool>();
+                _source = source;
+                _other = other;
+                _disposeReady = new TaskCompletionSource<bool>();
             }
 
             public async ValueTask DisposeAsync()
             {
-                if (Interlocked.Increment(ref disposeMain) == 1)
+                if (Interlocked.Increment(ref _disposeMain) == 1)
                 {
-                    Dispose(source);
+                    Dispose(_source);
                 }
-                if (Interlocked.Increment(ref disposeOther) == 1)
+                if (Interlocked.Increment(ref _disposeOther) == 1)
                 {
-                    Dispose(other);
+                    Dispose(_other);
                 }
 
-                await disposeReady.Task;
+                await _disposeReady.Task;
             }
 
             public ValueTask<bool> MoveNextAsync()
             {
                 for (; ; )
                 {
-                    var task = Volatile.Read(ref currentTask);
-                    if (task == UntilTask)
+                    var task = Volatile.Read(ref _currentTask);
+                    if (task == TakeUntilHelper.UntilTask)
                     {
-                        if (otherError != null)
+                        if (_otherError != null)
                         {
-                            return new ValueTask<bool>(Task.FromException<bool>(otherError));
+                            return new ValueTask<bool>(Task.FromException<bool>(_otherError));
                         }
                         return new ValueTask<bool>(false);
                     }
                     var newTask = new TaskCompletionSource<bool>();
-                    if (Interlocked.CompareExchange(ref currentTask, newTask, task) == task)
+                    if (Interlocked.CompareExchange(ref _currentTask, newTask, task) == task)
                     {
-                        if (Interlocked.Increment(ref disposeMain) == 1)
+                        if (Interlocked.Increment(ref _disposeMain) == 1)
                         {
-                            source.MoveNextAsync().AsTask()
+                            _source.MoveNextAsync().AsTask()
                                 .ContinueWith(t => HandleMain(t, newTask));
                             return new ValueTask<bool>(newTask.Task);
                         }
@@ -94,11 +96,11 @@ namespace async_enumerable_dotnet.impl
                 }
             }
 
-            void HandleMain(Task<bool> t, TaskCompletionSource<bool> newTask)
+            private void HandleMain(Task<bool> t, TaskCompletionSource<bool> newTask)
             {
-                if (Interlocked.Decrement(ref disposeMain) != 0)
+                if (Interlocked.Decrement(ref _disposeMain) != 0)
                 {
-                    Dispose(source);
+                    Dispose(_source);
                 }
                 else if (t.IsFaulted)
                 {
@@ -106,79 +108,83 @@ namespace async_enumerable_dotnet.impl
                 }
                 else
                 {
-                    if (t.Result)
-                    {
-                        newTask.TrySetResult(true);
-                    }
-                    else
-                    {
-                        newTask.TrySetResult(false);
-                    }
+                    newTask.TrySetResult(t.Result);
                 }
             }
 
             internal void MoveNextOther()
             {
-                Interlocked.Increment(ref disposeOther);
-                other.MoveNextAsync().AsTask()
-                    .ContinueWith(t => HandleOther(t));
+                Interlocked.Increment(ref _disposeOther);
+                _other.MoveNextAsync().AsTask()
+                    .ContinueWith(HandleOtherAction, this, TaskContinuationOptions.ExecuteSynchronously);
             }
 
-            void HandleOther(Task<bool> t)
+            private static readonly Action<Task<bool>, object> HandleOtherAction =
+                (task, state) => ((TakeUntilEnumerator) state).HandleOther(task);
+            
+            private void HandleOther(Task t)
             {
-                if (Interlocked.Decrement(ref disposeOther) != 0)
+                if (Interlocked.Decrement(ref _disposeOther) != 0)
                 {
-                    Dispose(other);
+                    Dispose(_other);
                 }
                 else if (t.IsFaulted) {
-                    otherError = t.Exception;
-                    var oldTask = Interlocked.Exchange(ref currentTask, UntilTask);
-                    if (oldTask != UntilTask)
+                    _otherError = t.Exception;
+                    var oldTask = Interlocked.Exchange(ref _currentTask, TakeUntilHelper.UntilTask);
+                    if (oldTask != TakeUntilHelper.UntilTask)
                     {
                         oldTask?.TrySetException(t.Exception);
                     }
                 }
                 else
                 {
-                    var oldTask = Interlocked.Exchange(ref currentTask, UntilTask);
-                    if (oldTask != UntilTask)
+                    var oldTask = Interlocked.Exchange(ref _currentTask, TakeUntilHelper.UntilTask);
+                    if (oldTask != TakeUntilHelper.UntilTask)
                     {
-                        if (Interlocked.Increment(ref disposeMain) == 1)
+                        if (Interlocked.Increment(ref _disposeMain) == 1)
                         {
-                            Dispose(source);
+                            Dispose(_source);
                         }
-                        if (Interlocked.Increment(ref disposeOther) == 1)
+                        if (Interlocked.Increment(ref _disposeOther) == 1)
                         {
-                            Dispose(other);
+                            Dispose(_other);
                         }
                         oldTask?.TrySetResult(false);
                     }
                 }
             }
 
-            void Dispose(IAsyncDisposable en)
+            private void Dispose(IAsyncDisposable en)
             {
                 en.DisposeAsync().AsTask()
                     .ContinueWith(t =>
                     {
                         if (t.IsFaulted)
                         {
-                            ExceptionHelper.AddException(ref disposeException, t.Exception);
+                            ExceptionHelper.AddException(ref _disposeException, t.Exception);
                         }
-                        if (Interlocked.Increment(ref disposed) == 2)
+                        if (Interlocked.Increment(ref _disposed) == 2)
                         {
-                            var ex = disposeException;
+                            var ex = _disposeException;
                             if (ex != null)
                             {
-                                disposeReady.TrySetException(ex);
+                                _disposeReady.TrySetException(ex);
                             }
                             else
                             {
-                                disposeReady.TrySetResult(false);
+                                _disposeReady.TrySetResult(false);
                             }
                         }
                     });
             }
         }
+    }
+
+    /// <summary>
+    /// Hosts the singleton UntilTask indicator
+    /// </summary>
+    internal static class TakeUntilHelper
+    {
+        internal static readonly TaskCompletionSource<bool> UntilTask = new TaskCompletionSource<bool>();
     }
 }

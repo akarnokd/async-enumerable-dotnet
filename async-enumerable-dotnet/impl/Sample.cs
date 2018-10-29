@@ -1,6 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -8,166 +10,172 @@ namespace async_enumerable_dotnet.impl
 {
     internal sealed class Sample<T> : IAsyncEnumerable<T>
     {
-        readonly IAsyncEnumerable<T> source;
+        private readonly IAsyncEnumerable<T> _source;
 
-        readonly TimeSpan period;
+        private readonly TimeSpan _period;
 
-        readonly bool emitLast;
+        private readonly bool _emitLast;
 
         public Sample(IAsyncEnumerable<T> source, TimeSpan period, bool emitLast)
         {
-            this.source = source;
-            this.period = period;
-            this.emitLast = emitLast;
+            _source = source;
+            _period = period;
+            _emitLast = emitLast;
         }
 
         public IAsyncEnumerator<T> GetAsyncEnumerator()
         {
-            var en = new SampleEnumerator(source.GetAsyncEnumerator(), period, emitLast);
+            var en = new SampleEnumerator(_source.GetAsyncEnumerator(), _period, _emitLast);
             en.StartTimer();
             en.MoveNext();
             return en;
         }
 
-        internal sealed class SampleEnumerator : IAsyncEnumerator<T>
+        private sealed class SampleEnumerator : IAsyncEnumerator<T>
         {
-            readonly IAsyncEnumerator<T> source;
+            private readonly IAsyncEnumerator<T> _source;
 
-            readonly TimeSpan period;
+            private readonly TimeSpan _period;
 
-            readonly CancellationTokenSource cts;
+            private readonly CancellationTokenSource _cts;
 
-            readonly bool emitLast;
+            private readonly bool _emitLast;
 
-            int consumerWip;
+            private int _consumerWip;
 
-            TaskCompletionSource<bool> resume;
+            private TaskCompletionSource<bool> _resume;
 
-            object timerLatest;
+            private object _timerLatest;
 
-            object latest;
-            volatile bool done;
-            Exception error;
+            private object _latest;
+            private volatile bool _done;
+            private Exception _error;
 
-            int disposeWip;
+            private int _disposeWip;
 
-            TaskCompletionSource<bool> disposeTask;
+            private TaskCompletionSource<bool> _disposeTask;
 
             public T Current { get; private set; }
 
-            static readonly object EmptyIndicator = new object();
-
             public SampleEnumerator(IAsyncEnumerator<T> source, TimeSpan period, bool emitLast)
             {
-                this.source = source;
-                this.period = period;
-                this.emitLast = emitLast;
-                this.disposeTask = new TaskCompletionSource<bool>();
-                this.cts = new CancellationTokenSource();
-                Volatile.Write(ref latest, EmptyIndicator);
+                _source = source;
+                _period = period;
+                _emitLast = emitLast;
+                _disposeTask = new TaskCompletionSource<bool>();
+                _cts = new CancellationTokenSource();
+                Volatile.Write(ref _latest, SampleHelper.EmptyIndicator);
             }
 
             public ValueTask DisposeAsync()
             {
-                cts.Cancel();
-                if (Interlocked.Increment(ref disposeWip) == 1)
+                _cts.Cancel();
+                if (Interlocked.Increment(ref _disposeWip) == 1)
                 {
-                    Interlocked.Exchange(ref timerLatest, EmptyIndicator);
-                    return source.DisposeAsync();
+                    Interlocked.Exchange(ref _timerLatest, SampleHelper.EmptyIndicator);
+                    return _source.DisposeAsync();
                 }
-                return ResumeHelper.Await(ref disposeTask);
+                return ResumeHelper.Await(ref _disposeTask);
             }
 
             public async ValueTask<bool> MoveNextAsync()
             {
                 for (; ; )
                 {
-                    var d = done;
-                    var v = Interlocked.Exchange(ref latest, EmptyIndicator);
+                    var d = _done;
+                    var v = Interlocked.Exchange(ref _latest, SampleHelper.EmptyIndicator);
 
-                    if (d && v == EmptyIndicator)
+                    if (d && v == SampleHelper.EmptyIndicator)
                     {
-                        if (error != null)
+                        if (_error != null)
                         {
-                            throw error;
+                            throw _error;
                         }
                         return false;
                     }
-                    else if (v != EmptyIndicator)
+
+                    if (v != SampleHelper.EmptyIndicator)
                     {
                         Current = (T)v;
                         return true;
                     }
 
-                    await ResumeHelper.Await(ref resume);
-                    ResumeHelper.Clear(ref resume);
+                    await ResumeHelper.Await(ref _resume);
+                    ResumeHelper.Clear(ref _resume);
                 }
             }
 
             // FIXME timer drift
             internal void StartTimer()
             {
-                Task.Delay(period, cts.Token)
-                    .ContinueWith(t => HandleTimer(t), cts.Token);
+                Task.Delay(_period, _cts.Token)
+                    .ContinueWith(HandleTimerAction, this, _cts.Token);
             }
 
-            void HandleTimer(Task timer)
+            private static readonly Action<Task, object> HandleTimerAction =
+                (t, state) => ((SampleEnumerator)state).HandleTimer(); 
+            
+            private void HandleTimer()
             {
                 // take the saved timerLatest and make it available to MoveNextAsync
                 // via latest
-                Interlocked.Exchange(ref latest, Interlocked.Exchange(ref timerLatest, EmptyIndicator));
+                Interlocked.Exchange(ref _latest, Interlocked.Exchange(ref _timerLatest, SampleHelper.EmptyIndicator));
 
                 Signal();
                 StartTimer();
             }
 
-            void Signal()
+            private void Signal()
             {
-                ResumeHelper.Resume(ref resume);
+                ResumeHelper.Resume(ref _resume);
             }
 
             internal void MoveNext()
             {
-                if (Interlocked.Increment(ref consumerWip) == 1)
+                if (Interlocked.Increment(ref _consumerWip) == 1)
                 {
                     do
                     {
-                        if (Interlocked.Increment(ref disposeWip) == 1)
+                        if (Interlocked.Increment(ref _disposeWip) == 1)
                         {
-                            source.MoveNextAsync()
-                                .AsTask().ContinueWith(t => Handler(t));
+                            _source.MoveNextAsync()
+                                .AsTask()
+                                .ContinueWith(HandleAction, this);
                         }
                         else
                         {
                             break;
                         }
                     }
-                    while (Interlocked.Decrement(ref consumerWip) != 0);
+                    while (Interlocked.Decrement(ref _consumerWip) != 0);
                 }
             }
+            
+            private static readonly Action<Task<bool>, object> HandleAction =
+                (t, state) => ((SampleEnumerator)state).Handler(t);
 
-            bool TryDispose()
+            private bool TryDispose()
             {
-                if (Interlocked.Decrement(ref disposeWip) != 0)
+                if (Interlocked.Decrement(ref _disposeWip) != 0)
                 {
-                    Interlocked.Exchange(ref timerLatest, EmptyIndicator);
-                    ResumeHelper.Complete(ref disposeTask, source.DisposeAsync());
+                    Interlocked.Exchange(ref _timerLatest, SampleHelper.EmptyIndicator);
+                    ResumeHelper.Complete(ref _disposeTask, _source.DisposeAsync());
                     return false;
                 }
                 return true;
             }
 
-            void Handler(Task<bool> t)
+            private void Handler(Task<bool> t)
             {
                 if (t.IsFaulted)
                 {
-                    cts.Cancel();
-                    if (emitLast)
+                    _cts.Cancel();
+                    if (_emitLast)
                     {
-                        Interlocked.Exchange(ref latest, Interlocked.Exchange(ref timerLatest, EmptyIndicator));
+                        Interlocked.Exchange(ref _latest, Interlocked.Exchange(ref _timerLatest, SampleHelper.EmptyIndicator));
                     }
-                    error = ExceptionHelper.Extract(t.Exception);
-                    done = true;
+                    _error = ExceptionHelper.Extract(t.Exception);
+                    _done = true;
                     if (TryDispose())
                     {
                         Signal();
@@ -175,7 +183,7 @@ namespace async_enumerable_dotnet.impl
                 }
                 else if (t.Result)
                 {
-                    Interlocked.Exchange(ref timerLatest, source.Current);
+                    Interlocked.Exchange(ref _timerLatest, _source.Current);
                     if (TryDispose())
                     {
                         // the value will be picked up by the timer
@@ -184,12 +192,12 @@ namespace async_enumerable_dotnet.impl
                 }
                 else
                 {
-                    cts.Cancel();
-                    if (emitLast)
+                    _cts.Cancel();
+                    if (_emitLast)
                     {
-                        Interlocked.Exchange(ref latest, Interlocked.Exchange(ref timerLatest, EmptyIndicator));
+                        Interlocked.Exchange(ref _latest, Interlocked.Exchange(ref _timerLatest, SampleHelper.EmptyIndicator));
                     }
-                    done = true;
+                    _done = true;
                     if (TryDispose())
                     {
                         Signal();
@@ -197,5 +205,13 @@ namespace async_enumerable_dotnet.impl
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// Hosts the singleton EmptyIndicator instance.
+    /// </summary>
+    internal static class SampleHelper
+    {
+        internal static readonly object EmptyIndicator = new object();
     }
 }

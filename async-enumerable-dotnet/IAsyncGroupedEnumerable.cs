@@ -1,4 +1,8 @@
-﻿namespace async_enumerable_dotnet
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
+namespace async_enumerable_dotnet
 {
     /// <summary>
     /// An IAsyncEnumerable with a key property to support grouping operations.
@@ -10,6 +14,11 @@
         /// <summary>
         /// Returns the group key.
         /// </summary>
-        TKey Key { get; }
+        // ReSharper disable once UnusedMemberInSuper.Global
+        TKey Key
+        {
+            // ReSharper disable once UnusedMemberInSuper.Global
+            get;
+        }
     }
 }

@@ -1,9 +1,10 @@
-using System;
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
 using Xunit;
 using async_enumerable_dotnet;
-using System.Threading.Tasks;
 using System.Collections.Generic;
-using static async_enumerable_dotnet_test.GroupByTest;
 
 namespace async_enumerable_dotnet_test
 {
@@ -28,9 +29,8 @@ namespace async_enumerable_dotnet_test
         [Fact]
         public void HashSet_Contains()
         {
-            var set = new HashSet<IList<int>>(ListComparer<int>.Default);
+            var set = new HashSet<IList<int>>(ListComparer<int>.Default) {new List<int>(new[] {1, 2, 3})};
 
-            set.Add(new List<int>(new[] { 1, 2, 3 }));
 
             Assert.Contains(new List<int>(new[] { 1, 2, 3 }), set);
 

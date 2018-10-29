@@ -1,7 +1,9 @@
-﻿using System;
+﻿// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
+using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -9,125 +11,122 @@ namespace async_enumerable_dotnet.impl
 {
     internal sealed class Prefetch<T> : IAsyncEnumerable<T>
     {
-        readonly IAsyncEnumerable<T> source;
+        private readonly IAsyncEnumerable<T> _source;
 
-        readonly int prefetch;
+        private readonly int _prefetch;
 
-        readonly int limit;
+        private readonly int _limit;
 
         public Prefetch(IAsyncEnumerable<T> source, int prefetch, int limit)
         {
-            this.source = source;
-            this.prefetch = prefetch;
-            this.limit = limit;
+            _source = source;
+            _prefetch = prefetch;
+            _limit = limit;
         }
 
         public IAsyncEnumerator<T> GetAsyncEnumerator()
         {
-            var en = new PrefetchEnumerator(source.GetAsyncEnumerator(), prefetch, limit);
+            var en = new PrefetchEnumerator(_source.GetAsyncEnumerator(), _prefetch, _limit);
             en.MoveNext();
             return en;
         }
 
-        internal sealed class PrefetchEnumerator : IAsyncEnumerator<T>
+        private sealed class PrefetchEnumerator : IAsyncEnumerator<T>
         {
-            readonly IAsyncEnumerator<T> source;
+            private readonly IAsyncEnumerator<T> _source;
 
-            readonly int prefetch;
-
-            readonly int limit;
+            private readonly int _limit;
 
             public T Current { get; private set; }
 
-            int consumerWip;
+            private int _consumerWip;
 
-            readonly ConcurrentQueue<T> queue;
-            volatile bool done;
-            Exception error;
+            private readonly ConcurrentQueue<T> _queue;
+            private volatile bool _done;
+            private Exception _error;
 
-            int consumed;
+            private int _consumed;
 
-            int outstanding;
+            private int _outstanding;
 
-            TaskCompletionSource<bool> resume;
+            private TaskCompletionSource<bool> _resume;
 
-            int disposeWip;
+            private int _disposeWip;
 
-            TaskCompletionSource<bool> disposeTask;
+            private TaskCompletionSource<bool> _disposeTask;
 
-            readonly Action<Task<bool>> sourceHandler;
+            private readonly Action<Task<bool>> _sourceHandler;
 
             public PrefetchEnumerator(IAsyncEnumerator<T> source, int prefetch, int limit)
             {
-                this.source = source;
-                this.prefetch = prefetch;
-                this.limit = limit;
-                this.sourceHandler = t => SourceHandler(t);
-                this.queue = new ConcurrentQueue<T>();
-                Volatile.Write(ref outstanding, prefetch);
+                _source = source;
+                _limit = limit;
+                _sourceHandler = SourceHandler;
+                _queue = new ConcurrentQueue<T>();
+                Volatile.Write(ref _outstanding, prefetch);
             }
 
             public ValueTask DisposeAsync()
             {
-                if (Interlocked.Increment(ref disposeWip) == 1)
+                if (Interlocked.Increment(ref _disposeWip) == 1)
                 {
-                    return source.DisposeAsync();
+                    return _source.DisposeAsync();
                 }
-                return ResumeHelper.Await(ref disposeTask);
+                return ResumeHelper.Await(ref _disposeTask);
             }
 
             internal void MoveNext()
             {
-                if (Interlocked.Increment(ref consumerWip) == 1)
+                if (Interlocked.Increment(ref _consumerWip) == 1)
                 {
                     do
                     {
-                        if (Interlocked.Increment(ref disposeWip) == 1)
+                        if (Interlocked.Increment(ref _disposeWip) == 1)
                         {
-                            source.MoveNextAsync()
-                                .AsTask().ContinueWith(sourceHandler);
+                            _source.MoveNextAsync()
+                                .AsTask().ContinueWith(_sourceHandler);
                         }
                         else
                         {
                             break;
                         }
                     }
-                    while (Interlocked.Decrement(ref consumerWip) != 0);
+                    while (Interlocked.Decrement(ref _consumerWip) != 0);
                 }
             }
 
-            void Signal()
+            private void Signal()
             {
-                ResumeHelper.Resume(ref resume);
+                ResumeHelper.Resume(ref _resume);
             }
 
-            void SourceHandler(Task<bool> t)
+            private void SourceHandler(Task<bool> t)
             {
                 var next = false;
                 if (t.IsFaulted)
                 {
-                    error = ExceptionHelper.Extract(t.Exception);
-                    done = true;
+                    _error = ExceptionHelper.Extract(t.Exception);
+                    _done = true;
                 }
                 else if (t.Result)
                 {
-                    queue.Enqueue(source.Current);
+                    _queue.Enqueue(_source.Current);
                     next = true;
                 }
                 else
                 {
-                    done = true;
+                    _done = true;
                 }
                 // release the MoveNext, just in case
-                if (Interlocked.Decrement(ref disposeWip) != 0)
+                if (Interlocked.Decrement(ref _disposeWip) != 0)
                 {
-                    ResumeHelper.Complete(ref disposeTask, source.DisposeAsync());
+                    ResumeHelper.Complete(ref _disposeTask, _source.DisposeAsync());
                 }
                 else
                 {
                     Signal();
 
-                    if (next && Interlocked.Decrement(ref outstanding) != 0)
+                    if (next && Interlocked.Decrement(ref _outstanding) != 0)
                     {
                         MoveNext();
                     }
@@ -138,40 +137,41 @@ namespace async_enumerable_dotnet.impl
             {
                 for (; ; )
                 {
-                    var d = done;
-                    var success = queue.TryDequeue(out var v);
+                    var d = _done;
+                    var success = _queue.TryDequeue(out var v);
 
                     if (d && !success)
                     {
-                        if (error != null)
+                        if (_error != null)
                         {
-                            throw error;
+                            throw _error;
                         }
                         return false;
                     }
-                    else if (success)
+
+                    if (success)
                     {
                         Current = v;
 
-                        var c = consumed + 1;
-                        if (c == limit)
+                        var c = _consumed + 1;
+                        if (c == _limit)
                         {
-                            consumed = 0;
-                            if (Interlocked.Add(ref outstanding, c) == c)
+                            _consumed = 0;
+                            if (Interlocked.Add(ref _outstanding, c) == c)
                             {
                                 MoveNext();
                             }
                         }
                         else
                         {
-                            consumed = c;
+                            _consumed = c;
                         }
 
                         return true;
                     }
 
-                    await ResumeHelper.Await(ref resume);
-                    ResumeHelper.Clear(ref resume);
+                    await ResumeHelper.Await(ref _resume);
+                    ResumeHelper.Clear(ref _resume);
                 }
             }
         }

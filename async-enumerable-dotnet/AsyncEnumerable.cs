@@ -1,4 +1,8 @@
-﻿using System;
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
+using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -16,13 +20,14 @@ namespace async_enumerable_dotnet
         /// <summary>
         /// Checks if the argument is null and throws.
         /// </summary>
-        /// <typeparam name="T">The class type.</typeparam>
+        /// <typeparam name="TValue">The class type.</typeparam>
         /// <param name="value">The value to check.</param>
         /// <param name="argumentName">The argument name for the ArgumentNullException</param>
         /// <exception cref="ArgumentNullException">If <paramref name="value"/> is null.</exception>
         /// <returns>The value.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void RequireNonNull<T>(T value, string argumentName) where T : class
+        // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Global
+        internal static void RequireNonNull<TValue>(TValue value, string argumentName) where TValue : class
         {
             if (value == null)
             {
@@ -67,43 +72,43 @@ namespace async_enumerable_dotnet
         /// <summary>
         /// Combine a row of the next elements from each async sequence via a zipper function.
         /// </summary>
-        /// <typeparam name="T">The common element type of the sources.</typeparam>
-        /// <typeparam name="R">The resulting element type.</typeparam>
+        /// <typeparam name="TSource">The common element type of the sources.</typeparam>
+        /// <typeparam name="TResult">The resulting element type.</typeparam>
         /// <param name="zipper">The function that receives the next items from the sources in
         /// an array and should return the value to be passed forward.</param>
         /// <param name="sources">The params array of async sequences.</param>
         /// <returns>The new IAsyncEnumerable instance.</returns>
-        public static IAsyncEnumerable<R> Zip<T, R>(Func<T[], R> zipper, params IAsyncEnumerable<T>[] sources)
+        public static IAsyncEnumerable<TResult> Zip<TSource, TResult>(Func<TSource[], TResult> zipper, params IAsyncEnumerable<TSource>[] sources)
         {
             RequireNonNull(sources, nameof(sources));
             RequireNonNull(zipper, nameof(zipper));
-            return new ZipArray<T, R>(sources, zipper);
+            return new ZipArray<TSource, TResult>(sources, zipper);
         }
 
         /// <summary>
         /// Wraps an array of items into an async sequence that emits its elements.
         /// </summary>
-        /// <typeparam name="T">The element type.</typeparam>
+        /// <typeparam name="TValue">The element type.</typeparam>
         /// <param name="values">The params array of values to emit.</param>
         /// <returns>The new IAsyncEnumerable instance.</returns>
-        public static IAsyncEnumerable<T> FromArray<T>(params T[] values)
+        public static IAsyncEnumerable<TValue> FromArray<TValue>(params TValue[] values)
         {
             RequireNonNull(values, nameof(values));
-            return new FromArray<T>(values);
+            return new FromArray<TValue>(values);
         }
 
         /// <summary>
         /// Signals a <see cref="TimeoutException"/> when more than the specified amount of
         /// time passes between items.
         /// </summary>
-        /// <typeparam name="T">The element type.</typeparam>
+        /// <typeparam name="TSource">The element type.</typeparam>
         /// <param name="source">The source sequence to relay items of.</param>
         /// <param name="timeout">The timeout between items.</param>
         /// <returns>The new IAsyncEnumerable instance.</returns>
-        public static IAsyncEnumerable<T> Timeout<T>(this IAsyncEnumerable<T> source, TimeSpan timeout)
+        public static IAsyncEnumerable<TSource> Timeout<TSource>(this IAsyncEnumerable<TSource> source, TimeSpan timeout)
         {
             RequireNonNull(source, nameof(source));
-            return new Timeout<T>(source, timeout);
+            return new Timeout<TSource>(source, timeout);
         }
 
         /// <summary>
@@ -137,74 +142,74 @@ namespace async_enumerable_dotnet
         /// Calls the specified synchronous handler when the async sequence is disposed via
         /// <see cref="IAsyncDisposable.DisposeAsync"/>.
         /// </summary>
-        /// <typeparam name="T">The element type.</typeparam>
+        /// <typeparam name="TSource">The element type.</typeparam>
         /// <param name="source">The source sequence to relay items of.</param>
         /// <param name="handler">The handler called when the sequence is disposed.</param>
         /// <returns>The new IAsyncEnumerable instance.</returns>
-        public static IAsyncEnumerable<T> DoOnDispose<T>(this IAsyncEnumerable<T> source, Action handler)
+        public static IAsyncEnumerable<TSource> DoOnDispose<TSource>(this IAsyncEnumerable<TSource> source, Action handler)
         {
             RequireNonNull(source, nameof(source));
             RequireNonNull(handler, nameof(handler));
-            return new DoOnDispose<T>(source, handler);
+            return new DoOnDispose<TSource>(source, handler);
         }
 
         /// <summary>
         /// Calls the specified asynchronous handler when the async sequence is disposed via
         /// <see cref="IAsyncDisposable.DisposeAsync"/>.
         /// </summary>
-        /// <typeparam name="T">The element type.</typeparam>
+        /// <typeparam name="TSource">The element type.</typeparam>
         /// <param name="source">The source sequence to relay items of.</param>
         /// <param name="handler">The async handler called when the sequence is disposed.</param>
         /// <returns>The new IAsyncEnumerable instance.</returns>
-        public static IAsyncEnumerable<T> DoOnDispose<T>(this IAsyncEnumerable<T> source, Func<ValueTask> handler)
+        public static IAsyncEnumerable<TSource> DoOnDispose<TSource>(this IAsyncEnumerable<TSource> source, Func<ValueTask> handler)
         {
             RequireNonNull(source, nameof(source));
             RequireNonNull(handler, nameof(handler));
-            return new DoOnDisposeAsync<T>(source, handler);
+            return new DoOnDisposeAsync<TSource>(source, handler);
         }
 
         /// <summary>
         /// Signals the given Exception immediately.
         /// </summary>
-        /// <typeparam name="T">The intended element type of the sequence.</typeparam>
+        /// <typeparam name="TResult">The intended element type of the sequence.</typeparam>
         /// <param name="exception">The exception to signal immediately.</param>
         /// <returns>The new IAsyncEnumerable instance.</returns>
-        public static IAsyncEnumerable<T> Error<T>(Exception exception)
+        public static IAsyncEnumerable<TResult> Error<TResult>(Exception exception)
         {
             RequireNonNull(exception, nameof(exception));
-            return new Error<T>(exception);
+            return new Error<TResult>(exception);
         }
 
         /// <summary>
         /// Creates a resource and an actual async sequence with the help of this resource
         /// to be relayed and cleaned up afterwards.
         /// </summary>
-        /// <typeparam name="T">The element type of the async sequence.</typeparam>
-        /// <typeparam name="R">The resource type.</typeparam>
+        /// <typeparam name="TSource">The element type of the async sequence.</typeparam>
+        /// <typeparam name="TResource">The resource type.</typeparam>
         /// <param name="resourceProvider">The function that returns the resource to be used.</param>
         /// <param name="sourceProvider">The function that produces the actual async sequence for
         /// the generated resource.</param>
         /// <param name="resourceCleanup">The action to cleanup the resource after the generated
         /// async sequence terminated.</param>
         /// <returns>The new IAsyncEnumerable instance.</returns>
-        public static IAsyncEnumerable<T> Using<T, R>(Func<R> resourceProvider, Func<R, IAsyncEnumerable<T>> sourceProvider, Action<R> resourceCleanup)
+        public static IAsyncEnumerable<TSource> Using<TSource, TResource>(Func<TResource> resourceProvider, Func<TResource, IAsyncEnumerable<TSource>> sourceProvider, Action<TResource> resourceCleanup)
         {
             RequireNonNull(resourceProvider, nameof(resourceProvider));
             RequireNonNull(sourceProvider, nameof(sourceProvider));
             RequireNonNull(resourceCleanup, nameof(resourceCleanup));
-            return new Using<T, R>(resourceProvider, sourceProvider, resourceCleanup);
+            return new Using<TSource, TResource>(resourceProvider, sourceProvider, resourceCleanup);
         }
 
         /// <summary>
         /// Create a task and emit its result/error as an async sequence.
         /// </summary>
-        /// <typeparam name="T">The element type.</typeparam>
+        /// <typeparam name="TResult">The result type.</typeparam>
         /// <param name="func">The function that returns a task that will create an item.</param>
         /// <returns>The new IAsyncEnumerable instance.</returns>
-        public static IAsyncEnumerable<T> FromTask<T>(Func<Task<T>> func)
+        public static IAsyncEnumerable<TResult> FromTask<TResult>(Func<Task<TResult>> func)
         {
             RequireNonNull(func, nameof(func));
-            return new FromTaskFunc<T>(func);
+            return new FromTaskFunc<TResult>(func);
         }
 
         /// <summary>
@@ -275,53 +280,53 @@ namespace async_enumerable_dotnet
         /// Maps the items of the source async sequence into async sequences and then
         /// merges the elements of those inner sequences into a one sequence.
         /// </summary>
-        /// <typeparam name="T">The element type of the source async sequence.</typeparam>
-        /// <typeparam name="R">The element type of the inner async sequences.</typeparam>
+        /// <typeparam name="TSource">The element type of the source async sequence.</typeparam>
+        /// <typeparam name="TResult">The element type of the inner async sequences.</typeparam>
         /// <param name="source">The source that emits items to be mapped.</param>
         /// <param name="mapper">The function that takes an source item and should return
         /// an async sequence to be merged.</param>
         /// <param name="maxConcurrency">The maximum number of inner sequences to run at once.</param>
         /// <param name="prefetch">The number of items to prefetch from each inner async sequence.</param>
         /// <returns>The new IAsyncEnumerable instance.</returns>
-        public static IAsyncEnumerable<R> FlatMap<T, R>(this IAsyncEnumerable<T> source, Func<T, IAsyncEnumerable<R>> mapper, int maxConcurrency = int.MaxValue, int prefetch = 32)
+        public static IAsyncEnumerable<TResult> FlatMap<TSource, TResult>(this IAsyncEnumerable<TSource> source, Func<TSource, IAsyncEnumerable<TResult>> mapper, int maxConcurrency = int.MaxValue, int prefetch = 32)
         {
             RequireNonNull(source, nameof(source));
             RequireNonNull(mapper, nameof(mapper));
             RequirePositive(maxConcurrency, nameof(maxConcurrency));
             RequirePositive(prefetch, nameof(prefetch));
-            return new FlatMap<T, R>(source, mapper, maxConcurrency, prefetch);
+            return new FlatMap<TSource, TResult>(source, mapper, maxConcurrency, prefetch);
         }
 
         /// <summary>
         /// Transforms each source item into another item via a function.
         /// </summary>
-        /// <typeparam name="T">The element type of the source.</typeparam>
-        /// <typeparam name="R">The result type.</typeparam>
+        /// <typeparam name="TSource">The element type of the source.</typeparam>
+        /// <typeparam name="TResult">The result type.</typeparam>
         /// <param name="source">The source async sequence to transform.</param>
         /// <param name="mapper">The function that takes a source item and should return the result item
         /// to be emitted.</param>
         /// <returns>The new IAsyncEnumerable instance.</returns>
-        public static IAsyncEnumerable<R> Map<T, R>(this IAsyncEnumerable<T> source, Func<T, R> mapper)
+        public static IAsyncEnumerable<TResult> Map<TSource, TResult>(this IAsyncEnumerable<TSource> source, Func<TSource, TResult> mapper)
         {
             RequireNonNull(source, nameof(source));
             RequireNonNull(mapper, nameof(mapper));
-            return new Map<T, R>(source, mapper);
+            return new Map<TSource, TResult>(source, mapper);
         }
 
         /// <summary>
         /// Transforms each source item into another item via an asynchronous function.
         /// </summary>
-        /// <typeparam name="T">The element type of the source.</typeparam>
-        /// <typeparam name="R">The result type.</typeparam>
+        /// <typeparam name="TSource">The element type of the source.</typeparam>
+        /// <typeparam name="TResult">The result type.</typeparam>
         /// <param name="source">The source async sequence to transform.</param>
         /// <param name="mapper">The function that takes a source item and should return a task that produces
         /// the result item.</param>
         /// <returns>The new IAsyncEnumerable instance.</returns>
-        public static IAsyncEnumerable<R> Map<T, R>(this IAsyncEnumerable<T> source, Func<T, Task<R>> mapper)
+        public static IAsyncEnumerable<TResult> Map<TSource, TResult>(this IAsyncEnumerable<TSource> source, Func<TSource, Task<TResult>> mapper)
         {
             RequireNonNull(source, nameof(source));
             RequireNonNull(mapper, nameof(mapper));
-            return new MapAsync<T, R>(source, mapper);
+            return new MapAsync<TSource, TResult>(source, mapper);
         }
 
         /// <summary>
@@ -400,7 +405,9 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<T> FromEnumerable<T>(IEnumerable<T> source)
         {
+            // ReSharper disable once PossibleMultipleEnumeration
             RequireNonNull(source, nameof(source));
+            // ReSharper disable once PossibleMultipleEnumeration
             return new FromEnumerable<T>(source);
         }
 
@@ -570,18 +577,18 @@ namespace async_enumerable_dotnet
         /// a new accumulator of which the last accumulator value
         /// is the result item.
         /// </summary>
-        /// <typeparam name="T">The element type.</typeparam>
-        /// <typeparam name="R">The accumulator and result type.</typeparam>
+        /// <typeparam name="TSource">The element type.</typeparam>
+        /// <typeparam name="TResult">The accumulator and result type.</typeparam>
         /// <param name="source">The source to reduce into a single value.</param>
         /// <param name="initialSupplier">The function returning the initial accumulator value.</param>
         /// <param name="reducer">The function that takes the previous accumulator value (or the first item), the current item and should produce the new accumulator value.</param>
         /// <returns>The new IAsyncEnumerable instance.</returns>
-        public static IAsyncEnumerable<R> Reduce<T, R>(this IAsyncEnumerable<T> source, Func<R> initialSupplier, Func<R, T, R> reducer)
+        public static IAsyncEnumerable<TResult> Reduce<TSource, TResult>(this IAsyncEnumerable<TSource> source, Func<TResult> initialSupplier, Func<TResult, TSource, TResult> reducer)
         {
             RequireNonNull(source, nameof(source));
             RequireNonNull(initialSupplier, nameof(initialSupplier));
             RequireNonNull(reducer, nameof(reducer));
-            return new ReduceSeed<T, R>(source, initialSupplier, reducer);
+            return new ReduceSeed<TSource, TResult>(source, initialSupplier, reducer);
         }
 
         /// <summary>
@@ -589,48 +596,48 @@ namespace async_enumerable_dotnet
         /// the current item to be combined into it and then
         /// the collection is emitted as the final result.
         /// </summary>
-        /// <typeparam name="T">The element type of the source async sequence.</typeparam>
-        /// <typeparam name="C">The collection and result type.</typeparam>
+        /// <typeparam name="TSource">The element type of the source async sequence.</typeparam>
+        /// <typeparam name="TCollection">The collection and result type.</typeparam>
         /// <param name="source">The source async sequence.</param>
         /// <param name="collectionSupplier">The function that generates the collection.</param>
         /// <param name="collector">The action called with the collection and the current source item.</param>
         /// <returns>The new IAsyncEnumerable instance.</returns>
-        public static IAsyncEnumerable<C> Collect<T, C>(this IAsyncEnumerable<T> source, Func<C> collectionSupplier, Action<C, T> collector)
+        public static IAsyncEnumerable<TCollection> Collect<TSource, TCollection>(this IAsyncEnumerable<TSource> source, Func<TCollection> collectionSupplier, Action<TCollection, TSource> collector)
         {
             RequireNonNull(source, nameof(source));
             RequireNonNull(collectionSupplier, nameof(collectionSupplier));
             RequireNonNull(collector, nameof(collector));
-            return new Collect<T, C>(source, collectionSupplier, collector);
+            return new Collect<TSource, TCollection>(source, collectionSupplier, collector);
         }
 
         /// <summary>
         /// Maps the source items into inner async sequences and relays their items one after the other sequence.
         /// </summary>
-        /// <typeparam name="T">The element type of the source async sequence.</typeparam>
-        /// <typeparam name="R">The element type of the inner sequences and the result items.</typeparam>
+        /// <typeparam name="TSource">The element type of the source async sequence.</typeparam>
+        /// <typeparam name="TResult">The element type of the inner sequences and the result items.</typeparam>
         /// <param name="source">The source async sequence to be mapped.</param>
         /// <param name="mapper">The function receiving the source item and should return an inner async sequence to relay elements of.</param>
         /// <returns>The new IAsyncEnumerable instance.</returns>
-        public static IAsyncEnumerable<R> ConcatMap<T, R>(this IAsyncEnumerable<T> source, Func<T, IAsyncEnumerable<R>> mapper)
+        public static IAsyncEnumerable<TResult> ConcatMap<TSource, TResult>(this IAsyncEnumerable<TSource> source, Func<TSource, IAsyncEnumerable<TResult>> mapper)
         {
             RequireNonNull(source, nameof(source));
             RequireNonNull(mapper, nameof(mapper));
-            return new ConcatMap<T, R>(source, mapper);
+            return new ConcatMap<TSource, TResult>(source, mapper);
         }
 
         /// <summary>
         /// Maps the source items into inner enumerable sequences and relays their items one after the other sequence.
         /// </summary>
-        /// <typeparam name="T">The element type of the source async sequence.</typeparam>
-        /// <typeparam name="R">The element type of the inner sequences and the result items.</typeparam>
+        /// <typeparam name="TSource">The element type of the source async sequence.</typeparam>
+        /// <typeparam name="TResult">The element type of the inner sequences and the result items.</typeparam>
         /// <param name="source">The source async sequence to be mapped.</param>
         /// <param name="mapper">The function receiving the source item and should return an inner enumerable sequence to relay elements of.</param>
         /// <returns>The new IAsyncEnumerable instance.</returns>
-        public static IAsyncEnumerable<R> ConcatMap<T, R>(this IAsyncEnumerable<T> source, Func<T, IEnumerable<R>> mapper)
+        public static IAsyncEnumerable<TResult> ConcatMap<TSource, TResult>(this IAsyncEnumerable<TSource> source, Func<TSource, IEnumerable<TResult>> mapper)
         {
             RequireNonNull(source, nameof(source));
             RequireNonNull(mapper, nameof(mapper));
-            return new ConcatMapEnumerable<T, R>(source, mapper);
+            return new ConcatMapEnumerable<TSource, TResult>(source, mapper);
         }
 
         /// <summary>
@@ -734,7 +741,9 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<T> Concat<T>(IEnumerable<IAsyncEnumerable<T>> sources)
         {
+            // ReSharper disable once PossibleMultipleEnumeration
             RequireNonNull(sources, nameof(sources));
+            // ReSharper disable once PossibleMultipleEnumeration
             return new ConcatEnumerable<T>(sources);
         }
 
@@ -756,16 +765,16 @@ namespace async_enumerable_dotnet
         /// Relays items of the main async sequence until the other
         /// async sequence produces an item or completes.
         /// </summary>
-        /// <typeparam name="T">The source element type.</typeparam>
-        /// <typeparam name="U">The element type of the other source.</typeparam>
+        /// <typeparam name="TSource">The source element type.</typeparam>
+        /// <typeparam name="TOther">The element type of the other source.</typeparam>
         /// <param name="source">The main source async sequence.</param>
         /// <param name="other">The other sequence that indicates how long to relay elements of the main source.</param>
         /// <returns>The new IAsyncEnumerable instance.</returns>
-        public static IAsyncEnumerable<T> TakeUntil<T, U>(this IAsyncEnumerable<T> source, IAsyncEnumerable<U> other)
+        public static IAsyncEnumerable<TSource> TakeUntil<TSource, TOther>(this IAsyncEnumerable<TSource> source, IAsyncEnumerable<TOther> other)
         {
             RequireNonNull(source, nameof(source));
             RequireNonNull(other, nameof(other));
-            return new TakeUntil<T, U>(source, other);
+            return new TakeUntil<TSource, TOther>(source, other);
         }
 
         /// <summary>
@@ -999,18 +1008,18 @@ namespace async_enumerable_dotnet
         /// <summary>
         /// Collect the specified number of source items, in a non-overlapping fashion, into custom ICollections generated on demand and emit those lists.
         /// </summary>
-        /// <typeparam name="T">The element type.</typeparam>
-        /// <typeparam name="C">The custom collection type.</typeparam>
+        /// <typeparam name="TSource">The element type.</typeparam>
+        /// <typeparam name="TCollection">The custom collection type.</typeparam>
         /// <param name="source">The source async sequence to batch up.</param>
         /// <param name="size">The maximum number of items per lists.</param>
         /// <param name="bufferSupplier">The function called to create a new collection.</param>
         /// <returns>The new IAsyncEnumerable instance.</returns>
-        public static IAsyncEnumerable<C> Buffer<T, C>(this IAsyncEnumerable<T> source, int size, Func<C> bufferSupplier) where C : ICollection<T>
+        public static IAsyncEnumerable<TCollection> Buffer<TSource, TCollection>(this IAsyncEnumerable<TSource> source, int size, Func<TCollection> bufferSupplier) where TCollection : ICollection<TSource>
         {
             RequireNonNull(source, nameof(source));
             RequireNonNull(bufferSupplier, nameof(bufferSupplier));
             RequirePositive(size, nameof(size));
-            return new BufferExact<T, C>(source, size, bufferSupplier);
+            return new BufferExact<TSource, TCollection>(source, size, bufferSupplier);
         }
 
         /// <summary>
@@ -1029,14 +1038,14 @@ namespace async_enumerable_dotnet
         /// <summary>
         /// Collect the specified number of source items, possibly in an overlapping fashion, into custom ICollections and emit those lists.
         /// </summary>
-        /// <typeparam name="T">The element type.</typeparam>
-        /// <typeparam name="C">The custom collection type.</typeparam>
+        /// <typeparam name="TSource">The element type.</typeparam>
+        /// <typeparam name="TCollection">The custom collection type.</typeparam>
         /// <param name="source">The source async sequence to batch up.</param>
         /// <param name="size">The maximum number of items per lists.</param>
         /// <param name="skip">After how many items to start a new list. If smaller than size, the output will be buffers sharing items. If larger than size, some source items will not be in buffers.</param>
         /// <param name="bufferSupplier">The function called to create a new collection.</param>
         /// <returns>The new IAsyncEnumerable instance.</returns>
-        public static IAsyncEnumerable<C> Buffer<T, C>(this IAsyncEnumerable<T> source, int size, int skip, Func<C> bufferSupplier) where C : ICollection<T>
+        public static IAsyncEnumerable<TCollection> Buffer<TSource, TCollection>(this IAsyncEnumerable<TSource> source, int size, int skip, Func<TCollection> bufferSupplier) where TCollection : ICollection<TSource>
         {
             RequireNonNull(source, nameof(source));
             RequireNonNull(bufferSupplier, nameof(bufferSupplier));
@@ -1044,13 +1053,13 @@ namespace async_enumerable_dotnet
             RequirePositive(skip, nameof(skip));
             if (size == skip)
             {
-                return new BufferExact<T, C>(source, size, bufferSupplier);
+                return new BufferExact<TSource, TCollection>(source, size, bufferSupplier);
             }
             if (size < skip)
             {
-                return new BufferSkip<T, C>(source, size, skip, bufferSupplier);
+                return new BufferSkip<TSource, TCollection>(source, size, skip, bufferSupplier);
             }
-            return new BufferOverlap<T, C>(source, size, skip, bufferSupplier);
+            return new BufferOverlap<TSource, TCollection>(source, size, skip, bufferSupplier);
         }
 
         /// <summary>
@@ -1070,18 +1079,18 @@ namespace async_enumerable_dotnet
         /// <summary>
         /// Aggregate the source elements in a rolling fashion by emitting all intermediate accumulated value.
         /// </summary>
-        /// <typeparam name="T">The element type.</typeparam>
-        /// <typeparam name="R">The accumulator/result type.</typeparam>
+        /// <typeparam name="TSource">The element type.</typeparam>
+        /// <typeparam name="TResult">The accumulator/result type.</typeparam>
         /// <param name="source">The source async sequence to aggregate in a rolling fashion.</param>
         /// <param name="initialSupplier">The function called to generate the initial accumulator value.</param>
         /// <param name="scanner">The function receiving the previous (or first) accumulator value, the current source item and should return the new accumulator item to be emitted as well.</param>
         /// <returns>The new IAsyncEnumerable instance.</returns>
-        public static IAsyncEnumerable<R> Scan<T, R>(this IAsyncEnumerable<T> source, Func<R> initialSupplier, Func<R, T, R> scanner)
+        public static IAsyncEnumerable<TResult> Scan<TSource, TResult>(this IAsyncEnumerable<TSource> source, Func<TResult> initialSupplier, Func<TResult, TSource, TResult> scanner)
         {
             RequireNonNull(source, nameof(source));
             RequireNonNull(initialSupplier, nameof(initialSupplier));
             RequireNonNull(scanner, nameof(scanner));
-            return new ScanSeed<T, R>(source, initialSupplier, scanner);
+            return new ScanSeed<TSource, TResult>(source, initialSupplier, scanner);
         }
 
         /// <summary>
@@ -1162,28 +1171,28 @@ namespace async_enumerable_dotnet
         /// <summary>
         /// Skips elements from the source async sequence until the other async sequence produces an item or completes, relaying all subsequent source items then on.
         /// </summary>
-        /// <typeparam name="T">The element type of the source.</typeparam>
-        /// <typeparam name="U">The element type of the other/until async sequence.</typeparam>
+        /// <typeparam name="TSource">The element type of the source.</typeparam>
+        /// <typeparam name="TOther">The element type of the other/until async sequence.</typeparam>
         /// <param name="source">The source async sequence to skip items of</param>
         /// <param name="other">The other async sequence to indicate when to stop skipping and start relaying items.</param>
         /// <returns>The new IAsyncEnumerable instance.</returns>
-        public static IAsyncEnumerable<T> SkipUntil<T, U>(this IAsyncEnumerable<T> source, IAsyncEnumerable<U> other)
+        public static IAsyncEnumerable<TSource> SkipUntil<TSource, TOther>(this IAsyncEnumerable<TSource> source, IAsyncEnumerable<TOther> other)
         {
             RequireNonNull(source, nameof(source));
             RequireNonNull(other, nameof(other));
-            return new SkipUntil<T, U>(source, other);
+            return new SkipUntil<TSource, TOther>(source, other);
         }
 
         /// <summary>
         /// Consume the source async sequence by emitting items and terminal signals via
         /// the given <see cref="IAsyncConsumer{T}"/> consumer.
         /// </summary>
-        /// <typeparam name="T">The element type.</typeparam>
+        /// <typeparam name="TSource">The element type.</typeparam>
         /// <param name="source">The source sequence to consume.</param>
         /// <param name="consumer">The push-awaitable consumer.</param>
         /// <param name="ct">The optional cancellation token to stop the consumption.</param>
         /// <returns>The task that is completed when the consumption terminates.</returns>
-        public static ValueTask Consume<T>(this IAsyncEnumerable<T> source, IAsyncConsumer<T> consumer, CancellationToken ct = default)
+        public static ValueTask Consume<TSource>(this IAsyncEnumerable<TSource> source, IAsyncConsumer<TSource> consumer, CancellationToken ct = default)
         {
             RequireNonNull(source, nameof(source));
             RequireNonNull(consumer, nameof(consumer));
@@ -1193,8 +1202,8 @@ namespace async_enumerable_dotnet
         /// <summary>
         /// Groups the source values into distinct groups of async sequences.
         /// </summary>
-        /// <typeparam name="T">The source element type.</typeparam>
-        /// <typeparam name="K">The key type of the groups.</typeparam>
+        /// <typeparam name="TSource">The source element type.</typeparam>
+        /// <typeparam name="TKey">The key type of the groups.</typeparam>
         /// <param name="source">The source async sequence.</param>
         /// <param name="keySelector">The function receiving the current source item
         /// and should return a key for the group.</param>
@@ -1203,16 +1212,16 @@ namespace async_enumerable_dotnet
         /// Note that all the groups and the main async sequence of those groups have
         /// to be consumed, otherwise the setup live-locks.
         /// </remarks>
-        public static IAsyncEnumerable<IAsyncGroupedEnumerable<K, T>> GroupBy<T, K>(this IAsyncEnumerable<T> source, Func<T, K> keySelector)
+        public static IAsyncEnumerable<IAsyncGroupedEnumerable<TKey, TSource>> GroupBy<TSource, TKey>(this IAsyncEnumerable<TSource> source, Func<TSource, TKey> keySelector)
         {
-            return GroupBy(source, keySelector, v => v, EqualityComparer<K>.Default);
+            return GroupBy(source, keySelector, v => v, EqualityComparer<TKey>.Default);
         }
 
         /// <summary>
         /// Groups the source values into distinct groups of async sequences.
         /// </summary>
-        /// <typeparam name="T">The source element type.</typeparam>
-        /// <typeparam name="K">The key type of the groups.</typeparam>
+        /// <typeparam name="TSource">The source element type.</typeparam>
+        /// <typeparam name="TKey">The key type of the groups.</typeparam>
         /// <param name="source">The source async sequence.</param>
         /// <param name="keySelector">The function receiving the current source item
         /// and should return a key for the group.</param>
@@ -1222,7 +1231,7 @@ namespace async_enumerable_dotnet
         /// Note that all the groups and the main async sequence of those groups have
         /// to be consumed, otherwise the setup live-locks.
         /// </remarks>
-        public static IAsyncEnumerable<IAsyncGroupedEnumerable<K, T>> GroupBy<T, K>(this IAsyncEnumerable<T> source, Func<T, K> keySelector, IEqualityComparer<K> keyComparer)
+        public static IAsyncEnumerable<IAsyncGroupedEnumerable<TKey, TSource>> GroupBy<TSource, TKey>(this IAsyncEnumerable<TSource> source, Func<TSource, TKey> keySelector, IEqualityComparer<TKey> keyComparer)
         {
             return GroupBy(source, keySelector, v => v, keyComparer);
         }
@@ -1230,9 +1239,9 @@ namespace async_enumerable_dotnet
         /// <summary>
         /// Groups the source values into distinct groups of async sequences.
         /// </summary>
-        /// <typeparam name="T">The source element type.</typeparam>
-        /// <typeparam name="K">The key type of the groups.</typeparam>
-        /// <typeparam name="V">The value type of the groups.</typeparam>
+        /// <typeparam name="TSource">The source element type.</typeparam>
+        /// <typeparam name="TKey">The key type of the groups.</typeparam>
+        /// <typeparam name="TValue">The value type of the groups.</typeparam>
         /// <param name="source">The source async sequence.</param>
         /// <param name="keySelector">The function receiving the current source item
         /// and should return a key for the group.</param>
@@ -1243,17 +1252,17 @@ namespace async_enumerable_dotnet
         /// Note that all the groups and the main async sequence of those groups have
         /// to be consumed, otherwise the setup live-locks.
         /// </remarks>
-        public static IAsyncEnumerable<IAsyncGroupedEnumerable<K, V>> GroupBy<T, K, V>(this IAsyncEnumerable<T> source, Func<T, K> keySelector, Func<T, V> valueSelector)
+        public static IAsyncEnumerable<IAsyncGroupedEnumerable<TKey, TValue>> GroupBy<TSource, TKey, TValue>(this IAsyncEnumerable<TSource> source, Func<TSource, TKey> keySelector, Func<TSource, TValue> valueSelector)
         {
-            return GroupBy(source, keySelector, valueSelector, EqualityComparer<K>.Default);
+            return GroupBy(source, keySelector, valueSelector, EqualityComparer<TKey>.Default);
         }
 
         /// <summary>
         /// Groups the source values into distinct groups of async sequences.
         /// </summary>
-        /// <typeparam name="T">The source element type.</typeparam>
-        /// <typeparam name="K">The key type of the groups.</typeparam>
-        /// <typeparam name="V">The value type of the groups.</typeparam>
+        /// <typeparam name="TSource">The source element type.</typeparam>
+        /// <typeparam name="TKey">The key type of the groups.</typeparam>
+        /// <typeparam name="TValue">The value type of the groups.</typeparam>
         /// <param name="source">The source async sequence.</param>
         /// <param name="keySelector">The function receiving the current source item
         /// and should return a key for the group.</param>
@@ -1265,13 +1274,13 @@ namespace async_enumerable_dotnet
         /// Note that all the groups and the main async sequence of those groups have
         /// to be consumed, otherwise the setup live-locks.
         /// </remarks>
-        public static IAsyncEnumerable<IAsyncGroupedEnumerable<K, V>> GroupBy<T, K, V>(this IAsyncEnumerable<T> source, Func<T, K> keySelector, Func<T, V> valueSelector, IEqualityComparer<K> keyComparer)
+        public static IAsyncEnumerable<IAsyncGroupedEnumerable<TKey, TValue>> GroupBy<TSource, TKey, TValue>(this IAsyncEnumerable<TSource> source, Func<TSource, TKey> keySelector, Func<TSource, TValue> valueSelector, IEqualityComparer<TKey> keyComparer)
         {
             RequireNonNull(source, nameof(source));
             RequireNonNull(keySelector, nameof(keySelector));
             RequireNonNull(valueSelector, nameof(valueSelector));
             RequireNonNull(keyComparer, nameof(keyComparer));
-            return new GroupBy<T, K, V>(source, keySelector, valueSelector, keyComparer);
+            return new GroupBy<TSource, TKey, TValue>(source, keySelector, valueSelector, keyComparer);
         }
 
         /// <summary>

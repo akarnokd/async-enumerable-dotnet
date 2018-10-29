@@ -1,23 +1,25 @@
-﻿using System;
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
+using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Text;
 
 namespace async_enumerable_dotnet.impl
 {
     internal sealed class ToEnumerable<T> : IEnumerable<T>
     {
-
-        readonly IAsyncEnumerable<T> source;
+        private readonly IAsyncEnumerable<T> _source;
 
         public ToEnumerable(IAsyncEnumerable<T> source)
         {
-            this.source = source;
+            _source = source;
         }
 
         public IEnumerator<T> GetEnumerator()
         {
-            return new ToEnumerator(source.GetAsyncEnumerator());
+            return new ToEnumerator(_source.GetAsyncEnumerator());
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -25,27 +27,27 @@ namespace async_enumerable_dotnet.impl
             return GetEnumerator();
         }
 
-        internal sealed class ToEnumerator : IEnumerator<T>
+        private sealed class ToEnumerator : IEnumerator<T>
         {
-            readonly IAsyncEnumerator<T> source;
+            private readonly IAsyncEnumerator<T> _source;
 
             public ToEnumerator(IAsyncEnumerator<T> source)
             {
-                this.source = source;
+                _source = source;
             }
 
-            public T Current => source.Current;
+            public T Current => _source.Current;
 
             object IEnumerator.Current => Current;
 
             public void Dispose()
             {
-                source.DisposeAsync().AsTask().Wait();
+                _source.DisposeAsync().AsTask().Wait();
             }
 
             public bool MoveNext()
             {
-                return source.MoveNextAsync().AsTask().Result;
+                return _source.MoveNextAsync().AsTask().Result;
             }
 
             public void Reset()

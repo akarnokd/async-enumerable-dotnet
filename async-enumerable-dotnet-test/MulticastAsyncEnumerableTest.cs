@@ -1,3 +1,7 @@
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
 using System;
 using Xunit;
 using async_enumerable_dotnet;
@@ -12,7 +16,7 @@ namespace async_enumerable_dotnet_test
         {
             var push = new MulticastAsyncEnumerable<int>();
 
-            for (int i = 1; i <= 5; i++)
+            for (var i = 1; i <= 5; i++)
             {
                 await push.Next(i);
             }
@@ -26,7 +30,7 @@ namespace async_enumerable_dotnet_test
         {
             var push = new MulticastAsyncEnumerable<int>();
 
-            for (int i = 1; i <= 5; i++)
+            for (var i = 1; i <= 5; i++)
             {
                 await push.Next(i);
             }
@@ -47,7 +51,7 @@ namespace async_enumerable_dotnet_test
                 await en1.AssertResult(1, 2, 3, 4, 5);
             });
 
-            for (int i = 1; i <= 5; i++)
+            for (var i = 1; i <= 5; i++)
             {
                 await push.Next(i);
             }
@@ -68,7 +72,7 @@ namespace async_enumerable_dotnet_test
                 await en1.AssertFailure(typeof(InvalidOperationException), 1, 2, 3, 4, 5);
             });
 
-            for (int i = 1; i <= 5; i++)
+            for (var i = 1; i <= 5; i++)
             {
                 await push.Next(i);
             }
@@ -95,7 +99,7 @@ namespace async_enumerable_dotnet_test
                 await en2.AssertResult(1, 2, 3, 4, 5);
             });
 
-            for (int i = 1; i <= 5; i++)
+            for (var i = 1; i <= 5; i++)
             {
                 await push.Next(i);
             }
@@ -124,7 +128,7 @@ namespace async_enumerable_dotnet_test
                 await en2.AssertFailure(typeof(InvalidOperationException), 1, 2, 3, 4, 5);
             });
 
-            for (int i = 1; i <= 5; i++)
+            for (var i = 1; i <= 5; i++)
             {
                 await push.Next(i);
             }
@@ -152,7 +156,7 @@ namespace async_enumerable_dotnet_test
                 await en2.AssertResult(1, 2, 3, 4, 5);
             });
 
-            for (int i = 1; i <= 5; i++)
+            for (var i = 1; i <= 5; i++)
             {
                 await push.Next(i);
             }

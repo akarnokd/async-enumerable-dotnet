@@ -1,7 +1,9 @@
-using System;
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
 using Xunit;
 using async_enumerable_dotnet;
-using System.Threading.Tasks;
 using System.Linq;
 
 namespace async_enumerable_dotnet_test

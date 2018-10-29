@@ -1,78 +1,80 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
 using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet.impl
 {
     internal sealed class DefaultIfEmpty<T> : IAsyncEnumerable<T>
     {
-        readonly IAsyncEnumerable<T> source;
+        private readonly IAsyncEnumerable<T> _source;
 
-        readonly T defaultItem;
+        private readonly T _defaultItem;
 
         public DefaultIfEmpty(IAsyncEnumerable<T> source, T defaultItem)
         {
-            this.source = source;
-            this.defaultItem = defaultItem;
+            _source = source;
+            _defaultItem = defaultItem;
         }
 
         public IAsyncEnumerator<T> GetAsyncEnumerator()
         {
-            return new DefaultIfEmptyEnumerator(source.GetAsyncEnumerator(), defaultItem);
+            return new DefaultIfEmptyEnumerator(_source.GetAsyncEnumerator(), _defaultItem);
         }
 
-        internal sealed class DefaultIfEmptyEnumerator : IAsyncEnumerator<T>
+        private sealed class DefaultIfEmptyEnumerator : IAsyncEnumerator<T>
         {
-            IAsyncEnumerator<T> source;
+            private IAsyncEnumerator<T> _source;
 
-            readonly T defaultItem;
+            private readonly T _defaultItem;
 
-            bool hasItems;
+            private bool _hasItems;
 
             public T Current
             {
                 get
                 {
-                    if (source != null)
+                    if (_source != null)
                     {
-                        return source.Current;
+                        return _source.Current;
                     }
-                    return defaultItem;
+                    return _defaultItem;
                 }
             }
 
             public DefaultIfEmptyEnumerator(IAsyncEnumerator<T> source, T defaultItem)
             {
-                this.source = source;
-                this.defaultItem = defaultItem;
+                _source = source;
+                _defaultItem = defaultItem;
             }
 
             public ValueTask DisposeAsync()
             {
-                if (source != null)
+                if (_source != null)
                 {
-                    return source.DisposeAsync();
+                    return _source.DisposeAsync();
                 }
                 return new ValueTask();
             }
 
             public async ValueTask<bool> MoveNextAsync()
             {
-                if (source == null)
+                if (_source == null)
                 {
                     return false;
                 }
-                if (await source.MoveNextAsync())
+                if (await _source.MoveNextAsync())
                 {
-                    hasItems = true;
+                    _hasItems = true;
                     return true;
                 }
-                else if (!hasItems)
+
+                if (!_hasItems)
                 {
-                    await source.DisposeAsync();
-                    source = null;
-                    hasItems = true;
+                    await _source.DisposeAsync();
+                    _source = null;
+                    _hasItems = true;
                     return true;
                 }
                 return false;

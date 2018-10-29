@@ -1,3 +1,7 @@
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
 using System;
 using Xunit;
 using async_enumerable_dotnet;
@@ -22,34 +26,34 @@ namespace async_enumerable_dotnet_test
             {
                 if (m2.IsStatic && m2.IsPublic)
                 {
-                    var m = default(MethodInfo);
+                    MethodInfo m;
 
                     if (m2.IsGenericMethod)
                     {
-                        Type[] argtypes = m2.GetGenericArguments();
-                        var gargs = new Type[argtypes.Length];
+                        var argumentTypes = m2.GetGenericArguments();
+                        var callArgumentTypes = new Type[argumentTypes.Length];
                         
-                        for (int i = 0; i < argtypes.Length; i++)
+                        for (var i = 0; i < argumentTypes.Length; i++)
                         {
-                            var argt = argtypes[i];
+                            var argumentType = argumentTypes[i];
 
-                            var gconst = argt.GetGenericParameterConstraints();
+                            var argumentConstraint = argumentType.GetGenericParameterConstraints();
 
-                            if (gconst.Length == 0)
+                            if (argumentConstraint.Length == 0)
                             {
-                                gargs[i] = typeof(int);
+                                callArgumentTypes[i] = typeof(int);
                             } else
-                            if (gconst[0].Name.Contains("ICollection"))
+                            if (argumentConstraint[0].Name.Contains("ICollection"))
                             {
-                                gargs[i] = typeof(ICollection<int>);
+                                callArgumentTypes[i] = typeof(ICollection<int>);
                             }
                             else
                             {
-                                Assert.False(true, "Method generic parameter default missing: " + argt);
+                                Assert.False(true, "Method generic parameter default missing: " + argumentType);
                             }
                         }
 
-                        m = m2.MakeGenericMethod(gargs);
+                        m = m2.MakeGenericMethod(callArgumentTypes);
                     }
                     else
                     {
@@ -58,14 +62,14 @@ namespace async_enumerable_dotnet_test
 
                     var args = m.GetParameters();
 
-                    for (int i = 0; i < args.Length; i++)
+                    for (var i = 0; i < args.Length; i++)
                     {
                         var arg = args[i];
 
                         if ((arg.ParameterType.IsClass || arg.ParameterType.IsInterface) && !arg.HasDefaultValue)
                         {
                             var pars = new object[args.Length];
-                            for (int j = 0; j < args.Length; j++)
+                            for (var j = 0; j < args.Length; j++)
                             {
                                 if (j != i)
                                 {
@@ -194,7 +198,7 @@ namespace async_enumerable_dotnet_test
             Defaults.Add(typeof(Func<int, int>), (Func<int, int>)(v => v));
             Defaults.Add(typeof(Func<int, int, int>), (Func<int, int, int>)((v, w) => v));
             Defaults.Add(typeof(Func<int[], int>), (Func<int[], int>)(v => v[0]));
-            Defaults.Add(typeof(Func<IAsyncEnumerable<int>>), (Func<IAsyncEnumerable<int>>)(() => AsyncEnumerable.Empty<int>()));
+            Defaults.Add(typeof(Func<IAsyncEnumerable<int>>), (Func<IAsyncEnumerable<int>>)AsyncEnumerable.Empty<int>);
             Defaults.Add(typeof(Func<int, IEnumerable<int>>), (Func<int, IEnumerable<int>>)(v => Enumerable.Empty<int>()));
             Defaults.Add(typeof(Func<int, IAsyncEnumerable<int>>), (Func<int, IAsyncEnumerable<int>>)(v => AsyncEnumerable.Empty<int>()));
             Defaults.Add(typeof(Func<Exception, IAsyncEnumerable<int>>), (Func<Exception, IAsyncEnumerable<int>>)(v => AsyncEnumerable.Empty<int>()));
@@ -221,7 +225,8 @@ namespace async_enumerable_dotnet_test
             Defaults.Add(typeof(TimeSpan), TimeSpan.FromMilliseconds(1));
         }
 
-        static object GetDefault(Type type, MethodInfo m)
+        // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
+        private static object GetDefault(Type type, MethodInfo m)
         {
             if (!Defaults.ContainsKey(type))
             {
@@ -230,7 +235,7 @@ namespace async_enumerable_dotnet_test
             return Defaults[type];
         }
 
-        sealed class EmptyAsyncConsumer : IAsyncConsumer<int>
+        private sealed class EmptyAsyncConsumer : IAsyncConsumer<int>
         {
             public ValueTask Complete()
             {

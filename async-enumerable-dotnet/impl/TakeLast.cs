@@ -1,84 +1,85 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
 using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet.impl
 {
     internal sealed class TakeLast<T> : IAsyncEnumerable<T>
     {
-        readonly IAsyncEnumerable<T> source;
+        private readonly IAsyncEnumerable<T> _source;
 
-        readonly int n;
+        private readonly int _n;
 
         public TakeLast(IAsyncEnumerable<T> source, int n)
         {
-            this.source = source;
-            this.n = n;
+            _source = source;
+            _n = n;
         }
 
         public IAsyncEnumerator<T> GetAsyncEnumerator()
         {
-            return new TakeLastEnumerator(source.GetAsyncEnumerator(), n);
+            return new TakeLastEnumerator(_source.GetAsyncEnumerator(), _n);
         }
 
-        internal sealed class TakeLastEnumerator : IAsyncEnumerator<T>
+        private sealed class TakeLastEnumerator : IAsyncEnumerator<T>
         {
-            readonly IAsyncEnumerator<T> source;
+            private readonly IAsyncEnumerator<T> _source;
 
-            int size;
+            private int _size;
 
-            public T Current => current;
+            public T Current => _current;
 
-            ArrayQueue<T> queue;
+            private ArrayQueue<T> _queue;
 
-            bool once;
+            private bool _once;
 
-            T current;
+            private T _current;
 
             public TakeLastEnumerator(IAsyncEnumerator<T> source, int size)
             {
-                this.source = source;
-                this.size = size;
-                this.queue = new ArrayQueue<T>(16);
+                _source = source;
+                _size = size;
+                _queue = new ArrayQueue<T>(16);
             }
 
             public ValueTask DisposeAsync()
             {
-                if (size == 0)
+                if (_size == 0)
                 {
-                    queue.Release();
+                    _queue.Release();
                     return new ValueTask();
                 }
 
-                return source.DisposeAsync();
+                return _source.DisposeAsync();
             }
 
             public async ValueTask<bool> MoveNextAsync()
             {
                 for (; ; )
                 {
-                    if (once)
+                    if (_once)
                     {
-                        if (queue.Dequeue(out current))
+                        if (_queue.Dequeue(out _current))
                         {
                             return true;
                         }
                         return false;
                     }
-                    while (await source.MoveNextAsync())
+                    while (await _source.MoveNextAsync())
                     {
-                        if (size != 0)
+                        if (_size != 0)
                         {
-                            size--;
+                            _size--;
                         }
                         else
                         {
-                            queue.Dequeue(out _);
+                            _queue.Dequeue(out _);
                         }
-                        queue.Enqueue(source.Current);
+                        _queue.Enqueue(_source.Current);
                     }
-                    once = true;
+                    _once = true;
                 }
             }
         }

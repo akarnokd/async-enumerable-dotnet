@@ -1,37 +1,37 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
+using System;
 using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet.impl
 {
     internal sealed class FromTaskFunc<T> : IAsyncEnumerable<T>
     {
-        readonly Func<Task<T>> func;
+        private readonly Func<Task<T>> _func;
 
         public FromTaskFunc(Func<Task<T>> func)
         {
-            this.func = func;
+            _func = func;
         }
 
         public IAsyncEnumerator<T> GetAsyncEnumerator()
         {
-            return new FromTaskFuncEnumerator(func);
+            return new FromTaskFuncEnumerator(_func);
         }
 
-        internal sealed class FromTaskFuncEnumerator : IAsyncEnumerator<T>
+        private sealed class FromTaskFuncEnumerator : IAsyncEnumerator<T>
         {
-            readonly Func<Task<T>> func;
+            private readonly Func<Task<T>> _func;
 
-            public T Current => current;
+            public T Current { get; private set; }
 
-            T current;
-
-            bool once;
+            private bool _once;
 
             public FromTaskFuncEnumerator(Func<Task<T>> func)
             {
-                this.func = func;
+                _func = func;
             }
 
             public ValueTask DisposeAsync()
@@ -41,15 +41,15 @@ namespace async_enumerable_dotnet.impl
 
             public async ValueTask<bool> MoveNextAsync()
             {
-                if (once)
+                if (_once)
                 {
-                    current = default;
+                    Current = default;
                     return false;
                 }
 
-                once = true;
+                _once = true;
 
-                current = await func();
+                Current = await _func();
                 return true;
             }
         }
@@ -57,29 +57,29 @@ namespace async_enumerable_dotnet.impl
 
     internal sealed class FromTask<T> : IAsyncEnumerable<T>
     {
-        readonly Task<T> task;
+        private readonly Task<T> _task;
 
         public FromTask(Task<T> task)
         {
-            this.task = task;
+            _task = task;
         }
 
         public IAsyncEnumerator<T> GetAsyncEnumerator()
         {
-            return new FromTaskEnumerator(task);
+            return new FromTaskEnumerator(_task);
         }
 
-        internal sealed class FromTaskEnumerator : IAsyncEnumerator<T>
+        private sealed class FromTaskEnumerator : IAsyncEnumerator<T>
         {
-            readonly Task<T> task;
+            private readonly Task<T> _task;
 
-            public T Current => task.Result;
+            public T Current => _task.Result;
 
-            bool once;
+            private bool _once;
 
             public FromTaskEnumerator(Task<T> task)
             {
-                this.task = task;
+                _task = task;
             }
 
             public ValueTask DisposeAsync()
@@ -89,14 +89,14 @@ namespace async_enumerable_dotnet.impl
 
             public async ValueTask<bool> MoveNextAsync()
             {
-                if (once)
+                if (_once)
                 {
                     return false;
                 }
 
-                once = true;
+                _once = true;
 
-                await task;
+                await _task;
                 return true;
             }
         }

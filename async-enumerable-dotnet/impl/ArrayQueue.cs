@@ -1,7 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
+using System;
 using System.Runtime.CompilerServices;
-using System.Text;
 
 [assembly: InternalsVisibleTo("async-enumerable-dotnet-test")]
 
@@ -9,23 +11,23 @@ namespace async_enumerable_dotnet.impl
 {
     internal struct ArrayQueue<T>
     {
-        int producerIndex;
-        int consumerIndex;
+        private int _producerIndex;
+        private int _consumerIndex;
 
-        T[] array;
+        private T[] _array;
 
         internal ArrayQueue(int capacity)
         {
-            producerIndex = 0;
-            consumerIndex = 0;
-            array = new T[capacity];
+            _producerIndex = 0;
+            _consumerIndex = 0;
+            _array = new T[capacity];
         }
 
         internal void Enqueue(T item)
         {
-            var pi = producerIndex;
-            var ci = consumerIndex;
-            var a = array;
+            var pi = _producerIndex;
+            var ci = _consumerIndex;
+            var a = _array;
             var len = a.Length;
 
             a[pi] = item;
@@ -36,21 +38,21 @@ namespace async_enumerable_dotnet.impl
                 var b = new T[len * 2];
                 Array.Copy(a, ci, b, 0, len - ci);
                 Array.Copy(a, 0, b, len - ci, ci);
-                array = b;
-                consumerIndex = 0;
-                producerIndex = len;
+                _array = b;
+                _consumerIndex = 0;
+                _producerIndex = len;
             }
             else
             {
-                producerIndex = pi;
+                _producerIndex = pi;
             }
         }
 
         internal bool Dequeue(out T item)
         {
-            var pi = producerIndex;
-            var ci = consumerIndex;
-            var a = array;
+            var pi = _producerIndex;
+            var ci = _consumerIndex;
+            var a = _array;
             var len = a.Length;
 
             if (pi == ci)
@@ -60,20 +62,20 @@ namespace async_enumerable_dotnet.impl
             }
             item = a[ci];
             a[ci] = default;
-            consumerIndex = (ci + 1) & (len - 1);
+            _consumerIndex = (ci + 1) & (len - 1);
             return true;
         }
 
         internal void Release()
         {
-            array = null;
+            _array = null;
         }
 
-        internal void ForEach<U>(U state, Action<T, U> onEach)
+        internal void ForEach<TState>(TState state, Action<T, TState> onEach)
         {
-            var ci = consumerIndex;
-            var pi = producerIndex;
-            var a = array;
+            var ci = _consumerIndex;
+            var pi = _producerIndex;
+            var a = _array;
             var len = a.Length;
 
             while (ci != pi)

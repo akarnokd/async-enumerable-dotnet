@@ -1,88 +1,85 @@
-﻿using System;
+﻿// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
+using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet.impl
 {
-    internal sealed class FlatMap<T, R> : IAsyncEnumerable<R>
+    internal sealed class FlatMap<TSource, TResult> : IAsyncEnumerable<TResult>
     {
-        readonly IAsyncEnumerable<T> source;
+        private readonly IAsyncEnumerable<TSource> _source;
 
-        readonly Func<T, IAsyncEnumerable<R>> mapper;
+        private readonly Func<TSource, IAsyncEnumerable<TResult>> _mapper;
 
-        readonly int maxConcurrency;
+        private readonly int _maxConcurrency;
 
-        readonly int prefetch;
+        private readonly int _prefetch;
 
-        public FlatMap(IAsyncEnumerable<T> source, Func<T, IAsyncEnumerable<R>> mapper, int maxConcurrency, int prefetch)
+        public FlatMap(IAsyncEnumerable<TSource> source, Func<TSource, IAsyncEnumerable<TResult>> mapper, int maxConcurrency, int prefetch)
         {
-            this.source = source;
-            this.mapper = mapper;
-            this.maxConcurrency = maxConcurrency;
-            this.prefetch = prefetch;
+            _source = source;
+            _mapper = mapper;
+            _maxConcurrency = maxConcurrency;
+            _prefetch = prefetch;
         }
 
-        public IAsyncEnumerator<R> GetAsyncEnumerator()
+        public IAsyncEnumerator<TResult> GetAsyncEnumerator()
         {
-            var en = new FlatMapEnumerator(source.GetAsyncEnumerator(), mapper, maxConcurrency, prefetch);
+            var en = new FlatMapEnumerator(_source.GetAsyncEnumerator(), _mapper, _maxConcurrency, _prefetch);
             en.MoveNext();
             return en;
         }
 
-        internal sealed class FlatMapEnumerator : IAsyncEnumerator<R>
+        internal sealed class FlatMapEnumerator : IAsyncEnumerator<TResult>
         {
-            readonly IAsyncEnumerator<T> source;
+            private readonly IAsyncEnumerator<TSource> _source;
 
-            readonly Func<T, IAsyncEnumerable<R>> mapper;
+            private readonly Func<TSource, IAsyncEnumerable<TResult>> _mapper;
 
-            readonly int maxConcurrency;
+            private readonly int _prefetch;
 
-            readonly int prefetch;
+            private readonly ConcurrentQueue<Item> _queue;
 
-            readonly ConcurrentQueue<Item> queue;
+            private TaskCompletionSource<bool> _resume;
 
-            TaskCompletionSource<bool> resume;
+            private InnerHandler[] _inners;
 
-            InnerHandler[] inners;
+            private volatile bool _done;
+            private Exception _errors;
 
-            volatile bool done;
-            Exception errors;
+            private static readonly InnerHandler[] Empty = new InnerHandler[0];
+            private static readonly InnerHandler[] Terminated = new InnerHandler[0];
 
-            static readonly InnerHandler[] EMPTY = new InnerHandler[0];
-            static readonly InnerHandler[] TERMINATED = new InnerHandler[0];
+            public TResult Current { get; private set; }
 
-            public R Current => current;
+            private int _dispose;
 
-            R current;
+            private int _outstanding;
 
-            int dispose;
+            private int _sourceWip;
 
-            int outstanding;
-
-            int sourceWip;
-
-            public FlatMapEnumerator(IAsyncEnumerator<T> source, Func<T, IAsyncEnumerable<R>> mapper, int maxConcurrency, int prefetch)
+            public FlatMapEnumerator(IAsyncEnumerator<TSource> source, Func<TSource, IAsyncEnumerable<TResult>> mapper, int maxConcurrency, int prefetch)
             {
-                this.source = source;
-                this.mapper = mapper;
-                this.maxConcurrency = maxConcurrency;
-                this.queue = new ConcurrentQueue<Item>();
-                this.prefetch = prefetch;
-                Volatile.Write(ref outstanding, maxConcurrency);
-                Volatile.Write(ref inners, EMPTY);
+                _source = source;
+                _mapper = mapper;
+                _queue = new ConcurrentQueue<Item>();
+                _prefetch = prefetch;
+                Volatile.Write(ref _outstanding, maxConcurrency);
+                Volatile.Write(ref _inners, Empty);
             }
 
             public ValueTask DisposeAsync()
             {
-                if (Interlocked.Increment(ref dispose) == 1)
+                if (Interlocked.Increment(ref _dispose) == 1)
                 {
-                    source.DisposeAsync();
+                    _source.DisposeAsync();
                 }
 
-                var a = Interlocked.Exchange(ref inners, TERMINATED);
+                var a = Interlocked.Exchange(ref _inners, Terminated);
                 foreach (var handler in a)
                 {
                     handler.Dispose();
@@ -92,63 +89,66 @@ namespace async_enumerable_dotnet.impl
 
             internal void MoveNext()
             {
-                if (Interlocked.Increment(ref sourceWip) == 1)
+                if (Interlocked.Increment(ref _sourceWip) == 1)
                 {
                     do
                     {
-                        if (Interlocked.Increment(ref dispose) == 1)
+                        if (Interlocked.Increment(ref _dispose) == 1)
                         {
-                            source.MoveNextAsync()
+                            _source.MoveNextAsync()
                                 .AsTask()
-                                .ContinueWith(t => Handle(t));
+                                .ContinueWith(HandleAction, this);
                         }
                         else
                         {
                             break;
                         }
                     }
-                    while (Interlocked.Decrement(ref sourceWip) != 0);
+                    while (Interlocked.Decrement(ref _sourceWip) != 0);
                 }
             }
 
-            void Handle(Task<bool> task)
+            private static readonly Action<Task<bool>, object>
+                HandleAction = (t, state) => ((FlatMapEnumerator) state).Handle(t);
+
+            private void Handle(Task<bool> task)
             {
-                if (Interlocked.Decrement(ref dispose) != 0)
+                if (Interlocked.Decrement(ref _dispose) != 0)
                 {
-                    source.DisposeAsync();
+                    _source.DisposeAsync();
                 }
                 else if (task.IsFaulted)
                 {
                     AddException(task.Exception);
-                    done = true;
+                    _done = true;
                     Signal();
                 }
                 else
                 {
                     if (task.Result)
                     {
-                        var innerSource = default(IAsyncEnumerator<R>);
+                        IAsyncEnumerator<TResult> innerSource;
                         try
                         {
-                            innerSource = mapper(source.Current)
+                            innerSource = _mapper(_source.Current)
                                 .GetAsyncEnumerator();
                         }
                         catch (Exception ex)
                         {
-                            source.DisposeAsync();
+                            _source.DisposeAsync();
 
                             AddException(ex);
-                            done = true;
+                            _done = true;
                             Signal();
                             return;
                         }
 
-                        var handler = new InnerHandler(this, innerSource, prefetch);
+                        var handler = new InnerHandler(this, innerSource, _prefetch);
                         if (Add(handler))
                         {
                             handler.MoveNext();
 
-                            if (Interlocked.Decrement(ref outstanding) != 0)
+                            if (Interlocked.Decrement(ref _outstanding) != 0)
                             {
                                 MoveNext();
                             }
@@ -156,7 +156,7 @@ namespace async_enumerable_dotnet.impl
                     }
                     else
                     {
-                        done = true;
+                        _done = true;
                         Signal();
                     }
                 }
@@ -166,44 +166,43 @@ namespace async_enumerable_dotnet.impl
             {
                 for (; ;)
                 {
-                    var d = done && Volatile.Read(ref inners).Length == 0;
-                    var success = queue.TryDequeue(out var v);
+                    var d = _done && Volatile.Read(ref _inners).Length == 0;
+                    var success = _queue.TryDequeue(out var v);
 
                     if (d && !success)
                     {
-                        if (errors != null)
+                        if (_errors != null)
                         {
-                            throw errors;
+                            throw _errors;
                         }
                         return false;
                     }
-                    else if (success)
+
+                    if (success)
                     {
-                        if (v.hasValue)
+                        if (v.HasValue)
                         {
-                            current = v.value;
-                            v.sender.ConsumedOne();
+                            Current = v.Value;
+                            v.Sender.ConsumedOne();
                             return true;
                         }
-                        else
-                        {
-                            Remove(v.sender);
-                            NextSource();
-                            continue;
-                        }
+
+                        Remove(v.Sender);
+                        NextSource();
+                        continue;
                     }
 
-                    await ResumeHelper.Await(ref resume);
-                    ResumeHelper.Clear(ref resume);
+                    await ResumeHelper.Await(ref _resume);
+                    ResumeHelper.Clear(ref _resume);
                 }
             }
 
-            bool Add(InnerHandler handler)
+            private bool Add(InnerHandler handler)
             {
                 for (; ;)
                 {
-                    var a = Volatile.Read(ref inners);
-                    if (a == TERMINATED)
+                    var a = Volatile.Read(ref _inners);
+                    if (a == Terminated)
                     {
                         return false;
                     }
@@ -212,18 +211,18 @@ namespace async_enumerable_dotnet.impl
                     Array.Copy(a, 0, b, 0, n);
                     b[n] = handler;
 
-                    if (Interlocked.CompareExchange(ref inners, b, a) == a)
+                    if (Interlocked.CompareExchange(ref _inners, b, a) == a)
                     {
                         return true;
                     }
                 }
             }
 
-            void Remove(InnerHandler handler)
+            private void Remove(InnerHandler handler)
             {
                 for (; ; )
                 {
-                    var a = Volatile.Read(ref inners);
+                    var a = Volatile.Read(ref _inners);
                     var n = a.Length;
                     if (n == 0)
                     {
@@ -234,10 +233,10 @@ namespace async_enumerable_dotnet.impl
                     {
                         break;
                     }
-                    var b = default(InnerHandler[]);
+                    InnerHandler[] b;
                     if (n == 1)
                     {
-                        b = EMPTY;
+                        b = Empty;
                     }
                     else
                     {
@@ -246,7 +245,7 @@ namespace async_enumerable_dotnet.impl
                         Array.Copy(a, idx + 1, b, idx, n - idx - 1);
                     }
 
-                    if (Interlocked.CompareExchange(ref inners, b, a) == a)
+                    if (Interlocked.CompareExchange(ref _inners, b, a) == a)
                     {
                         handler.Dispose();
                         break;
@@ -254,26 +253,26 @@ namespace async_enumerable_dotnet.impl
                 }
             }
 
-            void AddException(Exception ex)
+            private void AddException(Exception ex)
             {
-                ExceptionHelper.AddException(ref errors, ex);
+                ExceptionHelper.AddException(ref _errors, ex);
             }
 
-            void NextSource()
+            private void NextSource()
             {
-                if (Interlocked.Increment(ref outstanding) == 1)
+                if (Interlocked.Increment(ref _outstanding) == 1)
                 {
                     MoveNext();
                 }
             }
 
-            internal void InnerNext(InnerHandler sender, R item)
+            internal void InnerNext(InnerHandler sender, TResult item)
             {
-                queue.Enqueue(new Item
+                _queue.Enqueue(new Item
                 {
-                    sender = sender,
-                    value = item,
-                    hasValue = true
+                    Sender = sender,
+                    Value = item,
+                    HasValue = true
                 });
                 Signal();
             }
@@ -281,130 +280,134 @@ namespace async_enumerable_dotnet.impl
             internal void InnerError(InnerHandler sender, Exception ex)
             {
                 AddException(ex);
-                queue.Enqueue(new Item
+                _queue.Enqueue(new Item
                 {
-                    sender = sender
+                    Sender = sender
                 });
                 Signal();
             }
 
             internal void InnerComplete(InnerHandler sender)
             {
-                queue.Enqueue(new Item
+                _queue.Enqueue(new Item
                 {
-                    sender = sender
+                    Sender = sender
                 });
                 Signal();
             }
 
-            void Signal()
+            private void Signal()
             {
-                ResumeHelper.Resume(ref resume);
+                ResumeHelper.Resume(ref _resume);
             }
         }
 
         internal sealed class InnerHandler
         {
-            readonly FlatMapEnumerator parent;
+            private readonly FlatMapEnumerator _parent;
 
-            readonly IAsyncEnumerator<R> source;
+            private readonly IAsyncEnumerator<TResult> _source;
 
-            readonly int prefetch;
+            private readonly int _prefetch;
 
-            int dispose;
+            private int _dispose;
 
-            int wip;
+            private int _wip;
 
-            int outstanding;
+            private int _outstanding;
 
-            int consumed;
+            private int _consumed;
 
-            public InnerHandler(FlatMapEnumerator parent, IAsyncEnumerator<R> source, int prefetch)
+            public InnerHandler(FlatMapEnumerator parent, IAsyncEnumerator<TResult> source, int prefetch)
             {
-                this.parent = parent;
-                this.source = source;
-                this.prefetch = prefetch;
-                Volatile.Write(ref outstanding, prefetch);
+                _parent = parent;
+                _source = source;
+                _prefetch = prefetch;
+                Volatile.Write(ref _outstanding, prefetch);
             }
 
             internal void ConsumedOne()
             {
-                var c = consumed + 1;
-                var limit = prefetch - (prefetch >> 2);
+                var c = _consumed + 1;
+                var limit = _prefetch - (_prefetch >> 2);
                 if (c == limit)
                 {
-                    consumed = 0;
-                    if (Interlocked.Add(ref outstanding, limit) == limit)
+                    _consumed = 0;
+                    if (Interlocked.Add(ref _outstanding, limit) == limit)
                     {
                         MoveNext();
                     }
                 }
                 else
                 {
-                    consumed = c;
+                    _consumed = c;
                 }
             }
 
             internal void Dispose()
             {
-                if (Interlocked.Increment(ref dispose) == 1)
+                if (Interlocked.Increment(ref _dispose) == 1)
                 {
-                    source.DisposeAsync();
+                    _source.DisposeAsync();
                 }
             }
 
             internal void MoveNext()
             {
-                if (Interlocked.Increment(ref wip) == 1)
+                if (Interlocked.Increment(ref _wip) == 1)
                 {
                     do
                     {
-                        if (Interlocked.Increment(ref dispose) == 1)
+                        if (Interlocked.Increment(ref _dispose) == 1)
                         {
-                            source.MoveNextAsync()
-                                .AsTask().ContinueWith(t => Handle(t));
+                            _source.MoveNextAsync()
+                                .AsTask()
+                                .ContinueWith(HandleAction, this);
                         }
                         else
                         {
                             break;
                         }
-                    } while (Interlocked.Decrement(ref wip) != 0);
+                    } while (Interlocked.Decrement(ref _wip) != 0);
                 }
             }
 
-            void Handle(Task<bool> task)
+            private static readonly Action<Task<bool>, object>
+                HandleAction = (t, state) => ((InnerHandler) state).Handle(t);
+
+            private void Handle(Task<bool> task)
             {
-                if (Interlocked.Decrement(ref dispose) != 0)
+                if (Interlocked.Decrement(ref _dispose) != 0)
                 {
-                    source.DisposeAsync();
+                    _source.DisposeAsync();
                 }
                 else if (task.IsFaulted)
                 {
-                    parent.InnerError(this, task.Exception);
+                    _parent.InnerError(this, task.Exception);
                 }
                 else
                 {
                     if (task.Result)
                     {
-                        parent.InnerNext(this, source.Current);
-                        if (Interlocked.Decrement(ref outstanding) != 0)
+                        _parent.InnerNext(this, _source.Current);
+                        if (Interlocked.Decrement(ref _outstanding) != 0)
                         {
                             MoveNext();
                         }
                     }
                     else
                     {
-                        parent.InnerComplete(this);
+                        _parent.InnerComplete(this);
                     }
                 }
             }
         }
 
-        internal struct Item
+        private struct Item
         {
-            internal InnerHandler sender;
-            internal R value;
-            internal bool hasValue;
+            internal InnerHandler Sender;
+            internal TResult Value;
+            internal bool HasValue;
         }
     }
 }

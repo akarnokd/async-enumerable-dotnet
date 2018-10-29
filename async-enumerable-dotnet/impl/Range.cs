@@ -1,42 +1,41 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
 using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet.impl
 {
     internal sealed class Range : IAsyncEnumerable<int>
     {
-        readonly int start;
+        private readonly int _start;
 
-        readonly int end;
+        private readonly int _end;
 
         public Range(int start, int end)
         {
-            this.start = start;
-            this.end = end;
+            _start = start;
+            _end = end;
         }
 
         public IAsyncEnumerator<int> GetAsyncEnumerator()
         {
-            return new RangeEnumerator(start, end);
+            return new RangeEnumerator(_start, _end);
         }
 
-        internal sealed class RangeEnumerator : IAsyncEnumerator<int>
+        private sealed class RangeEnumerator : IAsyncEnumerator<int>
         {
-            readonly int end;
+            private readonly int _end;
 
-            int index;
-
-            int current;
+            private int _index;
 
             public RangeEnumerator(int index, int end)
             {
-                this.index = index;
-                this.end = end;
+                _index = index;
+                _end = end;
             }
 
-            public int Current => current;
+            public int Current { get; private set; }
 
             public ValueTask DisposeAsync()
             {
@@ -45,13 +44,13 @@ namespace async_enumerable_dotnet.impl
 
             public ValueTask<bool> MoveNextAsync()
             {
-                var idx = index;
-                if (idx == end)
+                var idx = _index;
+                if (idx == _end)
                 {
                     return new ValueTask<bool>(false);
                 }
-                index = idx + 1;
-                current = idx;
+                _index = idx + 1;
+                Current = idx;
                 return new ValueTask<bool>(true);
             }
         }

@@ -1,56 +1,57 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
 using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet.impl
 {
     internal sealed class Take<T> : IAsyncEnumerable<T>
     {
-        readonly IAsyncEnumerable<T> source;
+        private readonly IAsyncEnumerable<T> _source;
 
-        readonly long n;
+        private readonly long _n;
 
         public Take(IAsyncEnumerable<T> source, long n)
         {
-            this.source = source;
-            this.n = n;
+            _source = source;
+            _n = n;
         }
 
         public IAsyncEnumerator<T> GetAsyncEnumerator()
         {
-            return new TakeEnumerator(source.GetAsyncEnumerator(), n);
+            return new TakeEnumerator(_source.GetAsyncEnumerator(), _n);
         }
 
-        internal sealed class TakeEnumerator : IAsyncEnumerator<T>
+        private sealed class TakeEnumerator : IAsyncEnumerator<T>
         {
-            readonly IAsyncEnumerator<T> source;
+            private readonly IAsyncEnumerator<T> _source;
 
-            long remaining;
+            private long _remaining;
 
-            bool once;
+            private bool _once;
 
             public TakeEnumerator(IAsyncEnumerator<T> source, long remaining)
             {
-                this.source = source;
-                this.remaining = remaining;
+                _source = source;
+                _remaining = remaining;
             }
 
-            public T Current => source.Current;
+            public T Current => _source.Current;
 
             public ValueTask DisposeAsync()
             {
-                if (!once)
+                if (!_once)
                 {
-                    once = true;
-                    return source.DisposeAsync();
+                    _once = true;
+                    return _source.DisposeAsync();
                 }
                 return new ValueTask();
             }
 
             public async ValueTask<bool> MoveNextAsync()
             {
-                var n = remaining;
+                var n = _remaining;
                 if (n == 0)
                 {
                     // eagerly dispose as who knows when the
@@ -58,9 +59,9 @@ namespace async_enumerable_dotnet.impl
                     await DisposeAsync();
                     return false;
                 }
-                remaining = n - 1;
+                _remaining = n - 1;
 
-                return await source.MoveNextAsync();
+                return await _source.MoveNextAsync();
             }
         }
     }

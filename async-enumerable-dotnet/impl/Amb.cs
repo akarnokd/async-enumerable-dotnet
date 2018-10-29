@@ -1,6 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -8,36 +10,37 @@ namespace async_enumerable_dotnet.impl
 {
     internal sealed class Amb<T> : IAsyncEnumerable<T>
     {
-        readonly IAsyncEnumerable<T>[] sources;
+        private readonly IAsyncEnumerable<T>[] _sources;
 
         public Amb(IAsyncEnumerable<T>[] sources)
         {
-            this.sources = sources;
+            _sources = sources;
         }
 
         public IAsyncEnumerator<T> GetAsyncEnumerator()
         {
-            return new AmbEnumerator(sources);
+            return new AmbEnumerator(_sources);
         }
 
-        internal sealed class AmbEnumerator : IAsyncEnumerator<T>
+        private sealed class AmbEnumerator : IAsyncEnumerator<T>
         {
-            readonly InnerHandler[] sources;
+            private readonly InnerHandler[] _sources;
 
-            readonly TaskCompletionSource<bool> winTask;
+            private readonly TaskCompletionSource<bool> _winTask;
 
-            InnerHandler winner;
+            private InnerHandler _winner;
 
-            int disposeWip;
+            private int _disposeWip;
 
-            TaskCompletionSource<bool> disposeTask;
+            private readonly TaskCompletionSource<bool> _disposeTask;
 
-            Exception disposeError;
+            private Exception _disposeError;
 
-            bool once;
+            private bool _once;
 
-            public T Current => winner.source.Current;
+            public T Current => _winner.Source.Current;
 
+            // ReSharper disable once SuggestBaseTypeForParameter
             public AmbEnumerator(IAsyncEnumerable<T>[] sources)
             {
                 var handlers = new InnerHandler[sources.Length];
@@ -45,69 +48,67 @@ namespace async_enumerable_dotnet.impl
                 {
                     handlers[i] = new InnerHandler(sources[i].GetAsyncEnumerator(), this);
                 }
-                this.sources = handlers;
-                disposeWip = sources.Length;
-                this.disposeTask = new TaskCompletionSource<bool>();
-                this.winTask = new TaskCompletionSource<bool>();
+                _sources = handlers;
+                _disposeWip = sources.Length;
+                _disposeTask = new TaskCompletionSource<bool>();
+                _winTask = new TaskCompletionSource<bool>();
             }
 
             public async ValueTask DisposeAsync()
             {
-                winner = null;
-                foreach (var ih in sources)
+                _winner = null;
+                foreach (var ih in _sources)
                 {
                     ih.Dispose();
                 }
 
-                await disposeTask.Task;
+                await _disposeTask.Task;
             }
 
             public async ValueTask<bool> MoveNextAsync()
             {
-                if (once)
+                if (_once)
                 {
-                    return await winner.source.MoveNextAsync();
+                    return await _winner.Source.MoveNextAsync();
                 }
-                else
+
+                _once = true;
+
+                foreach (var h in _sources)
                 {
-                    once = true;
-
-                    foreach (var h in sources)
-                    {
-                        h.MoveNext(t => First(t, h));
-                    }
-
-                    var winnerHasValue = await winTask.Task;
-
-                    foreach (var h in sources)
-                    {
-                        if (h != winner)
-                        {
-                            h.Dispose();
-                        }
-                    }
-
-                    return winnerHasValue;
+                    h.MoveNext(t => First(t, h));
                 }
+
+                var winnerHasValue = await _winTask.Task;
+
+                foreach (var h in _sources)
+                {
+                    if (h != _winner)
+                    {
+                        h.Dispose();
+                    }
+                }
+
+                return winnerHasValue;
             }
 
-            internal void First(Task<bool> task, InnerHandler sender)
+            private void First(Task<bool> task, InnerHandler sender)
             {
                 if (sender.CheckDisposed())
                 {
-                    Dispose(sender.source);
+                    Dispose(sender.Source);
                 }
                 else
                 {
-                    if (Volatile.Read(ref winner) == null && Interlocked.CompareExchange(ref winner, sender, null) == null)
+                    if (Volatile.Read(ref _winner) == null && Interlocked.CompareExchange(ref _winner, sender, null) == null)
                     {
                         if (task.IsFaulted)
                         {
-                            winTask.TrySetException(task.Exception);
+                            _winTask.TrySetException(task.Exception);
                         }
                         else
                         {
-                            winTask.SetResult(task.Result);
+                            _winTask.SetResult(task.Result);
                         }
                     }
                 }
@@ -120,56 +121,56 @@ namespace async_enumerable_dotnet.impl
                     .ContinueWith(t => DisposeHandle(t.Exception));
             }
 
-            void DisposeHandle(Exception ex)
+            private void DisposeHandle(Exception ex)
             {
                 if (ex != null)
                 {
-                    ExceptionHelper.AddException(ref disposeError, ex);
+                    ExceptionHelper.AddException(ref _disposeError, ex);
                 }
 
-                if (Interlocked.Decrement(ref disposeWip) == 0)
+                if (Interlocked.Decrement(ref _disposeWip) == 0)
                 {
-                    ex = disposeError;
-                    disposeError = null;
+                    ex = _disposeError;
+                    _disposeError = null;
                     if (ex != null)
                     {
-                        disposeTask.TrySetException(ex);
+                        _disposeTask.TrySetException(ex);
                     }
                     else
                     {
-                        disposeTask.TrySetResult(false);
+                        _disposeTask.TrySetResult(false);
                     }
                 }
             }
         }
 
-        internal sealed class InnerHandler
+        private sealed class InnerHandler
         {
-            internal readonly IAsyncEnumerator<T> source;
+            internal readonly IAsyncEnumerator<T> Source;
 
-            readonly AmbEnumerator parent;
+            private readonly AmbEnumerator _parent;
 
-            int disposeWip;
+            private int _disposeWip;
 
             public InnerHandler(IAsyncEnumerator<T> source, AmbEnumerator parent)
             {
-                this.source = source;
-                this.parent = parent;
+                Source = source;
+                _parent = parent;
             }
 
             internal void Dispose()
             {
-                if (Interlocked.Increment(ref disposeWip) == 1)
+                if (Interlocked.Increment(ref _disposeWip) == 1)
                 {
-                    parent.Dispose(source);
+                    _parent.Dispose(Source);
                 }
             }
 
             internal void MoveNext(Action<Task<bool>> handler)
             {
-                if (Interlocked.Increment(ref disposeWip) == 1)
+                if (Interlocked.Increment(ref _disposeWip) == 1)
                 {
-                    source.MoveNextAsync()
+                    Source.MoveNextAsync()
                         .AsTask()
                         .ContinueWith(handler);
                 }
@@ -177,7 +178,7 @@ namespace async_enumerable_dotnet.impl
 
             internal bool CheckDisposed()
             {
-                return Interlocked.Decrement(ref disposeWip) != 0;
+                return Interlocked.Decrement(ref _disposeWip) != 0;
             }
         }
     }
