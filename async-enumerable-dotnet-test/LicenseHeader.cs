@@ -4,6 +4,7 @@
 
 using System;
 using System.IO;
+using System.Text;
 using Xunit;
 
 namespace async_enumerable_dotnet_test
@@ -57,12 +58,12 @@ namespace async_enumerable_dotnet_test
                     continue;
                 }
                 
-                var text = File.ReadAllText(entry);
+                var text = File.ReadAllText(entry, Encoding.UTF8);
                 if (!text.StartsWith(HeaderLines))
                 {
                     Console.WriteLine("Missing header: " + entry);
                     found = true;
-                    File.WriteAllText(entry, HeaderLines + text);
+                    File.WriteAllText(entry, HeaderLines + text, Encoding.UTF8);
                 }
             }
 
