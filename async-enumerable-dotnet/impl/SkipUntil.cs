@@ -42,8 +42,6 @@ namespace async_enumerable_dotnet.impl
 
             TaskCompletionSource<bool> disposeTask;
 
-            long wip;
-
             Exception error;
             bool done;
             bool hasValue;
@@ -114,12 +112,8 @@ namespace async_enumerable_dotnet.impl
                         }
                     }
 
-                    if (Volatile.Read(ref wip) == 0)
-                    {
-                        await ResumeHelper.Resume(ref resume).Task;
-                    }
+                    await ResumeHelper.Await(ref resume);
                     ResumeHelper.Clear(ref resume);
-                    Interlocked.Exchange(ref wip, 0);
                 }
             }
 
@@ -205,10 +199,7 @@ namespace async_enumerable_dotnet.impl
 
             void Signal()
             {
-                if (Interlocked.Increment(ref wip) == 1)
-                {
-                    ResumeHelper.Resume(ref resume).TrySetResult(true);
-                }
+                ResumeHelper.Resume(ref resume);
             }
 
             void Dispose(IAsyncDisposable d)

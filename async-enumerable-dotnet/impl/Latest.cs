@@ -30,8 +30,6 @@ namespace async_enumerable_dotnet.impl
 
             TaskCompletionSource<bool> disposeTask;
 
-            long resumeWip;
-
             TaskCompletionSource<bool> resumeTask;
 
             Exception error;
@@ -60,7 +58,7 @@ namespace async_enumerable_dotnet.impl
                 {
                     return source.DisposeAsync();
                 }
-                return new ValueTask(ResumeHelper.Resume(ref disposeTask).Task);
+                return ResumeHelper.Await(ref disposeTask);
             }
 
             public async ValueTask<bool> MoveNextAsync()
@@ -83,11 +81,8 @@ namespace async_enumerable_dotnet.impl
                         return true;
                     }
 
-                    if (Volatile.Read(ref resumeWip) == 0)
-                    {
-                        await ResumeHelper.Resume(ref resumeTask).Task;
-                    }
-                    ResumeHelper.Clear(ref resumeTask, ref resumeWip);
+                    await ResumeHelper.Await(ref resumeTask);
+                    ResumeHelper.Clear(ref resumeTask);
                 }
             }
 
@@ -112,30 +107,42 @@ namespace async_enumerable_dotnet.impl
                 }
             }
 
-            void HandleMain(Task<bool> t)
+            bool TryDispose()
             {
                 if (Interlocked.Decrement(ref disposeWip) != 0)
                 {
-                    ResumeHelper.ResumeWhen(source.DisposeAsync(), ref disposeTask);
+                    ResumeHelper.Complete(ref disposeTask, source.DisposeAsync());
+                    return false;
+                }
+                return true;
+            }
+
+            void HandleMain(Task<bool> t)
+            {
+                if (t.IsFaulted)
+                {
+                    error = ExceptionHelper.Unaggregate(t.Exception);
+                    done = true;
+                    if (TryDispose())
+                    {
+                        ResumeHelper.Resume(ref resumeTask);
+                    }
+                }
+                else if (t.Result)
+                {
+                    Interlocked.Exchange(ref latest, source.Current);
+                    if (TryDispose())
+                    {
+                        ResumeHelper.Resume(ref resumeTask);
+                    }
+                    MoveNext();
                 }
                 else
                 {
-                    if (t.IsFaulted)
+                    done = true;
+                    if (TryDispose())
                     {
-                        error = ExceptionHelper.Unaggregate(t.Exception);
-                        done = true;
-                        ResumeHelper.Signal(ref resumeWip, ref resumeTask);
-                    }
-                    else if (t.Result)
-                    {
-                        Interlocked.Exchange(ref latest, source.Current);
-                        ResumeHelper.Signal(ref resumeWip, ref resumeTask);
-                        MoveNext();
-                    }
-                    else
-                    {
-                        done = true;
-                        ResumeHelper.Signal(ref resumeWip, ref resumeTask);
+                        ResumeHelper.Resume(ref resumeTask);
                     }
                 }
             }

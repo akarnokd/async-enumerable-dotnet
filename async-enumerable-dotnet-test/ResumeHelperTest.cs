@@ -16,7 +16,7 @@ namespace async_enumerable_dotnet_test
             var source = new TaskCompletionSource<bool>();
             source.TrySetCanceled();
             
-            ResumeHelper.ResumeWhen(new ValueTask(source.Task), ref _tcs);
+            ResumeHelper.Complete(ref _tcs, new ValueTask(source.Task));
             
             Assert.True(_tcs.Task.IsCanceled);
         }
@@ -27,9 +27,9 @@ namespace async_enumerable_dotnet_test
             var source = new TaskCompletionSource<bool>();
             var ex = new InvalidOperationException();
             source.TrySetException(ex);
-            
-            ResumeHelper.ResumeWhen(new ValueTask(source.Task), ref _tcs);
-            
+
+            ResumeHelper.Complete(ref _tcs, new ValueTask(source.Task));
+
             Assert.True(_tcs.Task.IsFaulted);
             Assert.Same(ex, ExceptionHelper.Unaggregate(ExceptionHelper.Unaggregate(_tcs.Task.Exception)));
         }
@@ -40,9 +40,9 @@ namespace async_enumerable_dotnet_test
         {
             var source = new TaskCompletionSource<bool>();
             source.TrySetResult(true);
-            
-            ResumeHelper.ResumeWhen(new ValueTask(source.Task), ref _tcs);
-            
+
+            ResumeHelper.Complete(ref _tcs, new ValueTask(source.Task));
+
             Assert.True(_tcs.Task.IsCompleted);
             Assert.True(_tcs.Task.Result);
         }
@@ -51,8 +51,8 @@ namespace async_enumerable_dotnet_test
         public async void Async_Cancelled()
         {
             var source = new TaskCompletionSource<bool>();
-            
-            ResumeHelper.ResumeWhen(new ValueTask(source.Task), ref _tcs);
+
+            ResumeHelper.Complete(ref _tcs, new ValueTask(source.Task));
 
             source.TrySetCanceled();
 
@@ -72,8 +72,8 @@ namespace async_enumerable_dotnet_test
         public async void Async_Error()
         {
             var source = new TaskCompletionSource<bool>();
-            
-            ResumeHelper.ResumeWhen(new ValueTask(source.Task), ref _tcs);
+
+            ResumeHelper.Complete(ref _tcs, new ValueTask(source.Task));
 
             var ex = new InvalidOperationException();
             source.TrySetException(ex);
@@ -95,9 +95,9 @@ namespace async_enumerable_dotnet_test
         public async void Async_Success()
         {
             var source = new TaskCompletionSource<bool>();
-            
-            ResumeHelper.ResumeWhen(new ValueTask(source.Task), ref _tcs);
-            
+
+            ResumeHelper.Complete(ref _tcs, new ValueTask(source.Task));
+
             source.TrySetResult(true);
 
             await _tcs.Task;

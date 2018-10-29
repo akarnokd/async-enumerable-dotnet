@@ -49,8 +49,6 @@ namespace async_enumerable_dotnet.impl
 
             int outstanding;
 
-            long wip;
-
             TaskCompletionSource<bool> resume;
 
             int disposeWip;
@@ -75,7 +73,7 @@ namespace async_enumerable_dotnet.impl
                 {
                     return source.DisposeAsync();
                 }
-                return new ValueTask(ResumeHelper.Resume(ref disposeTask).Task);
+                return ResumeHelper.Await(ref disposeTask);
             }
 
             internal void MoveNext()
@@ -100,10 +98,7 @@ namespace async_enumerable_dotnet.impl
 
             void Signal()
             {
-                if (Interlocked.Increment(ref wip) == 1)
-                {
-                    ResumeHelper.Resume(ref resume).TrySetResult(true);
-                }
+                ResumeHelper.Resume(ref resume);
             }
 
             void SourceHandler(Task<bool> t)
@@ -126,7 +121,7 @@ namespace async_enumerable_dotnet.impl
                 // release the MoveNext, just in case
                 if (Interlocked.Decrement(ref disposeWip) != 0)
                 {
-                    ResumeHelper.ResumeWhen(source.DisposeAsync(), ref disposeTask);
+                    ResumeHelper.Complete(ref disposeTask, source.DisposeAsync());
                 }
                 else
                 {
@@ -175,12 +170,8 @@ namespace async_enumerable_dotnet.impl
                         return true;
                     }
 
-                    if (Volatile.Read(ref wip) == 0)
-                    {
-                        await ResumeHelper.Resume(ref resume).Task;
-                    }
+                    await ResumeHelper.Await(ref resume);
                     ResumeHelper.Clear(ref resume);
-                    Interlocked.Exchange(ref wip, 0);
                 }
             }
         }

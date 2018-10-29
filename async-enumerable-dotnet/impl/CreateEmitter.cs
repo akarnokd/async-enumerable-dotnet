@@ -46,14 +46,14 @@ namespace async_enumerable_dotnet.impl
                 task.ContinueWith(t =>
                 {
                     taskComplete = true;
-                    ResumeHelper.Resume(ref valueReady).TrySetResult(false);
+                    ResumeHelper.Resume(ref valueReady);
                 });
             }
 
             public ValueTask DisposeAsync()
             {
                 disposeRequested = true;
-                ResumeHelper.Resume(ref consumed).TrySetResult(true);
+                ResumeHelper.Resume(ref consumed);
                 return new ValueTask(task);
             }
 
@@ -67,16 +67,16 @@ namespace async_enumerable_dotnet.impl
                     }
                     return false;
                 }
-                ResumeHelper.Resume(ref consumed).TrySetResult(true);
+                ResumeHelper.Resume(ref consumed);
 
-                var b = await ResumeHelper.Resume(ref valueReady).Task;
+                await ResumeHelper.Await(ref valueReady);
                 ResumeHelper.Clear(ref valueReady);
 
-                if (b)
+                if (!taskComplete)
                 {
                     return true;
                 }
-                if (task.IsFaulted)
+                else if (task.IsFaulted)
                 {
                     throw task.Exception;
                 }
@@ -89,7 +89,7 @@ namespace async_enumerable_dotnet.impl
                 {
                     return;
                 }
-                await ResumeHelper.Resume(ref consumed).Task;
+                await ResumeHelper.Await(ref consumed);
                 ResumeHelper.Clear(ref consumed);
                 if (disposeRequested)
                 {
@@ -98,7 +98,7 @@ namespace async_enumerable_dotnet.impl
 
                 current = value;
 
-                ResumeHelper.Resume(ref valueReady).TrySetResult(true);
+                ResumeHelper.Resume(ref valueReady);
             }
         }
     }

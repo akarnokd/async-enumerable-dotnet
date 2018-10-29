@@ -49,8 +49,6 @@ namespace async_enumerable_dotnet.impl
             volatile bool done;
             Exception error;
 
-            long wip;
-
             int disposeWip;
 
             TaskCompletionSource<bool> disposeTask;
@@ -77,7 +75,7 @@ namespace async_enumerable_dotnet.impl
                     Interlocked.Exchange(ref timerLatest, EmptyIndicator);
                     return source.DisposeAsync();
                 }
-                return new ValueTask(ResumeHelper.Resume(ref disposeTask).Task);
+                return ResumeHelper.Await(ref disposeTask);
             }
 
             public async ValueTask<bool> MoveNextAsync()
@@ -101,12 +99,8 @@ namespace async_enumerable_dotnet.impl
                         return true;
                     }
 
-                    if (Volatile.Read(ref wip) == 0)
-                    {
-                        await ResumeHelper.Resume(ref resume).Task;
-                    }
+                    await ResumeHelper.Await(ref resume);
                     ResumeHelper.Clear(ref resume);
-                    Interlocked.Exchange(ref wip, 0);
                 }
             }
 
@@ -129,10 +123,7 @@ namespace async_enumerable_dotnet.impl
 
             void Signal()
             {
-                if (Interlocked.Increment(ref wip) == 1)
-                {
-                    ResumeHelper.Resume(ref resume).TrySetResult(true);
-                }
+                ResumeHelper.Resume(ref resume);
             }
 
             internal void MoveNext()
@@ -155,14 +146,20 @@ namespace async_enumerable_dotnet.impl
                 }
             }
 
-            void Handler(Task<bool> t)
+            bool TryDispose()
             {
                 if (Interlocked.Decrement(ref disposeWip) != 0)
                 {
                     Interlocked.Exchange(ref timerLatest, EmptyIndicator);
-                    ResumeHelper.ResumeWhen(source.DisposeAsync(), ref disposeTask);
+                    ResumeHelper.Complete(ref disposeTask, source.DisposeAsync());
+                    return false;
                 }
-                else if (t.IsFaulted)
+                return true;
+            }
+
+            void Handler(Task<bool> t)
+            {
+                if (t.IsFaulted)
                 {
                     cts.Cancel();
                     if (emitLast)
@@ -171,13 +168,19 @@ namespace async_enumerable_dotnet.impl
                     }
                     error = ExceptionHelper.Unaggregate(t.Exception);
                     done = true;
-                    Signal();
+                    if (TryDispose())
+                    {
+                        Signal();
+                    }
                 }
                 else if (t.Result)
                 {
                     Interlocked.Exchange(ref timerLatest, source.Current);
-                    // the value will be picked up by the timer
-                    MoveNext();
+                    if (TryDispose())
+                    {
+                        // the value will be picked up by the timer
+                        MoveNext();
+                    }
                 }
                 else
                 {
@@ -187,7 +190,10 @@ namespace async_enumerable_dotnet.impl
                         Interlocked.Exchange(ref latest, Interlocked.Exchange(ref timerLatest, EmptyIndicator));
                     }
                     done = true;
-                    Signal();
+                    if (TryDispose())
+                    {
+                        Signal();
+                    }
                 }
             }
         }

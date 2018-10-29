@@ -174,12 +174,12 @@ namespace async_enumerable_dotnet
 
             public async ValueTask Complete()
             {
-                await ResumeHelper.Resume(ref consumed).Task;
+                await ResumeHelper.Await(ref consumed);
                 ResumeHelper.Clear(ref consumed);
 
                 this.done = true;
 
-                ResumeHelper.Resume(ref valueReady).TrySetResult(true);
+                ResumeHelper.Resume(ref valueReady);
             }
 
             public ValueTask DisposeAsync()
@@ -187,23 +187,23 @@ namespace async_enumerable_dotnet
                 current = default;
                 parent.Remove(this);
                 // unblock any Next/Error/Complete waiting for consumption
-                ResumeHelper.Resume(ref consumed).TrySetResult(true);
+                ResumeHelper.Resume(ref consumed);
                 return new ValueTask();
             }
 
             public async ValueTask Error(Exception ex)
             {
-                await ResumeHelper.Resume(ref consumed).Task;
+                await ResumeHelper.Await(ref consumed);
                 ResumeHelper.Clear(ref consumed);
 
                 this.error = ex;
 
-                ResumeHelper.Resume(ref valueReady).TrySetResult(true);
+                ResumeHelper.Resume(ref valueReady);
             }
 
             public async ValueTask<bool> MoveNextAsync()
             {
-                await ResumeHelper.Resume(ref valueReady).Task;
+                await ResumeHelper.Await(ref valueReady);
                 ResumeHelper.Clear(ref valueReady);
 
                 if (error != null)
@@ -218,18 +218,18 @@ namespace async_enumerable_dotnet
 
                 current = value;
                 value = default;
-                ResumeHelper.Resume(ref consumed).TrySetResult(true);
+                ResumeHelper.Resume(ref consumed);
                 return true;
             }
 
             public async ValueTask Next(T value)
             {
-                await ResumeHelper.Resume(ref consumed).Task;
+                await ResumeHelper.Await(ref consumed);
                 ResumeHelper.Clear(ref consumed);
 
                 this.value = value;
 
-                ResumeHelper.Resume(ref valueReady).TrySetResult(true);
+                ResumeHelper.Resume(ref valueReady);
             }
         }
     }

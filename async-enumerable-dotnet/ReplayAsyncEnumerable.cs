@@ -55,7 +55,7 @@ namespace async_enumerable_dotnet
         /// Construct a time-bound ReplayAsyncEnumerable.
         /// </summary>
         /// <param name="maxAge">The maximum age of items to retain.</param>
-        /// <param name="timeSource">The optional source for the current time. Defaults to the unix epoch milliseconds.</param>
+        /// <param name="timeSource">The optional source for the current time. Defaults to the Unix epoch milliseconds.</param>
         public ReplayAsyncEnumerable(TimeSpan maxAge, Func<long> timeSource = null)
         {
             this.buffer = new TimeSizeBoundBuffer(int.MaxValue, maxAge, timeSource ?? DefaultTimeSource);
@@ -67,7 +67,7 @@ namespace async_enumerable_dotnet
         /// </summary>
         /// <param name="maxSize">The maximum number of items to retain.</param>
         /// <param name="maxAge">The maximum age of items to retain.</param>
-        /// <param name="timeSource">The optional source for the current time. Defaults to the unix epoch milliseconds.</param>
+        /// <param name="timeSource">The optional source for the current time. Defaults to the Unix epoch milliseconds.</param>
         public ReplayAsyncEnumerable(int maxSize, TimeSpan maxAge, Func<long> timeSource = null)
         {
             this.buffer = new TimeSizeBoundBuffer(maxSize, maxAge, timeSource ?? DefaultTimeSource);
@@ -206,8 +206,6 @@ namespace async_enumerable_dotnet
 
             internal object node;
 
-            internal long wip;
-
             internal T current;
 
             internal TaskCompletionSource<bool> resume;
@@ -235,10 +233,7 @@ namespace async_enumerable_dotnet
 
             public void Signal()
             {
-                if (Interlocked.Increment(ref wip) == 1)
-                {
-                    ResumeHelper.Resume(ref resume).TrySetResult(true);
-                }
+                ResumeHelper.Resume(ref resume);
             }
         }
 
@@ -284,12 +279,8 @@ namespace async_enumerable_dotnet
                         return true;
                     }
 
-                    if (Volatile.Read(ref consumer.wip) == 0)
-                    {
-                        await ResumeHelper.Resume(ref consumer.resume).Task;
-                    }
+                    await ResumeHelper.Await(ref consumer.resume);
                     ResumeHelper.Clear(ref consumer.resume);
-                    Interlocked.Exchange(ref consumer.wip, 0L);
                 }
             }
 
@@ -396,12 +387,8 @@ namespace async_enumerable_dotnet
                         return true;
                     }
 
-                    if (Volatile.Read(ref consumer.wip) == 0)
-                    {
-                        await ResumeHelper.Resume(ref consumer.resume).Task;
-                    }
+                    await ResumeHelper.Await(ref consumer.resume);
                     ResumeHelper.Clear(ref consumer.resume);
-                    Interlocked.Exchange(ref consumer.wip, 0L);
                 }
             }
 
@@ -564,12 +551,8 @@ namespace async_enumerable_dotnet
                         return true;
                     }
 
-                    if (Volatile.Read(ref consumer.wip) == 0)
-                    {
-                        await ResumeHelper.Resume(ref consumer.resume).Task;
-                    }
+                    await ResumeHelper.Await(ref consumer.resume);
                     ResumeHelper.Clear(ref consumer.resume);
-                    Interlocked.Exchange(ref consumer.wip, 0L);
                 }
             }
 

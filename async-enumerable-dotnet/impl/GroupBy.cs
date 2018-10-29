@@ -185,38 +185,38 @@ namespace async_enumerable_dotnet.impl
                 {
                     Key = key;
                     this.parent = parent;
-                    ResumeHelper.Resume(ref consumed).TrySetResult(true);
+                    ResumeHelper.Resume(ref consumed);
                 }
 
                 public async ValueTask Next(V value)
                 {
-                    await ResumeHelper.Resume(ref consumed).Task;
+                    await ResumeHelper.Await(ref consumed);
                     ResumeHelper.Clear(ref consumed);
 
                     current = value;
 
-                    ResumeHelper.Resume(ref valueReady).TrySetResult(true);
+                    ResumeHelper.Resume(ref valueReady);
                 }
 
                 public async ValueTask Error(Exception ex)
                 {
-                    await ResumeHelper.Resume(ref consumed).Task;
+                    await ResumeHelper.Await(ref consumed);
                     ResumeHelper.Clear(ref consumed);
 
                     error = ex;
                     done = true;
 
-                    ResumeHelper.Resume(ref valueReady).TrySetResult(true);
+                    ResumeHelper.Resume(ref valueReady);
                 }
 
                 public async ValueTask Complete()
                 {
-                    await ResumeHelper.Resume(ref consumed).Task;
+                    await ResumeHelper.Await(ref consumed);
                     ResumeHelper.Clear(ref consumed);
 
                     done = true;
 
-                    ResumeHelper.Resume(ref valueReady).TrySetResult(true);
+                    ResumeHelper.Resume(ref valueReady);
                 }
 
 
@@ -231,7 +231,7 @@ namespace async_enumerable_dotnet.impl
 
                 public async ValueTask<bool> MoveNextAsync()
                 {
-                    await ResumeHelper.Resume(ref valueReady).Task;
+                    await ResumeHelper.Await(ref valueReady);
                     ResumeHelper.Clear(ref valueReady);
 
                     if (done)
@@ -243,14 +243,14 @@ namespace async_enumerable_dotnet.impl
                         return false;
                     }
                     Current = current;
-                    ResumeHelper.Resume(ref consumed).TrySetResult(true);
+                    ResumeHelper.Resume(ref consumed);
                     return true;
                 }
 
                 public async ValueTask DisposeAsync()
                 {
                     await parent.Remove(this);
-                    ResumeHelper.Resume(ref consumed).TrySetResult(true);
+                    ResumeHelper.Resume(ref consumed);
                 }
             }
         }

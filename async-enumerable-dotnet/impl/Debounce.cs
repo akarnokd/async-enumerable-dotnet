@@ -46,8 +46,6 @@ namespace async_enumerable_dotnet.impl
 
             int sourceWip;
 
-            long resumeWip;
-
             TaskCompletionSource<bool> resume;
 
             volatile bool done;
@@ -80,7 +78,7 @@ namespace async_enumerable_dotnet.impl
                     }
                     return source.DisposeAsync();
                 }
-                return new ValueTask(ResumeHelper.Resume(ref disposeTask).Task);
+                return ResumeHelper.Await(ref disposeTask);
             }
 
             public async ValueTask<bool> MoveNextAsync()
@@ -104,11 +102,8 @@ namespace async_enumerable_dotnet.impl
                         return true;
                     }
 
-                    if (Volatile.Read(ref resumeWip) == 0)
-                    {
-                        await ResumeHelper.Resume(ref resume).Task;
-                    }
-                    ResumeHelper.Clear(ref resume, ref resumeWip);
+                    await ResumeHelper.Await(ref resume);
+                    ResumeHelper.Clear(ref resume);
                 }
             }
 
@@ -133,7 +128,7 @@ namespace async_enumerable_dotnet.impl
                 }
             }
 
-            void HandleMain(Task<bool> t)
+            bool TryDispose()
             {
                 if (Interlocked.Decrement(ref disposeWip) != 0)
                 {
@@ -141,9 +136,14 @@ namespace async_enumerable_dotnet.impl
                     {
                         emitLastItem = default;
                     }
-                    ResumeHelper.ResumeWhen(source.DisposeAsync(), ref disposeTask);
+                    ResumeHelper.Complete(ref disposeTask, source.DisposeAsync());
+                    return false;
                 }
-                else 
+                return true;
+            }
+
+            void HandleMain(Task<bool> t)
+            {
                 if (t.IsFaulted)
                 {
                     CancellationHelper.Cancel(ref cts);
@@ -158,24 +158,30 @@ namespace async_enumerable_dotnet.impl
                     }
                     error = ExceptionHelper.Unaggregate(t.Exception);
                     done = true;
-                    ResumeHelper.Signal(ref resumeWip, ref resume);
+                    if (TryDispose())
+                    {
+                        ResumeHelper.Resume(ref resume);
+                    }
                 }
                 else if (t.Result)
                 {
                     Volatile.Read(ref cts)?.Cancel();
 
                     var v = source.Current;
-                    if (emitLast)
+                    if (TryDispose())
                     {
-                        emitLastItem = v;
-                    }
-                    var idx = ++sourceIndex;
-                    var newCts = new CancellationTokenSource();
-                    if (CancellationHelper.Replace(ref cts, newCts))
-                    {
-                        Task.Delay(delay, newCts.Token)
-                            .ContinueWith(tt => TimerHandler(tt, v, idx));
-                        MoveNext();
+                        if (emitLast)
+                        {
+                            emitLastItem = v;
+                        }
+                        var idx = ++sourceIndex;
+                        var newCts = new CancellationTokenSource();
+                        if (CancellationHelper.Replace(ref cts, newCts))
+                        {
+                            Task.Delay(delay, newCts.Token)
+                                .ContinueWith(tt => TimerHandler(tt, v, idx));
+                            MoveNext();
+                        }
                     }
                 }
                 else
@@ -191,7 +197,10 @@ namespace async_enumerable_dotnet.impl
                         }
                     }
                     done = true;
-                    ResumeHelper.Signal(ref resumeWip, ref resume);
+                    if (TryDispose())
+                    {
+                        ResumeHelper.Resume(ref resume);
+                    }
                 }
             }
 
@@ -199,7 +208,7 @@ namespace async_enumerable_dotnet.impl
             {
                 if (!t.IsCanceled && SetLatest(value, idx))
                 {
-                    ResumeHelper.Signal(ref resumeWip, ref resume);
+                    ResumeHelper.Resume(ref resume);
                 }
             }
 

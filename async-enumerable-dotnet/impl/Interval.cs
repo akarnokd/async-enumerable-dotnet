@@ -45,8 +45,6 @@ namespace async_enumerable_dotnet.impl
 
             long current;
 
-            long wip;
-
             TaskCompletionSource<bool> resume;
 
             public long Current => current;
@@ -85,12 +83,8 @@ namespace async_enumerable_dotnet.impl
                         return false;
                     }
 
-                    if (Volatile.Read(ref wip) == 0)
-                    {
-                        await ResumeHelper.Resume(ref resume).Task;
-                    }
+                    await ResumeHelper.Await(ref resume);
                     ResumeHelper.Clear(ref resume);
-                    Interlocked.Exchange(ref wip, 0);
                 }
             }
 
@@ -107,10 +101,7 @@ namespace async_enumerable_dotnet.impl
                     return;
                 }
                 var value = Interlocked.Increment(ref available);
-                if (Interlocked.Increment(ref wip) == 1)
-                {
-                    ResumeHelper.Resume(ref resume).TrySetResult(true);
-                }
+                ResumeHelper.Resume(ref resume);
 
                 if (value != end)
                 {

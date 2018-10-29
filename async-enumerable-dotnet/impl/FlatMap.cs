@@ -58,8 +58,6 @@ namespace async_enumerable_dotnet.impl
 
             R current;
 
-            long queueWip;
-
             int dispose;
 
             int outstanding;
@@ -185,8 +183,6 @@ namespace async_enumerable_dotnet.impl
                         {
                             current = v.value;
                             v.sender.ConsumedOne();
-                            Interlocked.Exchange(ref resume, null);
-                            Interlocked.Decrement(ref queueWip);
                             return true;
                         }
                         else
@@ -197,12 +193,8 @@ namespace async_enumerable_dotnet.impl
                         }
                     }
 
-                    if (Volatile.Read(ref queueWip) == 0)
-                    {
-                        await ResumeHelper.Resume(ref resume).Task;
-                    }
+                    await ResumeHelper.Await(ref resume);
                     ResumeHelper.Clear(ref resume);
-                    Interlocked.Exchange(ref queueWip, 0);
                 }
             }
 
@@ -307,10 +299,7 @@ namespace async_enumerable_dotnet.impl
 
             void Signal()
             {
-                if (Interlocked.Increment(ref queueWip) == 1)
-                {
-                    ResumeHelper.Resume(ref resume).TrySetResult(true);
-                }
+                ResumeHelper.Resume(ref resume);
             }
         }
 
