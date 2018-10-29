@@ -106,7 +106,7 @@ namespace async_enumerable_dotnet.impl
                 var next = false;
                 if (t.IsFaulted)
                 {
-                    error = ExceptionHelper.Unaggregate(t.Exception);
+                    error = ExceptionHelper.Extract(t.Exception);
                     done = true;
                 }
                 else if (t.Result)

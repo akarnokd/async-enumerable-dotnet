@@ -67,7 +67,7 @@ namespace async_enumerable_dotnet_test
         {
             var ex = new InvalidOperationException();
 
-            Assert.Same(ExceptionHelper.Unaggregate(new AggregateException(ex)), ex);
+            Assert.Same(ExceptionHelper.Extract(new AggregateException(ex)), ex);
         }
 
         [Fact]
@@ -78,7 +78,7 @@ namespace async_enumerable_dotnet_test
 
             var g = new AggregateException(ex, ex2);
             
-            Assert.Same(ExceptionHelper.Unaggregate(g), g);
+            Assert.Same(ExceptionHelper.Extract(g), g);
         }
 
         [Fact]
@@ -86,7 +86,7 @@ namespace async_enumerable_dotnet_test
         {
             var ex = new InvalidOperationException();
 
-            Assert.Same(ExceptionHelper.Unaggregate(ex), ex);
+            Assert.Same(ExceptionHelper.Extract(ex), ex);
         }
 
     }

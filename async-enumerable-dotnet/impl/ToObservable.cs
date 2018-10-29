@@ -6,11 +6,11 @@ namespace async_enumerable_dotnet.impl
 {
     internal sealed class ToObservable<T> : IObservable<T>
     {
-        readonly IAsyncEnumerable<T> _source;
+        private readonly IAsyncEnumerable<T> _source;
 
         public ToObservable(IAsyncEnumerable<T> source)
         {
-            this._source = source;
+            _source = source;
         }
 
         public IDisposable Subscribe(IObserver<T> observer)
@@ -35,9 +35,9 @@ namespace async_enumerable_dotnet.impl
 
             public ToObservableHandler(IObserver<T> downstream, IAsyncEnumerator<T> source)
             {
-                this._downstream = downstream;
-                this._source = source;
-                this._handleMain = t => HandleMain(t);
+                _downstream = downstream;
+                _source = source;
+                _handleMain = HandleMain;
             }
 
             internal void MoveNext()
@@ -60,7 +60,7 @@ namespace async_enumerable_dotnet.impl
                 }
             }
 
-            void HandleMain(Task<bool> task)
+            private void HandleMain(Task<bool> task)
             {
                 if (Interlocked.Decrement(ref _dispose) != 0)
                 {
@@ -68,7 +68,7 @@ namespace async_enumerable_dotnet.impl
                 } else
                 if (task.IsFaulted)
                 {
-                    _downstream.OnError(ExceptionHelper.Unaggregate(task.Exception));
+                    _downstream.OnError(ExceptionHelper.Extract(task.Exception));
                 }
                 else
                 {

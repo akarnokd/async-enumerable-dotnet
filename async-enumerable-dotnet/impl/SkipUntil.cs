@@ -1,6 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿// Copyright (c) David Karnok & Contributors.
+// Licensed under the Apache 2.0 License.
+// See LICENSE file in the project root for full license information.
+
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -45,7 +47,6 @@ namespace async_enumerable_dotnet.impl
             Exception error;
             bool done;
             bool hasValue;
-            T current;
 
             TaskCompletionSource<bool> resume;
 
@@ -61,7 +62,7 @@ namespace async_enumerable_dotnet.impl
                 Volatile.Write(ref disposed, 2);
             }
 
-            public T Current => current;
+            public T Current { get; private set; }
 
             public async ValueTask DisposeAsync()
             {
@@ -103,7 +104,7 @@ namespace async_enumerable_dotnet.impl
                         if (Volatile.Read(ref gate) != 0)
                         {
                             next = true;
-                            current = source.Current;
+                            Current = source.Current;
                         }
                         MoveNextMain();
                         if (next)
@@ -211,7 +212,7 @@ namespace async_enumerable_dotnet.impl
                     });
             }
 
-            void DisposeHandler(Task t)
+            private void DisposeHandler(Task t)
             {
                 if (t.IsFaulted)
                 {

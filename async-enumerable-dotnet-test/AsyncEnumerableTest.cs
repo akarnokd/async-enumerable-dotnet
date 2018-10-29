@@ -114,6 +114,20 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
+        public void RequireNonNull_Null()
+        {
+            try
+            {
+                AsyncEnumerable.RequireNonNull<string>(null, "param");
+                Assert.False(true, "Should have thrown");
+            }
+            catch (ArgumentNullException)
+            {
+                // expected
+            }
+        }
+
+        [Fact]
         public void RequirePositiveInt_Minus1()
         {
             try
@@ -161,59 +175,59 @@ namespace async_enumerable_dotnet_test
             AsyncEnumerable.RequirePositive(1L, "param");
         }
 
-        static readonly Dictionary<Type, object> defaults = new Dictionary<Type, object>();
+        private static readonly Dictionary<Type, object> Defaults = new Dictionary<Type, object>();
 
         static AsyncEnumerableTest()
         {
-            defaults.Add(typeof(bool), true);
+            Defaults.Add(typeof(bool), true);
 
-            defaults.Add(typeof(int), 1);
-            defaults.Add(typeof(int[]), new[] { 1 });
-            defaults.Add(typeof(long), 1L);
+            Defaults.Add(typeof(int), 1);
+            Defaults.Add(typeof(int[]), new[] { 1 });
+            Defaults.Add(typeof(long), 1L);
 
-            defaults.Add(typeof(IEnumerable<int>), Enumerable.Empty<int>());
-            defaults.Add(typeof(IAsyncEnumerable<int>), AsyncEnumerable.Empty<int>());
-            defaults.Add(typeof(IAsyncEnumerable<int>[]), new[] { AsyncEnumerable.Empty<int>() });
+            Defaults.Add(typeof(IEnumerable<int>), Enumerable.Empty<int>());
+            Defaults.Add(typeof(IAsyncEnumerable<int>), AsyncEnumerable.Empty<int>());
+            Defaults.Add(typeof(IAsyncEnumerable<int>[]), new[] { AsyncEnumerable.Empty<int>() });
 
-            defaults.Add(typeof(Func<int>), (Func<int>)(() => 1));
-            defaults.Add(typeof(Func<int, bool>), (Func<int, bool>)(v => true));
-            defaults.Add(typeof(Func<int, int>), (Func<int, int>)(v => v));
-            defaults.Add(typeof(Func<int, int, int>), (Func<int, int, int>)((v, w) => v));
-            defaults.Add(typeof(Func<int[], int>), (Func<int[], int>)(v => v[0]));
-            defaults.Add(typeof(Func<IAsyncEnumerable<int>>), (Func<IAsyncEnumerable<int>>)(() => AsyncEnumerable.Empty<int>()));
-            defaults.Add(typeof(Func<int, IEnumerable<int>>), (Func<int, IEnumerable<int>>)(v => Enumerable.Empty<int>()));
-            defaults.Add(typeof(Func<int, IAsyncEnumerable<int>>), (Func<int, IAsyncEnumerable<int>>)(v => AsyncEnumerable.Empty<int>()));
-            defaults.Add(typeof(Func<Exception, IAsyncEnumerable<int>>), (Func<Exception, IAsyncEnumerable<int>>)(v => AsyncEnumerable.Empty<int>()));
-            defaults.Add(typeof(Func<int, Task>), (Func<int, Task>)(v => null));
-            defaults.Add(typeof(Func<int, Task<int>>), (Func<int, Task<int>>)(v => null));
-            defaults.Add(typeof(Func<int, Task<bool>>), (Func<int, Task<bool>>)(v => null));
-            defaults.Add(typeof(Func<ICollection<int>>), (Func<ICollection<int>>)(() => null));
-            defaults.Add(typeof(Func<Task>), (Func<Task>)(() => null));
-            defaults.Add(typeof(Func<ValueTask>), (Func<ValueTask>)(() => new ValueTask()));
-            defaults.Add(typeof(Func<long, bool>), (Func<long, bool>)(v => false));
-            defaults.Add(typeof(Func<long, Exception, bool>), (Func<long, Exception, bool>)((v, w) => false));
+            Defaults.Add(typeof(Func<int>), (Func<int>)(() => 1));
+            Defaults.Add(typeof(Func<int, bool>), (Func<int, bool>)(v => true));
+            Defaults.Add(typeof(Func<int, int>), (Func<int, int>)(v => v));
+            Defaults.Add(typeof(Func<int, int, int>), (Func<int, int, int>)((v, w) => v));
+            Defaults.Add(typeof(Func<int[], int>), (Func<int[], int>)(v => v[0]));
+            Defaults.Add(typeof(Func<IAsyncEnumerable<int>>), (Func<IAsyncEnumerable<int>>)(() => AsyncEnumerable.Empty<int>()));
+            Defaults.Add(typeof(Func<int, IEnumerable<int>>), (Func<int, IEnumerable<int>>)(v => Enumerable.Empty<int>()));
+            Defaults.Add(typeof(Func<int, IAsyncEnumerable<int>>), (Func<int, IAsyncEnumerable<int>>)(v => AsyncEnumerable.Empty<int>()));
+            Defaults.Add(typeof(Func<Exception, IAsyncEnumerable<int>>), (Func<Exception, IAsyncEnumerable<int>>)(v => AsyncEnumerable.Empty<int>()));
+            Defaults.Add(typeof(Func<int, Task>), (Func<int, Task>)(v => null));
+            Defaults.Add(typeof(Func<int, Task<int>>), (Func<int, Task<int>>)(v => null));
+            Defaults.Add(typeof(Func<int, Task<bool>>), (Func<int, Task<bool>>)(v => null));
+            Defaults.Add(typeof(Func<ICollection<int>>), (Func<ICollection<int>>)(() => null));
+            Defaults.Add(typeof(Func<Task>), (Func<Task>)(() => null));
+            Defaults.Add(typeof(Func<ValueTask>), (Func<ValueTask>)(() => new ValueTask()));
+            Defaults.Add(typeof(Func<long, bool>), (Func<long, bool>)(v => false));
+            Defaults.Add(typeof(Func<long, Exception, bool>), (Func<long, Exception, bool>)((v, w) => false));
 
-            defaults.Add(typeof(Action), (Action)(() => { }));
-            defaults.Add(typeof(Action<int>), (Action<int>)(v => { }));
-            defaults.Add(typeof(Action<int, int>), (Action<int, int>)((v, w) => { }));
-            defaults.Add(typeof(Action<Exception>), (Action<Exception>)(v => { }));
+            Defaults.Add(typeof(Action), (Action)(() => { }));
+            Defaults.Add(typeof(Action<int>), (Action<int>)(v => { }));
+            Defaults.Add(typeof(Action<int, int>), (Action<int, int>)((v, w) => { }));
+            Defaults.Add(typeof(Action<Exception>), (Action<Exception>)(v => { }));
 
-            defaults.Add(typeof(IEqualityComparer<int>), EqualityComparer<int>.Default);
+            Defaults.Add(typeof(IEqualityComparer<int>), EqualityComparer<int>.Default);
 
-            defaults.Add(typeof(IAsyncConsumer<int>), new EmptyAsyncConsumer());
+            Defaults.Add(typeof(IAsyncConsumer<int>), new EmptyAsyncConsumer());
 
-            defaults.Add(typeof(CancellationToken), new CancellationToken());
+            Defaults.Add(typeof(CancellationToken), new CancellationToken());
 
-            defaults.Add(typeof(TimeSpan), TimeSpan.FromMilliseconds(1));
+            Defaults.Add(typeof(TimeSpan), TimeSpan.FromMilliseconds(1));
         }
 
         static object GetDefault(Type type, MethodInfo m)
         {
-            if (!defaults.ContainsKey(type))
+            if (!Defaults.ContainsKey(type))
             {
                 Assert.False(true, "No default for " + type + " \r\n\r\n Method: " + m);
             }
-            return defaults[type];
+            return Defaults[type];
         }
 
         sealed class EmptyAsyncConsumer : IAsyncConsumer<int>

@@ -22,13 +22,12 @@ namespace async_enumerable_dotnet
         /// <exception cref="ArgumentNullException">If <paramref name="value"/> is null.</exception>
         /// <returns>The value.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static T RequireNonNull<T>(T value, string argumentName) where T : class
+        internal static void RequireNonNull<T>(T value, string argumentName) where T : class
         {
             if (value == null)
             {
                 throw new ArgumentNullException(argumentName);
             }
-            return value;
         }
 
         /// <summary>
@@ -39,13 +38,12 @@ namespace async_enumerable_dotnet
         /// <exception cref="ArgumentNullException">If <paramref name="value"/> is null.</exception>
         /// <returns>The value.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static int RequirePositive(int value, string argumentName)
+        internal static void RequirePositive(int value, string argumentName)
         {
             if (value <= 0)
             {
                 throw new ArgumentOutOfRangeException(argumentName, value, "must be positive");
             }
-            return value;
         }
 
         /// <summary>
@@ -56,13 +54,12 @@ namespace async_enumerable_dotnet
         /// <exception cref="ArgumentNullException">If <paramref name="value"/> is null.</exception>
         /// <returns>The value.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static long RequirePositive(long value, string argumentName)
+        internal static void RequirePositive(long value, string argumentName)
         {
             if (value <= 0L)
             {
                 throw new ArgumentOutOfRangeException(argumentName, value, "must be positive");
             }
-            return value;
         }
 
         #endregion - ValidationHelper -
@@ -129,7 +126,7 @@ namespace async_enumerable_dotnet
         /// <remarks>
         /// Note that the <see cref="CancellationToken"/> is shared across all instantiations of the
         /// async sequence and thus it is recommended this Timer is created in a deferred manner,
-        /// such as <see cref="Defer"/>.
+        /// such as <see cref="AsyncEnumerable.Defer{T}"/>.
         /// </remarks>
         public static IAsyncEnumerable<long> Timer(TimeSpan delay, CancellationToken token)
         {
@@ -1049,7 +1046,7 @@ namespace async_enumerable_dotnet
             {
                 return new BufferExact<T, C>(source, size, bufferSupplier);
             }
-            else if (size < skip)
+            if (size < skip)
             {
                 return new BufferSkip<T, C>(source, size, skip, bufferSupplier);
             }

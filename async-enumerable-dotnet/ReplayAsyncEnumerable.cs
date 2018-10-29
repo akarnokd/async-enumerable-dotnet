@@ -1,7 +1,6 @@
 ﻿using async_enumerable_dotnet.impl;
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -14,31 +13,26 @@ namespace async_enumerable_dotnet
     /// <typeparam name="T">The element type.</typeparam>
     public sealed class ReplayAsyncEnumerable<T> : IAsyncEnumerable<T>, IAsyncConsumer<T>
     {
-        readonly IBufferManager buffer;
+        private readonly IBufferManager _buffer;
 
-        ReplayEnumerator[] enumerators;
+        private ReplayEnumerator[] _enumerators;
 
-        static readonly ReplayEnumerator[] EMPTY = new ReplayEnumerator[0];
+        private static readonly ReplayEnumerator[] Empty = new ReplayEnumerator[0];
 
-        static readonly ReplayEnumerator[] TERMINATED = new ReplayEnumerator[0];
+        private static readonly ReplayEnumerator[] Terminated = new ReplayEnumerator[0];
 
         /// <summary>
         /// Returns true if there are any consumers to this AsyncEnumerable.
         /// </summary>
-        public bool HasConsumers => enumerators.Length != 0;
-
-        static readonly Func<long> DefaultTimeSource = () =>
-        {
-            return DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        };
+        public bool HasConsumers => _enumerators.Length != 0;
 
         /// <summary>
         /// Construct an unbounded ReplayAsyncEnumerable.
         /// </summary>
         public ReplayAsyncEnumerable()
         {
-            this.buffer = new UnboundedBuffer();
-            Volatile.Write(ref enumerators, EMPTY);
+            _buffer = new UnboundedBuffer();
+            Volatile.Write(ref _enumerators, Empty);
         }
 
         /// <summary>
@@ -47,8 +41,8 @@ namespace async_enumerable_dotnet
         /// <param name="maxSize">The maximum number of items to retain.</param>
         public ReplayAsyncEnumerable(int maxSize)
         {
-            this.buffer = new SizeBoundBuffer(maxSize);
-            Volatile.Write(ref enumerators, EMPTY);
+            _buffer = new SizeBoundBuffer(maxSize);
+            Volatile.Write(ref _enumerators, Empty);
         }
 
         /// <summary>
@@ -58,8 +52,8 @@ namespace async_enumerable_dotnet
         /// <param name="timeSource">The optional source for the current time. Defaults to the Unix epoch milliseconds.</param>
         public ReplayAsyncEnumerable(TimeSpan maxAge, Func<long> timeSource = null)
         {
-            this.buffer = new TimeSizeBoundBuffer(int.MaxValue, maxAge, timeSource ?? DefaultTimeSource);
-            Volatile.Write(ref enumerators, EMPTY);
+            _buffer = new TimeSizeBoundBuffer(int.MaxValue, maxAge, timeSource ?? TimeSource.DefaultTimeSource);
+            Volatile.Write(ref _enumerators, Empty);
         }
 
         /// <summary>
@@ -70,8 +64,8 @@ namespace async_enumerable_dotnet
         /// <param name="timeSource">The optional source for the current time. Defaults to the Unix epoch milliseconds.</param>
         public ReplayAsyncEnumerable(int maxSize, TimeSpan maxAge, Func<long> timeSource = null)
         {
-            this.buffer = new TimeSizeBoundBuffer(maxSize, maxAge, timeSource ?? DefaultTimeSource);
-            Volatile.Write(ref enumerators, EMPTY);
+            _buffer = new TimeSizeBoundBuffer(maxSize, maxAge, timeSource ?? TimeSource.DefaultTimeSource);
+            Volatile.Write(ref _enumerators, Empty);
         }
 
         /// <summary>
@@ -80,8 +74,8 @@ namespace async_enumerable_dotnet
         /// <returns>The task to await before calling any of the methods again.</returns>
         public ValueTask Complete()
         {
-            buffer.Complete();
-            foreach (var en in Interlocked.Exchange(ref enumerators, TERMINATED))
+            _buffer.Complete();
+            foreach (var en in Interlocked.Exchange(ref _enumerators, Terminated))
             {
                 en.Signal();
             }
@@ -95,8 +89,8 @@ namespace async_enumerable_dotnet
         /// <returns>The task to await before calling any of the methods again.</returns>
         public ValueTask Error(Exception ex)
         {
-            buffer.Error(ex);
-            foreach (var en in Interlocked.Exchange(ref enumerators, TERMINATED))
+            _buffer.Error(ex);
+            foreach (var en in Interlocked.Exchange(ref _enumerators, Terminated))
             {
                 en.Signal();
             }
@@ -110,8 +104,8 @@ namespace async_enumerable_dotnet
         /// <returns>The task to await before calling any of the methods again.</returns>
         public ValueTask Next(T value)
         {
-            buffer.Next(value);
-            foreach (var en in Volatile.Read(ref enumerators))
+            _buffer.Next(value);
+            foreach (var en in Volatile.Read(ref _enumerators))
             {
                 en.Signal();
             }
@@ -129,31 +123,31 @@ namespace async_enumerable_dotnet
             return en;
         }
 
-        internal bool Add(ReplayEnumerator inner)
+        private void Add(ReplayEnumerator inner)
         {
             for (; ; )
             {
-                var a = Volatile.Read(ref enumerators);
-                if (a == TERMINATED)
+                var a = Volatile.Read(ref _enumerators);
+                if (a == Terminated)
                 {
-                    return false;
+                    return;
                 }
                 var n = a.Length;
                 var b = new ReplayEnumerator[n + 1];
                 Array.Copy(a, 0, b, 0, n);
                 b[n] = inner;
-                if (Interlocked.CompareExchange(ref enumerators, b, a) == a)
+                if (Interlocked.CompareExchange(ref _enumerators, b, a) == a)
                 {
-                    return true;
+                    return;
                 }
             }
         }
 
-        internal void Remove(ReplayEnumerator inner)
+        private void Remove(ReplayEnumerator inner)
         {
             for (; ; )
             {
-                var a = Volatile.Read(ref enumerators);
+                var a = Volatile.Read(ref _enumerators);
                 var n = a.Length;
                 if (n == 0)
                 {
@@ -167,10 +161,10 @@ namespace async_enumerable_dotnet
                     return;
                 }
 
-                var b = default(ReplayEnumerator[]);
+                ReplayEnumerator[] b;
                 if (n == 1)
                 {
-                    b = EMPTY;
+                    b = Empty;
                 }
                 else
                 {
@@ -178,14 +172,14 @@ namespace async_enumerable_dotnet
                     Array.Copy(a, 0, b, 0, j);
                     Array.Copy(a, j + 1, b, j, n - j - 1);
                 }
-                if (Interlocked.CompareExchange(ref enumerators, b, a) == a)
+                if (Interlocked.CompareExchange(ref _enumerators, b, a) == a)
                 {
                     return;
                 }
             }
         }
 
-        internal interface IBufferManager
+        private interface IBufferManager
         {
             void Next(T item);
 
@@ -198,164 +192,164 @@ namespace async_enumerable_dotnet
 
         internal sealed class ReplayEnumerator : IAsyncEnumerator<T>
         {
-            readonly ReplayAsyncEnumerable<T> parent;
+            private readonly ReplayAsyncEnumerable<T> _parent;
 
-            readonly IBufferManager buffer;
+            private readonly IBufferManager _buffer;
 
-            internal int index;
+            internal int Index;
 
-            internal object node;
+            internal object Node;
 
-            internal T current;
+            internal TaskCompletionSource<bool> Resume;
 
-            internal TaskCompletionSource<bool> resume;
-
-            public T Current => current;
+            public T Current { get; internal set; }
 
             public ReplayEnumerator(ReplayAsyncEnumerable<T> parent)
             {
-                this.parent = parent;
-                this.buffer = parent.buffer;
+                _parent = parent;
+                _buffer = parent._buffer;
             }
 
             public ValueTask DisposeAsync()
             {
-                current = default;
-                node = null;
-                parent.Remove(this);
+                Current = default;
+                Node = null;
+                _parent.Remove(this);
                 return new ValueTask();
             }
 
             public ValueTask<bool> MoveNextAsync()
             {
-                return buffer.Drain(this);
+                return _buffer.Drain(this);
             }
 
             public void Signal()
             {
-                ResumeHelper.Resume(ref resume);
+                ResumeHelper.Resume(ref Resume);
             }
         }
 
-        internal sealed class UnboundedBuffer : IBufferManager
+        private sealed class UnboundedBuffer : IBufferManager
         {
-            readonly IList<T> values;
+            private readonly IList<T> _values;
 
-            volatile int size;
-            Exception error;
-            volatile bool done;
+            private volatile int _size;
+            private Exception _error;
+            private volatile bool _done;
 
             public UnboundedBuffer()
             {
-                this.values = new List<T>();
+                _values = new List<T>();
             }
 
             public void Complete()
             {
-                this.done = true;
+                _done = true;
             }
 
             public async ValueTask<bool> Drain(ReplayEnumerator consumer)
             {
                 for (; ; )
                 {
-                    var d = done;
-                    var s = size;
-                    var index = consumer.index;
+                    var d = _done;
+                    var s = _size;
+                    var index = consumer.Index;
 
                     if (d && s == index)
                     {
-                        if (error != null)
+                        if (_error != null)
                         {
-                            throw error;
+                            throw _error;
                         }
                         return false;
                     }
 
                     if (index != s)
                     {
-                        consumer.current = values[index];
-                        consumer.index = index + 1;
+                        consumer.Current = _values[index];
+                        consumer.Index = index + 1;
                         return true;
                     }
 
-                    await ResumeHelper.Await(ref consumer.resume);
-                    ResumeHelper.Clear(ref consumer.resume);
+                    await ResumeHelper.Await(ref consumer.Resume);
+                    ResumeHelper.Clear(ref consumer.Resume);
                 }
             }
 
             public void Error(Exception error)
             {
-                this.error = error;
-                this.done = true;
+                _error = error;
+                _done = true;
             }
 
             public void Next(T item)
             {
-                values.Add(item);
-                size++;
+                _values.Add(item);
+                _size++;
             }
         }
 
         internal sealed class SizeBoundBuffer : IBufferManager
         {
-            readonly int maxSize;
+            private readonly int _maxSize;
 
-            Exception error;
-            volatile bool done;
+            private Exception _error;
+            private volatile bool _done;
 
-            volatile Node head;
-            Node tail;
+            private volatile Node _head;
+            private Node _tail;
 
-            int size;
+            private int _size;
 
             internal SizeBoundBuffer(int maxSize)
             {
-                this.maxSize = maxSize;
+                _maxSize = maxSize;
                 var h = new Node(default);
-                tail = h;
-                head = h;
+                _tail = h;
+                _head = h;
             }
 
-            internal void ClearHead()
+            private void ClearHead()
             {
                 // clear any beyond max size items by replacing the head
-                var h = head;
-                if (h.next != null)
+                var h = _head;
+                if (h.Next != null)
                 {
-                    var n = new Node(default);
-                    n.next = h.next;
-                    head = n;
+                    var n = new Node(default)
+                    {
+                        Next = h.Next
+                    };
+                    _head = n;
                 }
             }
 
             public void Complete()
             {
                 ClearHead();
-                done = true;
+                _done = true;
             }
 
             public void Error(Exception error)
             {
                 ClearHead();
-                this.error = error;
-                this.done = true;
+                _error = error;
+                _done = true;
             }
 
             public void Next(T item)
             {
                 var n = new Node(item);
-                if (size != maxSize)
+                if (_size != _maxSize)
                 {
-                    size++;
-                    tail.next = n;
-                    tail = n;
+                    _size++;
+                    _tail.Next = n;
+                    _tail = n;
                 }
                 else
                 {
-                    tail.next = n;
-                    tail = n;
-                    head = head.next;
+                    _tail.Next = n;
+                    _tail = n;
+                    _head = _head.Next;
                 }
             }
 
@@ -363,99 +357,102 @@ namespace async_enumerable_dotnet
             {
                 for (; ;)
                 {
-                    var d = done;
-                    var n = consumer.node as Node;
+                    var d = _done;
+                    var n = (Node)consumer.Node;
                     if (n == null)
                     {
-                        n = head;
-                        consumer.node = head;
+                        n = _head;
+                        consumer.Node = _head;
                     }
-                    var x = n.next;
+                    var x = n.Next;
                     var empty = x == null;
                     if (d && empty)
                     {
-                        if (error != null)
+                        if (_error != null)
                         {
-                            throw error;
+                            throw _error;
                         }
                         return false;
                     }
-                    else if (!empty)
+
+                    if (!empty)
                     {
-                        consumer.current = x.item;
-                        consumer.node = x;
+                        consumer.Current = x.Item;
+                        consumer.Node = x;
                         return true;
                     }
 
-                    await ResumeHelper.Await(ref consumer.resume);
-                    ResumeHelper.Clear(ref consumer.resume);
+                    await ResumeHelper.Await(ref consumer.Resume);
+                    ResumeHelper.Clear(ref consumer.Resume);
                 }
             }
 
             internal sealed class Node
             {
-                internal readonly T item;
+                internal readonly T Item;
 
-                internal volatile Node next;
+                internal volatile Node Next;
 
                 internal Node(T item)
                 {
-                    this.item = item;
+                    Item = item;
                 }
             }
         }
 
         internal sealed class TimeSizeBoundBuffer : IBufferManager
         {
-            readonly long maxAge;
+            private readonly long _maxAge;
 
-            readonly int maxSize;
+            private readonly int _maxSize;
 
-            readonly Func<long> timeSource;
+            private readonly Func<long> _timeSource;
 
-            Exception error;
-            volatile bool done;
+            private Exception _error;
+            private volatile bool _done;
 
-            volatile Node head;
-            Node tail;
+            private volatile Node _head;
+            private Node _tail;
 
-            int size;
+            private int _size;
 
             internal TimeSizeBoundBuffer(int maxSize, TimeSpan maxAge, Func<long> timeSource)
             {
-                this.maxSize = maxSize;
-                this.maxAge = (long)maxAge.TotalMilliseconds;
-                this.timeSource = timeSource;
+                _maxSize = maxSize;
+                _maxAge = (long)maxAge.TotalMilliseconds;
+                _timeSource = timeSource;
                 var h = new Node(default, 0L);
-                tail = h;
-                head = h;
+                _tail = h;
+                _head = h;
             }
 
-            internal void ClearHead()
+            private void ClearHead()
             {
                 // clear any beyond max size items by replacing the head
-                if (head.next != null)
+                if (_head.Next != null)
                 {
-                    var n = new Node(default, 0L);
-                    n.next = head.next;
-                    head = n;
+                    var n = new Node(default, 0L)
+                    {
+                        Next = _head.Next
+                    };
+                    _head = n;
                 }
             }
 
-            void TrimTime()
+            private void TrimTime()
             {
-                long now = timeSource() - maxAge;
+                var now = _timeSource() - _maxAge;
 
-                var c = size;
-                var h = head;
+                var c = _size;
+                var h = _head;
                 for (; ;)
                 {
-                    var x = h.next;
+                    var x = h.Next;
                     if (x == null)
                     {
                         break;
                     }
-                    if (x.timestamp > now)
+                    if (x.Timestamp > now)
                     {
                         break;
                     }
@@ -463,26 +460,26 @@ namespace async_enumerable_dotnet
                     c--;
                 }
 
-                if (h != head)
+                if (h != _head)
                 {
-                    size = c;
-                    head = h;
+                    _size = c;
+                    _head = h;
                 }
             }
 
-            Node FindHead()
+            private Node FindHead()
             {
-                long now = timeSource() - maxAge;
+                var now = _timeSource() - _maxAge;
 
-                var h = head;
+                var h = _head;
                 for (; ; )
                 {
-                    var x = h.next;
+                    var x = h.Next;
                     if (x == null)
                     {
                         return h;
                     }
-                    if (x.timestamp > now)
+                    if (x.Timestamp > now)
                     {
                         return h;
                     }
@@ -494,31 +491,31 @@ namespace async_enumerable_dotnet
             {
                 TrimTime();
                 ClearHead();
-                done = true;
+                _done = true;
             }
 
             public void Error(Exception error)
             {
                 TrimTime();
                 ClearHead();
-                this.error = error;
-                this.done = true;
+                _error = error;
+                _done = true;
             }
 
             public void Next(T item)
             {
-                var n = new Node(item, timeSource());
-                if (size != maxSize)
+                var n = new Node(item, _timeSource());
+                if (_size != _maxSize)
                 {
-                    size++;
-                    tail.next = n;
-                    tail = n;
+                    _size++;
+                    _tail.Next = n;
+                    _tail = n;
                 }
                 else
                 {
-                    tail.next = n;
-                    tail = n;
-                    head = head.next;
+                    _tail.Next = n;
+                    _tail = n;
+                    _head = _head.Next;
                     TrimTime();
                 }
             }
@@ -527,50 +524,59 @@ namespace async_enumerable_dotnet
             {
                 for (; ; )
                 {
-                    var d = done;
-                    var n = consumer.node as Node;
+                    var d = _done;
+                    var n = (Node)consumer.Node;
                     if (n == null)
                     {
                         n = FindHead();
-                        consumer.node = head;
+                        consumer.Node = _head;
                     }
-                    var x = n.next;
+                    var x = n.Next;
                     var empty = x == null;
                     if (d && empty)
                     {
-                        if (error != null)
+                        if (_error != null)
                         {
-                            throw error;
+                            throw _error;
                         }
                         return false;
                     }
-                    else if (!empty)
+
+                    if (!empty)
                     {
-                        consumer.current = x.item;
-                        consumer.node = x;
+                        consumer.Current = x.Item;
+                        consumer.Node = x;
                         return true;
                     }
 
-                    await ResumeHelper.Await(ref consumer.resume);
-                    ResumeHelper.Clear(ref consumer.resume);
+                    await ResumeHelper.Await(ref consumer.Resume);
+                    ResumeHelper.Clear(ref consumer.Resume);
                 }
             }
 
             internal sealed class Node
             {
-                internal readonly T item;
+                internal readonly T Item;
 
-                internal readonly long timestamp;
+                internal readonly long Timestamp;
 
-                internal volatile Node next;
+                internal volatile Node Next;
 
                 internal Node(T item, long timestamp)
                 {
-                    this.item = item;
-                    this.timestamp = timestamp;
+                    Item = item;
+                    Timestamp = timestamp;
                 }
             }
         }
 
+    }
+
+    /// <summary>
+    /// Hosts a singleton default time source function.
+    /// </summary>
+    internal static class TimeSource
+    {
+        internal static readonly Func<long> DefaultTimeSource = () => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
     }
 }

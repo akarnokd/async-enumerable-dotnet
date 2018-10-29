@@ -1,4 +1,3 @@
-using System;
 using Xunit;
 using async_enumerable_dotnet;
 using System.Threading.Tasks;

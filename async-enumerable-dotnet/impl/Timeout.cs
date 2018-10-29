@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -8,56 +6,55 @@ namespace async_enumerable_dotnet.impl
 {
     internal sealed class Timeout<T> : IAsyncEnumerable<T>
     {
-        readonly IAsyncEnumerable<T> source;
+        private readonly IAsyncEnumerable<T> _source;
 
-        readonly TimeSpan timeout;
+        private readonly TimeSpan _timeout;
 
         public Timeout(IAsyncEnumerable<T> source, TimeSpan timeout)
         {
-            this.source = source;
-            this.timeout = timeout;
+            _source = source;
+            _timeout = timeout;
         }
 
         public IAsyncEnumerator<T> GetAsyncEnumerator()
         {
-            return new TimeoutEnumerator(source.GetAsyncEnumerator(), timeout);
+            return new TimeoutEnumerator(_source.GetAsyncEnumerator(), _timeout);
         }
 
-        internal sealed class TimeoutEnumerator : IAsyncEnumerator<T>
+        private sealed class TimeoutEnumerator : IAsyncEnumerator<T>
         {
-            readonly IAsyncEnumerator<T> source;
+            private readonly IAsyncEnumerator<T> _source;
 
-            readonly TimeSpan timeout;
+            private readonly TimeSpan _timeout;
 
-            readonly TaskCompletionSource<int> dispose;
+            private TaskCompletionSource<bool> _disposeTask;
 
-            public T Current => source.Current;
+            public T Current => _source.Current;
 
-            long index;
+            private long _index;
 
-            CancellationTokenSource token;
+            private CancellationTokenSource _token;
 
-            int wip;
+            private int _disposeWip;
 
             public TimeoutEnumerator(IAsyncEnumerator<T> source, TimeSpan timeout)
             {
-                this.source = source;
-                this.timeout = timeout;
-                this.dispose = new TaskCompletionSource<int>();
+                _source = source;
+                _timeout = timeout;
             }
 
             public ValueTask DisposeAsync()
             {
-                if (Interlocked.Increment(ref wip) == 1)
+                if (Interlocked.Increment(ref _disposeWip) == 1)
                 {
-                    return source.DisposeAsync();
+                    return _source.DisposeAsync();
                 }
-                return new ValueTask(dispose.Task);
+                return ResumeHelper.Await(ref _disposeTask);
             }
 
             public ValueTask<bool> MoveNextAsync()
             {
-                var idx = Volatile.Read(ref index);
+                var idx = Volatile.Read(ref _index);
                 if (idx == long.MaxValue)
                 {
                     return new ValueTask<bool>(false);
@@ -65,14 +62,14 @@ namespace async_enumerable_dotnet.impl
 
                 var result = new TaskCompletionSource<bool>();
 
-                token = new CancellationTokenSource();
+                _token = new CancellationTokenSource();
 
-                Interlocked.Increment(ref wip);
+                Interlocked.Increment(ref _disposeWip);
 
-                Task.Delay(timeout, token.Token)
-                    .ContinueWith(t => Timeout(idx, result));
+                Task.Delay(_timeout, _token.Token)
+                    .ContinueWith(t => Timeout(idx, result), _token.Token);
 
-                var task = source.MoveNextAsync();
+                var task = _source.MoveNextAsync();
 
                 if (task.IsCompleted || task.IsFaulted)
                 {
@@ -86,50 +83,43 @@ namespace async_enumerable_dotnet.impl
                 return new ValueTask<bool>(result.Task);
             }
 
-            void Timeout(long idx, TaskCompletionSource<bool> result)
+            private void Timeout(long idx, TaskCompletionSource<bool> result)
             {
-                if (Interlocked.CompareExchange(ref index, long.MaxValue, idx) == idx)
+                if (Interlocked.CompareExchange(ref _index, long.MaxValue, idx) == idx)
                 {
                     result.TrySetException(new TimeoutException());
                 }
             }
 
-            void Next(long idx, ValueTask<bool> vtask, TaskCompletionSource<bool> result)
+            private void Next(long idx, ValueTask<bool> task, TaskCompletionSource<bool> result)
             {
-                if (Interlocked.Decrement(ref wip) != 0)
+                if (Interlocked.Decrement(ref _disposeWip) != 0)
                 {
                     DisposeTask();
                 }
-                if (Interlocked.CompareExchange(ref index, idx + 1, idx) == idx)
+                if (Interlocked.CompareExchange(ref _index, idx + 1, idx) == idx)
                 {
-                    token?.Cancel();
-                    if (vtask.IsFaulted)
+                    _token?.Cancel();
+                    if (task.IsFaulted)
                     {
-                        try
-                        {
-                            var v = vtask.Result;
-                        }
-                        catch (Exception ex)
-                        {
-                            result.TrySetException(ex);
-                        }
+                        result.TrySetException(task.AsTask().Exception);
                     }
                     else
                     {
-                        result.TrySetResult(vtask.Result);
+                        result.TrySetResult(task.Result);
                     }
                 }
             }
 
-            void Next(long idx, Task<bool> task, TaskCompletionSource<bool> result)
+            private void Next(long idx, Task<bool> task, TaskCompletionSource<bool> result)
             {
-                if (Interlocked.Decrement(ref wip) != 0)
+                if (Interlocked.Decrement(ref _disposeWip) != 0)
                 {
                     DisposeTask();
                 }
-                if (Interlocked.CompareExchange(ref index, idx + 1, idx) == idx)
+                if (Interlocked.CompareExchange(ref _index, idx + 1, idx) == idx)
                 {
-                    token?.Cancel();
+                    _token?.Cancel();
                     if (task.IsFaulted)
                     {
                         result.TrySetException(task.Exception);
@@ -141,20 +131,9 @@ namespace async_enumerable_dotnet.impl
                 }
             }
 
-            void DisposeTask()
+            private void DisposeTask()
             {
-                source.DisposeAsync()
-                    .AsTask()
-                    .ContinueWith(t =>
-                    {
-                        if (t.IsFaulted)
-                        {
-                            dispose.TrySetException(t.Exception);
-                        } else
-                        {
-                            dispose.TrySetResult(0);
-                        }
-                    });
+                ResumeHelper.Complete(ref _disposeTask, _source.DisposeAsync());
             }
         }
     }

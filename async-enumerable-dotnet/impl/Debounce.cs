@@ -156,7 +156,7 @@ namespace async_enumerable_dotnet.impl
                             emitLastItem = default;
                         }
                     }
-                    error = ExceptionHelper.Unaggregate(t.Exception);
+                    error = ExceptionHelper.Extract(t.Exception);
                     done = true;
                     if (TryDispose())
                     {

@@ -1,7 +1,5 @@
 ﻿using async_enumerable_dotnet.impl;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -14,25 +12,25 @@ namespace async_enumerable_dotnet
     /// <typeparam name="T">The element type of the async sequence.</typeparam>
     public sealed class MulticastAsyncEnumerable<T> : IAsyncEnumerable<T>, IAsyncConsumer<T>
     {
-        MulticastEnumerator[] enumerators;
+        private MulticastEnumerator[] _enumerators;
 
-        Exception error;
+        private Exception _error;
 
-        static readonly MulticastEnumerator[] EMPTY = new MulticastEnumerator[0];
+        private static readonly MulticastEnumerator[] Empty = new MulticastEnumerator[0];
 
-        static readonly MulticastEnumerator[] TERMINATED = new MulticastEnumerator[0];
+        private static readonly MulticastEnumerator[] Terminated = new MulticastEnumerator[0];
 
         /// <summary>
         /// Returns true if there are any consumers to this AsyncEnumerable.
         /// </summary>
-        public bool HasConsumers => enumerators.Length != 0;
+        public bool HasConsumers => _enumerators.Length != 0;
 
         /// <summary>
         /// Construct a non-terminated MulticastAsyncEnumerable.
         /// </summary>
         public MulticastAsyncEnumerable()
         {
-            Volatile.Write(ref enumerators, EMPTY);
+            Volatile.Write(ref _enumerators, Empty);
         }
 
         /// <summary>
@@ -42,7 +40,7 @@ namespace async_enumerable_dotnet
         /// <returns>The task to await before calling any of the methods again.</returns>
         public async ValueTask Next(T value)
         {
-            foreach (var inner in Volatile.Read(ref enumerators))
+            foreach (var inner in Volatile.Read(ref _enumerators))
             {
                 await inner.Next(value);
             }
@@ -55,8 +53,8 @@ namespace async_enumerable_dotnet
         /// <returns>The task to await before calling any of the methods again.</returns>
         public async ValueTask Error(Exception ex)
         {
-            this.error = ex;
-            foreach (var inner in Interlocked.Exchange(ref enumerators, TERMINATED))
+            _error = ex;
+            foreach (var inner in Interlocked.Exchange(ref _enumerators, Terminated))
             {
                 await inner.Error(ex);
             }
@@ -68,7 +66,7 @@ namespace async_enumerable_dotnet
         /// <returns>The task to await before calling any of the methods again.</returns>
         public async ValueTask Complete()
         {
-            foreach (var inner in Interlocked.Exchange(ref enumerators, TERMINATED))
+            foreach (var inner in Interlocked.Exchange(ref _enumerators, Terminated))
             {
                 await inner.Complete();
             }
@@ -81,23 +79,23 @@ namespace async_enumerable_dotnet
         public IAsyncEnumerator<T> GetAsyncEnumerator()
         {
             var en = new MulticastEnumerator(this);
-            if (!Add(en))
+            if (Add(en))
             {
-                if (error != null)
-                {
-                    return new Error<T>.ErrorEnumerator(error);
-                }
-                return new Empty<T>();
+                return en;
             }
-            return en;
+            if (_error != null)
+            {
+                return new Error<T>.ErrorEnumerator(_error);
+            }
+            return new Empty<T>();
         }
 
-        internal bool Add(MulticastEnumerator inner)
+        private bool Add(MulticastEnumerator inner)
         {
             for (; ;)
             {
-                var a = Volatile.Read(ref enumerators);
-                if (a == TERMINATED)
+                var a = Volatile.Read(ref _enumerators);
+                if (a == Terminated)
                 {
                     return false;
                 }
@@ -105,18 +103,18 @@ namespace async_enumerable_dotnet
                 var b = new MulticastEnumerator[n + 1];
                 Array.Copy(a, 0, b, 0, n);
                 b[n] = inner;
-                if (Interlocked.CompareExchange(ref enumerators, b, a) == a)
+                if (Interlocked.CompareExchange(ref _enumerators, b, a) == a)
                 {
                     return true;
                 }
             }
         }
 
-        internal void Remove(MulticastEnumerator inner)
+        private void Remove(MulticastEnumerator inner)
         {
             for (; ; )
             {
-                var a = Volatile.Read(ref enumerators);
+                var a = Volatile.Read(ref _enumerators);
                 var n = a.Length;
                 if (n == 0)
                 {
@@ -130,10 +128,10 @@ namespace async_enumerable_dotnet
                     return;
                 }
 
-                var b = default(MulticastEnumerator[]);
+                MulticastEnumerator[] b;
                 if (n == 1)
                 {
-                    b = EMPTY;
+                    b = Empty;
                 }
                 else
                 {
@@ -141,95 +139,94 @@ namespace async_enumerable_dotnet
                     Array.Copy(a, 0, b, 0, j);
                     Array.Copy(a, j + 1, b, j, n - j - 1);
                 }
-                if (Interlocked.CompareExchange(ref enumerators, b, a) == a)
+                if (Interlocked.CompareExchange(ref _enumerators, b, a) == a)
                 {
                     return;
                 }
             }
         }
 
-        internal sealed class MulticastEnumerator : IAsyncEnumerator<T>, IAsyncConsumer<T>
+        private sealed class MulticastEnumerator : IAsyncEnumerator<T>, IAsyncConsumer<T>
         {
-            readonly MulticastAsyncEnumerable<T> parent;
+            private readonly MulticastAsyncEnumerable<T> _parent;
 
-            T value;
-            bool done;
-            Exception error;
+            private T _value;
+            private bool _done;
+            private Exception _error;
 
-            TaskCompletionSource<bool> consumed;
+            private TaskCompletionSource<bool> _consumed;
 
-            TaskCompletionSource<bool> valueReady;
+            private TaskCompletionSource<bool> _valueReady;
 
-            T current;
+            public T Current { get; private set; }
 
             public MulticastEnumerator(MulticastAsyncEnumerable<T> parent)
             {
-                this.parent = parent;
+                _parent = parent;
                 var tcs = new TaskCompletionSource<bool>();
                 tcs.TrySetResult(true);
-                Volatile.Write(ref consumed, tcs);
+                Volatile.Write(ref _consumed, tcs);
             }
 
-            public T Current => current;
 
             public async ValueTask Complete()
             {
-                await ResumeHelper.Await(ref consumed);
-                ResumeHelper.Clear(ref consumed);
+                await ResumeHelper.Await(ref _consumed);
+                ResumeHelper.Clear(ref _consumed);
 
-                this.done = true;
+                _done = true;
 
-                ResumeHelper.Resume(ref valueReady);
+                ResumeHelper.Resume(ref _valueReady);
             }
 
             public ValueTask DisposeAsync()
             {
-                current = default;
-                parent.Remove(this);
+                Current = default;
+                _parent.Remove(this);
                 // unblock any Next/Error/Complete waiting for consumption
-                ResumeHelper.Resume(ref consumed);
+                ResumeHelper.Resume(ref _consumed);
                 return new ValueTask();
             }
 
             public async ValueTask Error(Exception ex)
             {
-                await ResumeHelper.Await(ref consumed);
-                ResumeHelper.Clear(ref consumed);
+                await ResumeHelper.Await(ref _consumed);
+                ResumeHelper.Clear(ref _consumed);
 
-                this.error = ex;
+                _error = ex;
 
-                ResumeHelper.Resume(ref valueReady);
+                ResumeHelper.Resume(ref _valueReady);
             }
 
             public async ValueTask<bool> MoveNextAsync()
             {
-                await ResumeHelper.Await(ref valueReady);
-                ResumeHelper.Clear(ref valueReady);
+                await ResumeHelper.Await(ref _valueReady);
+                ResumeHelper.Clear(ref _valueReady);
 
-                if (error != null)
+                if (_error != null)
                 {
-                    throw error;
+                    throw _error;
                 }
-                else
-                if (done)
+
+                if (_done)
                 {
                     return false;
                 }
 
-                current = value;
-                value = default;
-                ResumeHelper.Resume(ref consumed);
+                Current = _value;
+                _value = default;
+                ResumeHelper.Resume(ref _consumed);
                 return true;
             }
 
             public async ValueTask Next(T value)
             {
-                await ResumeHelper.Await(ref consumed);
-                ResumeHelper.Clear(ref consumed);
+                await ResumeHelper.Await(ref _consumed);
+                ResumeHelper.Clear(ref _consumed);
 
-                this.value = value;
+                _value = value;
 
-                ResumeHelper.Resume(ref valueReady);
+                ResumeHelper.Resume(ref _valueReady);
             }
         }
     }

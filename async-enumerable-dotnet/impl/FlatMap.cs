@@ -329,8 +329,8 @@ namespace async_enumerable_dotnet.impl
 
             internal void ConsumedOne()
             {
-                int c = consumed + 1;
-                int limit = prefetch - (prefetch >> 2);
+                var c = consumed + 1;
+                var limit = prefetch - (prefetch >> 2);
                 if (c == limit)
                 {
                     consumed = 0;

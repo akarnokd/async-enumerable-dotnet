@@ -50,7 +50,7 @@ namespace async_enumerable_dotnet.impl
 
             public async ValueTask<bool> MoveNextAsync()
             {
-                long n = remaining;
+                var n = remaining;
                 if (n == 0)
                 {
                     // eagerly dispose as who knows when the

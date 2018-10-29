@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 
 namespace async_enumerable_dotnet.impl
@@ -33,20 +32,21 @@ namespace async_enumerable_dotnet.impl
                 {
                     return false;
                 }
-                var b = default(Exception);
-                if (a == null)
+                Exception b;
+                switch (a)
                 {
-                    b = ex;
-                }
-                else if (a is AggregateException g)
-                {
-                    var list = new List<Exception>(g.InnerExceptions);
-                    list.Add(ex);
-                    b = new AggregateException(list);
-                }
-                else
-                {
-                    b = new AggregateException(a, ex);
+                    case null:
+                        b = ex;
+                        break;
+                    case AggregateException g:
+                    {
+                        var list = new List<Exception>(g.InnerExceptions) { ex };
+                        b = new AggregateException(list);
+                        break;
+                    }
+                    default:
+                        b = new AggregateException(a, ex);
+                        break;
                 }
                 if (Interlocked.CompareExchange(ref field, b, a) == a)
                 {
@@ -83,7 +83,7 @@ namespace async_enumerable_dotnet.impl
         /// </summary>
         /// <param name="ex">The exception to un-aggregate</param>
         /// <returns>The inner solo exception or <paramref name="ex"/>.</returns>
-        internal static Exception Unaggregate(Exception ex)
+        internal static Exception Extract(Exception ex)
         {
             if (ex is AggregateException g && g.InnerExceptions.Count == 1)
             {

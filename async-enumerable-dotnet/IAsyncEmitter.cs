@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet
@@ -26,7 +24,7 @@ namespace async_enumerable_dotnet
 
     /// <summary>
     /// The "push-side" of an IAsyncEnumerator.
-    /// Each method should be awaited and called non-overlappingly.
+    /// Each method should be awaited and called in a non-overlapping fashion.
     /// </summary>
     /// <typeparam name="T">The element type.</typeparam>
     /// <remarks>

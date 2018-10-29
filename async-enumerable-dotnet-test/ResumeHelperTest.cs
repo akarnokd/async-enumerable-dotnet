@@ -31,7 +31,7 @@ namespace async_enumerable_dotnet_test
             ResumeHelper.Complete(ref _tcs, new ValueTask(source.Task));
 
             Assert.True(_tcs.Task.IsFaulted);
-            Assert.Same(ex, ExceptionHelper.Unaggregate(ExceptionHelper.Unaggregate(_tcs.Task.Exception)));
+            Assert.Same(ex, ExceptionHelper.Extract(ExceptionHelper.Extract(_tcs.Task.Exception)));
         }
 
         
@@ -84,7 +84,7 @@ namespace async_enumerable_dotnet_test
             }
             catch (AggregateException g)
             {
-                Assert.Same(ex, ExceptionHelper.Unaggregate(ExceptionHelper.Unaggregate(g)));
+                Assert.Same(ex, ExceptionHelper.Extract(ExceptionHelper.Extract(g)));
             }
             
             Assert.True(_tcs.Task.IsFaulted);

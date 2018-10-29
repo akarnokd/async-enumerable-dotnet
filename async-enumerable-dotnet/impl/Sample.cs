@@ -82,7 +82,7 @@ namespace async_enumerable_dotnet.impl
             {
                 for (; ; )
                 {
-                    bool d = done;
+                    var d = done;
                     var v = Interlocked.Exchange(ref latest, EmptyIndicator);
 
                     if (d && v == EmptyIndicator)
@@ -166,7 +166,7 @@ namespace async_enumerable_dotnet.impl
                     {
                         Interlocked.Exchange(ref latest, Interlocked.Exchange(ref timerLatest, EmptyIndicator));
                     }
-                    error = ExceptionHelper.Unaggregate(t.Exception);
+                    error = ExceptionHelper.Extract(t.Exception);
                     done = true;
                     if (TryDispose())
                     {

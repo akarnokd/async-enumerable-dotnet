@@ -81,7 +81,7 @@ namespace async_enumerable_dotnet.impl
                         }
                         return new ValueTask<bool>(false);
                     }
-                    TaskCompletionSource<bool> newTask = new TaskCompletionSource<bool>();
+                    var newTask = new TaskCompletionSource<bool>();
                     if (Interlocked.CompareExchange(ref currentTask, newTask, task) == task)
                     {
                         if (Interlocked.Increment(ref disposeMain) == 1)

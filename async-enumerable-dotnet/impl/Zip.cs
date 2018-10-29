@@ -1,56 +1,52 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet.impl
 {
-    internal sealed class ZipArray<T, R> : IAsyncEnumerable<R>
+    internal sealed class ZipArray<TSource, TResult> : IAsyncEnumerable<TResult>
     {
-        readonly IAsyncEnumerable<T>[] sources;
+        private readonly IAsyncEnumerable<TSource>[] _sources;
 
-        readonly Func<T[], R> zipper;
+        private readonly Func<TSource[], TResult> _zipper;
 
-        public ZipArray(IAsyncEnumerable<T>[] sources, Func<T[], R> zipper)
+        public ZipArray(IAsyncEnumerable<TSource>[] sources, Func<TSource[], TResult> zipper)
         {
-            this.sources = sources;
-            this.zipper = zipper;
+            _sources = sources;
+            _zipper = zipper;
         }
 
-        public IAsyncEnumerator<R> GetAsyncEnumerator()
+        public IAsyncEnumerator<TResult> GetAsyncEnumerator()
         {
-            var enumerators = new IAsyncEnumerator<T>[sources.Length];
-            for (var i = 0; i < sources.Length; i++)
+            var enumerators = new IAsyncEnumerator<TSource>[_sources.Length];
+            for (var i = 0; i < _sources.Length; i++)
             {
-                enumerators[i] = sources[i].GetAsyncEnumerator();
+                enumerators[i] = _sources[i].GetAsyncEnumerator();
             }
-            return new ZipArrayEnumerator(enumerators, zipper);
+            return new ZipArrayEnumerator(enumerators, _zipper);
         }
 
-        internal sealed class ZipArrayEnumerator : IAsyncEnumerator<R>
+        sealed class ZipArrayEnumerator : IAsyncEnumerator<TResult>
         {
-            readonly IAsyncEnumerator<T>[] enumerators;
+            private readonly IAsyncEnumerator<TSource>[] _enumerators;
 
-            readonly Func<T[], R> zipper;
+            private readonly Func<TSource[], TResult> _zipper;
 
-            readonly ValueTask<bool>[] tasks;
+            private readonly ValueTask<bool>[] _tasks;
 
-            R current;
+            private bool _done;
 
-            bool done;
-
-            public ZipArrayEnumerator(IAsyncEnumerator<T>[] enumerators, Func<T[], R> zipper)
+            public ZipArrayEnumerator(IAsyncEnumerator<TSource>[] enumerators, Func<TSource[], TResult> zipper)
             {
-                this.enumerators = enumerators;
-                this.zipper = zipper;
-                this.tasks = new ValueTask<bool>[enumerators.Length];
+                _enumerators = enumerators;
+                _zipper = zipper;
+                _tasks = new ValueTask<bool>[enumerators.Length];
             }
 
-            public R Current => current;
+            public TResult Current { get; private set; }
 
             public async ValueTask DisposeAsync()
             {
-                foreach (var en in enumerators)
+                foreach (var en in _enumerators)
                 {
                     await en.DisposeAsync().ConfigureAwait(false);
                 }
@@ -58,30 +54,30 @@ namespace async_enumerable_dotnet.impl
 
             public async ValueTask<bool> MoveNextAsync()
             {
-                if (done)
+                if (_done)
                 {
                     return false;
                 }
 
-                current = default;
+                Current = default;
 
-                var values = new T[enumerators.Length];
+                var values = new TSource[_enumerators.Length];
 
-                for (var i = 0; i < enumerators.Length; i++)
+                for (var i = 0; i < _enumerators.Length; i++)
                 {
-                    tasks[i] = enumerators[i].MoveNextAsync();
+                    _tasks[i] = _enumerators[i].MoveNextAsync();
                 }
 
                 var fullRow = true;
                 var errors = default(Exception);
 
-                for (var i = 0; i < tasks.Length; i++)
+                for (var i = 0; i < _tasks.Length; i++)
                 {
                     try
                     {
-                        if (await tasks[i].ConfigureAwait(false))
+                        if (await _tasks[i].ConfigureAwait(false))
                         {
-                            values[i] = enumerators[i].Current;
+                            values[i] = _enumerators[i].Current;
                         }
                         else
                         {
@@ -91,20 +87,13 @@ namespace async_enumerable_dotnet.impl
                     }
                     catch (Exception ex)
                     {
-                        if (errors == null)
-                        {
-                            errors = ex;
-                        }
-                        else
-                        {
-                            errors = new AggregateException(errors, ex);
-                        }
+                        errors = errors == null ? ex : new AggregateException(errors, ex);
                     }
                 }
 
                 if (!fullRow)
                 {
-                    done = true;
+                    _done = true;
                     if (errors != null)
                     {
                         throw errors;
@@ -113,7 +102,7 @@ namespace async_enumerable_dotnet.impl
                     return false;
                 }
 
-                current = zipper(values);
+                Current = _zipper(values);
                 return true;
             }
         }
