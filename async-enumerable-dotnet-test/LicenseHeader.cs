@@ -55,7 +55,9 @@ namespace async_enumerable_dotnet_test
             
             foreach (var entry in Directory.EnumerateFiles(path, "*.cs", SearchOption.AllDirectories))
             {
-                if (entry.Contains("AssemblyInfo") || entry.Contains("Temporary"))
+                if (entry.Contains("AssemblyInfo") 
+                    || entry.Contains("Temporary")
+                    || entry.Contains("/obj/"))
                 {
                     continue;
                 }
