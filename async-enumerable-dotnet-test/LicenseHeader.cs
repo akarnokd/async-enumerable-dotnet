@@ -50,6 +50,8 @@ namespace async_enumerable_dotnet_test
         private static void VisitSources(string path)
         {
             var found = false;
+
+            var ci = Environment.GetEnvironmentVariable("CI") != null;
             
             foreach (var entry in Directory.EnumerateFiles(path, "*.cs", SearchOption.AllDirectories))
             {
@@ -59,12 +61,18 @@ namespace async_enumerable_dotnet_test
                 }
                 
                 var text = File.ReadAllText(entry, Encoding.UTF8);
+                if (!text.Contains("\r\n"))
+                {
+                    text = text.Replace("\n", "\r\n");
+                }
                 if (!text.StartsWith(HeaderLines))
                 {
                     Console.WriteLine("Missing header: " + entry);
-                    Console.WriteLine(text.Substring(0, HeaderLines.Length));
                     found = true;
-                    File.WriteAllText(entry, HeaderLines + text, Encoding.UTF8);
+                    if (!ci)
+                    {
+                        File.WriteAllText(entry, HeaderLines + text, Encoding.UTF8);
+                    }
                 }
             }
 
