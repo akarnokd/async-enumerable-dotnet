@@ -62,6 +62,7 @@ namespace async_enumerable_dotnet_test
                 if (!text.StartsWith(HeaderLines))
                 {
                     Console.WriteLine("Missing header: " + entry);
+                    Console.WriteLine(text.Substring(0, HeaderLines.Length));
                     found = true;
                     File.WriteAllText(entry, HeaderLines + text, Encoding.UTF8);
                 }
