@@ -32,6 +32,7 @@ namespace async_enumerable_dotnet.impl
             public bool DisposeAsyncRequested => _disposeRequested;
 
             private bool _hasValue;
+            private Exception _error;
 
             public T Current { get; private set; }
 
@@ -41,8 +42,7 @@ namespace async_enumerable_dotnet.impl
 
             internal void SetTask(Task task)
             {
-                _task = task;
-                task.ContinueWith(async t =>
+                _task = task.ContinueWith(async t =>
                 {
                     if (_disposeRequested)
                     {
@@ -54,6 +54,8 @@ namespace async_enumerable_dotnet.impl
                     {
                         return;
                     }
+
+                    _error = ExceptionHelper.Extract(t.Exception);
 
                     ResumeHelper.Resume(ref _valueReady);
                 });
@@ -78,6 +80,13 @@ namespace async_enumerable_dotnet.impl
                     return true;
                 }
                 Current = default;
+
+                var ex = _error;
+                if (ex != null)
+                {
+                    _error = null;
+                    throw ex;
+                }
                 return false;
             }
 

@@ -5,6 +5,7 @@
 using Xunit;
 using async_enumerable_dotnet;
 using System.Threading.Tasks;
+using System;
 
 namespace async_enumerable_dotnet_test
 {
@@ -41,6 +42,44 @@ namespace async_enumerable_dotnet_test
             for (int j = 0; j < 1000; j++)
             {
                 await Range();
+            }
+        }
+
+        [Fact]
+        public async void Items_And_Error()
+        {
+            var result = AsyncEnumerable.Create<int>(async e =>
+            {
+                await e.Next(1);
+
+                await e.Next(2);
+
+                throw new InvalidOperationException();
+            });
+
+            await result.AssertFailure(typeof(InvalidOperationException), 1, 2);
+        }
+
+        [Fact]
+        public async ValueTask Take()
+        {
+            await AsyncEnumerable.Create<int>(async e =>
+            {
+                for (var i = 0; i < 10 && !e.DisposeAsyncRequested; i++)
+                {
+                    await e.Next(i);
+                }
+            })
+            .Take(5)
+            .AssertResult(0, 1, 2, 3, 4);
+        }
+
+        [Fact]
+        public async void Take_Loop()
+        {
+            for (int j = 0; j < 1000; j++)
+            {
+                await Take();
             }
         }
     }
