@@ -56,11 +56,15 @@ namespace async_enumerable_dotnet.impl
 
             public TResult Current { get; private set; }
 
-            private int _dispose;
+            private int _allDisposeWip;
+            private Exception _allDisposeError;
+            private readonly TaskCompletionSource<bool> _allDisposeTask;
 
             private int _outstanding;
 
             private int _sourceWip;
+
+            private int _sourceDisposeWip;
 
             public FlatMapEnumerator(IAsyncEnumerator<TSource> source, Func<TSource, IAsyncEnumerable<TResult>> mapper, int maxConcurrency, int prefetch)
             {
@@ -68,15 +72,17 @@ namespace async_enumerable_dotnet.impl
                 _mapper = mapper;
                 _queue = new ConcurrentQueue<Item>();
                 _prefetch = prefetch;
+                _allDisposeWip = 1; // the main source is one
+                _allDisposeTask = new TaskCompletionSource<bool>();
                 Volatile.Write(ref _outstanding, maxConcurrency);
                 Volatile.Write(ref _inners, Empty);
             }
 
             public ValueTask DisposeAsync()
             {
-                if (Interlocked.Increment(ref _dispose) == 1)
+                if (Interlocked.Increment(ref _sourceDisposeWip) == 1)
                 {
-                    _source.DisposeAsync();
+                    Dispose(_source);
                 }
 
                 var a = Interlocked.Exchange(ref _inners, Terminated);
@@ -84,7 +90,7 @@ namespace async_enumerable_dotnet.impl
                 {
                     handler.Dispose();
                 }
-                return new ValueTask();
+                return new ValueTask(_allDisposeTask.Task);
             }
 
             internal void MoveNext()
@@ -93,7 +99,7 @@ namespace async_enumerable_dotnet.impl
                 {
                     do
                     {
-                        if (Interlocked.Increment(ref _dispose) == 1)
+                        if (Interlocked.Increment(ref _sourceDisposeWip) == 1)
                         {
                             _source.MoveNextAsync()
                                 .AsTask()
@@ -111,53 +117,112 @@ namespace async_enumerable_dotnet.impl
             private static readonly Action<Task<bool>, object>
                 HandleAction = (t, state) => ((FlatMapEnumerator) state).Handle(t);
 
+            private bool TryDispose()
+            {
+                if (Interlocked.Decrement(ref _sourceDisposeWip) != 0)
+                {
+                    Dispose(_source);
+                    return false;
+                }
+                return true;
+            }
+
             private void Handle(Task<bool> task)
             {
-                if (Interlocked.Decrement(ref _dispose) != 0)
-                {
-                    _source.DisposeAsync();
-                }
-                else if (task.IsFaulted)
+                if (task.IsFaulted)
                 {
                     AddException(task.Exception);
                     _done = true;
-                    Signal();
+                    if (TryDispose())
+                    {
+                        Signal();
+                    }
                 }
                 else
                 {
                     if (task.Result)
                     {
-                        IAsyncEnumerator<TResult> innerSource;
-                        try
-                        {
-                            innerSource = _mapper(_source.Current)
-                                .GetAsyncEnumerator();
-                        }
-                        catch (Exception ex)
-                        {
-                            _source.DisposeAsync();
+                        var v = _source.Current;
 
-                            AddException(ex);
-                            _done = true;
-                            Signal();
-                            return;
-                        }
-
-                        var handler = new InnerHandler(this, innerSource, _prefetch);
-                        if (Add(handler))
+                        if (TryDispose())
                         {
-                            handler.MoveNext();
-
-                            if (Interlocked.Decrement(ref _outstanding) != 0)
+                            IAsyncEnumerator<TResult> innerSource;
+                            try
                             {
-                                MoveNext();
+                                innerSource = _mapper(_source.Current)
+                                    .GetAsyncEnumerator();
+                            }
+                            catch (Exception ex)
+                            {
+                                _source.DisposeAsync();
+
+                                AddException(ex);
+                                _done = true;
+                                Signal();
+                                return;
+                            }
+
+                            var handler = new InnerHandler(this, innerSource, _prefetch);
+                            Interlocked.Increment(ref _allDisposeWip);
+                            if (Add(handler))
+                            {
+                                handler.MoveNext();
+
+                                if (Interlocked.Decrement(ref _outstanding) != 0)
+                                {
+                                    MoveNext();
+                                }
+                            }
+                            else
+                            {
+                                // This will decrement _allDisposeWip so
+                                // that the DisposeAsync() can be released eventually
+                                DisposeOne();
                             }
                         }
                     }
                     else
                     {
                         _done = true;
-                        Signal();
+                        if (TryDispose())
+                        {
+                            Signal();
+                        }
+                    }
+                }
+            }
+
+            internal void Dispose(IAsyncDisposable disposable)
+            {
+                disposable.DisposeAsync()
+                    .AsTask()
+                    .ContinueWith(DisposeHandlerAction, this);
+            }
+
+            private static readonly Action<Task, object> DisposeHandlerAction = (t, state) => ((FlatMapEnumerator)state).DisposeHandler(t);
+
+            private void DisposeHandler(Task t)
+            {
+                if (t.IsFaulted)
+                {
+                    ExceptionHelper.AddException(ref _allDisposeError, ExceptionHelper.Extract(t.Exception));
+                }
+                DisposeOne();
+            }
+
+            private void DisposeOne()
+            {
+                if (Interlocked.Decrement(ref _allDisposeWip) == 0)
+                {
+                    var ex = _allDisposeError;
+                    if (ex != null)
+                    {
+                        _allDisposeError = null;
+                        _allDisposeTask.TrySetException(ex);
+                    }
+                    else
+                    {
+                        _allDisposeTask.TrySetResult(true);
                     }
                 }
             }
@@ -348,7 +413,7 @@ namespace async_enumerable_dotnet.impl
             {
                 if (Interlocked.Increment(ref _dispose) == 1)
                 {
-                    _source.DisposeAsync();
+                    _parent.Dispose(_source);
                 }
             }
 
@@ -375,29 +440,45 @@ namespace async_enumerable_dotnet.impl
             private static readonly Action<Task<bool>, object>
                 HandleAction = (t, state) => ((InnerHandler) state).Handle(t);
 
-            private void Handle(Task<bool> task)
+            private bool TryDispose()
             {
                 if (Interlocked.Decrement(ref _dispose) != 0)
                 {
-                    _source.DisposeAsync();
+                    _parent.Dispose(_source);
+                    return false;
                 }
-                else if (task.IsFaulted)
+                return true;
+            }
+
+            private void Handle(Task<bool> task)
+            {
+                if (task.IsFaulted)
                 {
-                    _parent.InnerError(this, task.Exception);
+                    if (TryDispose())
+                    {
+                        _parent.InnerError(this, task.Exception);
+                    }
                 }
                 else
                 {
                     if (task.Result)
                     {
-                        _parent.InnerNext(this, _source.Current);
-                        if (Interlocked.Decrement(ref _outstanding) != 0)
+                        var v = _source.Current;
+                        if (TryDispose())
                         {
-                            MoveNext();
+                            _parent.InnerNext(this, v);
+                            if (Interlocked.Decrement(ref _outstanding) != 0)
+                            {
+                                MoveNext();
+                            }
                         }
                     }
                     else
                     {
-                        _parent.InnerComplete(this);
+                        if (TryDispose())
+                        {
+                            _parent.InnerComplete(this);
+                        }
                     }
                 }
             }

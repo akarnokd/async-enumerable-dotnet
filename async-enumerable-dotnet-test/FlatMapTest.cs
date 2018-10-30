@@ -5,6 +5,7 @@
 using System;
 using Xunit;
 using async_enumerable_dotnet;
+using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet_test
 {
@@ -153,7 +154,10 @@ namespace async_enumerable_dotnet_test
             var disposed = 0;
 
             var result = AsyncEnumerable.Range(1, 1)
-                .DoOnDispose(() => disposed++)
+                .DoOnDispose(async () => {
+                    await Task.Delay(100);
+                    disposed++;
+                })
                 .FlatMap(v => AsyncEnumerable.Range(v, 5)
                     .DoOnDispose(() => disposed++)
                 )
