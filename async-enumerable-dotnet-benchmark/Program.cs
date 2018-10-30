@@ -21,14 +21,19 @@ namespace async_enumerable_dotnet_benchmark
         // ReSharper disable once ArrangeTypeMemberModifiers
         static void Main(string[] args)
         {
-            for (var i = 0; i < 100000; i++)
+            for (var j = 0; j < 100000; j++)
             {
-                if (i % 10 == 0)
+                if (j % 10 == 0)
                 {
-                    Console.WriteLine(i);
+                    Console.WriteLine(j);
                 }
-                var list = AsyncEnumerable.Range(1, 100_000)
-                .SwitchMap(v => AsyncEnumerable.Range(v, 2))
+                var list = AsyncEnumerable.Create<int>(async e =>
+                {
+                    for (var i = 0; i < 10 && !e.DisposeAsyncRequested; i++)
+                    {
+                        await e.Next(i);
+                    }
+                })
                 .Last()
                 .GetAsyncEnumerator();
 
@@ -39,7 +44,7 @@ namespace async_enumerable_dotnet_benchmark
                         Console.WriteLine("Empty?");
                     }
 
-                    if (list.Current != 100_001)
+                    if (list.Current != 9)
                     {
                         Console.WriteLine(list.Current);
                         Console.ReadLine();

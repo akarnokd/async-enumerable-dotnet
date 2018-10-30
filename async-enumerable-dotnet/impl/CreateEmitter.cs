@@ -29,9 +29,9 @@ namespace async_enumerable_dotnet.impl
 
             private volatile bool _disposeRequested;
 
-            private volatile bool _taskComplete;
-
             public bool DisposeAsyncRequested => _disposeRequested;
+
+            private bool _hasValue;
 
             public T Current { get; private set; }
 
@@ -42,9 +42,19 @@ namespace async_enumerable_dotnet.impl
             internal void SetTask(Task task)
             {
                 _task = task;
-                task.ContinueWith(t =>
+                task.ContinueWith(async t =>
                 {
-                    _taskComplete = true;
+                    if (_disposeRequested)
+                    {
+                        return;
+                    }
+                    await ResumeHelper.Await(ref _consumed);
+                    ResumeHelper.Clear(ref _consumed);
+                    if (_disposeRequested)
+                    {
+                        return;
+                    }
+
                     ResumeHelper.Resume(ref _valueReady);
                 });
             }
@@ -58,28 +68,16 @@ namespace async_enumerable_dotnet.impl
 
             public async ValueTask<bool> MoveNextAsync()
             {
-                if (_taskComplete)
-                {
-                    if (_task.IsFaulted)
-                    {
-                        throw _task.Exception;
-                    }
-                    return false;
-                }
                 ResumeHelper.Resume(ref _consumed);
 
                 await ResumeHelper.Await(ref _valueReady);
                 ResumeHelper.Clear(ref _valueReady);
-
-                if (!_taskComplete)
+                if (_hasValue)
                 {
+                    _hasValue = false;
                     return true;
                 }
-
-                if (_task.IsFaulted)
-                {
-                    throw _task.Exception;
-                }
+                Current = default;
                 return false;
             }
 
@@ -97,6 +95,7 @@ namespace async_enumerable_dotnet.impl
                 }
 
                 Current = value;
+                _hasValue = true;
 
                 ResumeHelper.Resume(ref _valueReady);
             }
