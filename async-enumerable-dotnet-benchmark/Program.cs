@@ -12,36 +12,63 @@ namespace async_enumerable_dotnet_benchmark
     // ReSharper disable once ArrangeTypeModifiers
     class Program
     {
+        /// <summary>
+        /// Don't worry about this program yet. I'm using it to
+        /// diagnose await hangs and internal state that is otherwise
+        /// hard (or I don't know how) to debug as an Xunit test.
+        /// </summary>
+        /// <param name="args"></param>
         // ReSharper disable once UnusedParameter.Local
         // ReSharper disable once ArrangeTypeMemberModifiers
-        static async Task Main(string[] args)
+        static void Main(string[] args)
         {
-            var result = AsyncEnumerable.Range(1, 5)
-                .Map(v =>
-                {
-                    Console.WriteLine(v);
-                    return v;
-                })
-                .FlatMap(v => AsyncEnumerable.Range(v * 10, 5)
-                .Map(w =>
-                {
-                    Console.WriteLine(w);
-                    return w;
-                })
-                , 1, 1)
-                ;
-
-            var en = result.GetAsyncEnumerator();
-            try
+            for (int i = 0; i < 100000; i++)
             {
-                while (await en.MoveNextAsync())
+                if (i % 100 == 0)
                 {
-                    Console.WriteLine(">> " + en.Current);
+                    Console.WriteLine(i);
                 }
-            }
-            finally
-            {
-                await en.DisposeAsync();
+                var list = AsyncEnumerable.Range(1, 5)
+                    .Publish(a => 
+                        a.Take(3).MergeWith(a.Skip(3))
+                    )
+                    .ToList().GetAsyncEnumerator();
+                try
+                {
+                    /*
+                    var t = 0;
+                    while (!list.IsCompleted && !list.IsFaulted && !list.IsCanceled && t < 5000)
+                    {
+                        t++;
+                    }
+
+                    while (!list.IsCompleted && !list.IsFaulted && !list.IsCanceled)
+                    {
+                        await Task.Delay(1);
+                    }
+                    */
+
+                    if (!list.MoveNextAsync().Result)
+                    {
+                        Console.WriteLine("Empty?");
+                    }
+
+                    if (list.Current.Count != 5)
+                    {
+                        foreach (var e in list.Current)
+                        {
+                            Console.Write(e);
+                            Console.Write(", ");
+                        }
+                        Console.WriteLine();
+                        Console.ReadLine();
+                        break;
+                    }
+                }
+                finally
+                {
+                    list.DisposeAsync().AsTask().Wait();
+                }
             }
         }
     }

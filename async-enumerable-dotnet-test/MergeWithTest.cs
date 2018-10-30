@@ -8,13 +8,14 @@ using async_enumerable_dotnet;
 
 namespace async_enumerable_dotnet_test
 {
-    public class UnitTest1
+    public class MergeWithTest
     {
         [Fact]
-        public async void Test1()
+        public async void Normal()
         {
             await AsyncEnumerable.Range(1, 5)
-                .AssertResult(1, 2, 3, 4, 5);
+                .MergeWith(AsyncEnumerable.Range(6, 5))
+                .AssertResultSet(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
         }
     }
 }

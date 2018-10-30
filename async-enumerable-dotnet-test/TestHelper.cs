@@ -41,6 +41,12 @@ namespace async_enumerable_dotnet_test
             }
         }
 
+        public static async ValueTask AssertThen<T>(this IAsyncEnumerable<T> source, Action<IList<T>> outcomeHandler)
+        {
+            var list = await source.ToListAsync();
+            outcomeHandler(list);
+        }
+
         public static ValueTask AssertResultSet<T>(this IAsyncEnumerable<T> source, params T[] values)
         {
             return AssertResultSet(source, EqualityComparer<T>.Default, values);

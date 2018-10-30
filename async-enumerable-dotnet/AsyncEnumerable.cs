@@ -1370,5 +1370,59 @@ namespace async_enumerable_dotnet
             RequireNonNull(source, nameof(source));
             return new Latest<T>(source);
         }
+
+        /// <summary>
+        /// Shares and multicasts the source async sequence for the duration
+        /// of a function and relays items from the returned async sequence.
+        /// </summary>
+        /// <typeparam name="TSource">The element type of the source.</typeparam>
+        /// <typeparam name="TResult">The result type.</typeparam>
+        /// <param name="source">The source async sequence to multicast.</param>
+        /// <param name="func">The function to transform the sequence without
+        /// consuming it multiple times.</param>
+        /// <returns>The new IAsyncEnumerable sequence.</returns>
+        public static IAsyncEnumerable<TResult> Publish<TSource, TResult>(this IAsyncEnumerable<TSource> source, Func<IAsyncEnumerable<TSource>, IAsyncEnumerable<TResult>> func)
+        {
+            RequireNonNull(source, nameof(source));
+            RequireNonNull(func, nameof(func));
+            return new Publish<TSource, TResult>(source, func);
+        }
+
+        /// <summary>
+        /// Merges the source sequence with the other sequence by
+        /// running them both at the same time and serializing the item
+        /// emissions.
+        /// </summary>
+        /// <typeparam name="TSource">The element type of the sources and result.</typeparam>
+        /// <param name="source">A source to merge.</param>
+        /// <param name="other">A source to merge.</param>
+        /// <returns>The new IAsyncEnumerable sequence.</returns>
+        public static IAsyncEnumerable<TSource> MergeWith<TSource>(this IAsyncEnumerable<TSource> source, IAsyncEnumerable<TSource> other)
+        {
+            RequireNonNull(source, nameof(source));
+            RequireNonNull(other, nameof(other));
+            return Merge(source, other);
+        }
+
+        /// <summary>
+        /// Merges all async sequences running at once into a single
+        /// serialized async sequence.
+        /// </summary>
+        /// <typeparam name="TSource">The element type of the sources and result.</typeparam>
+        /// <param name="sources">The params array of source async sequences.</param>
+        /// <returns>The new IAsyncEnumerable sequence.</returns>
+        public static IAsyncEnumerable<TSource> Merge<TSource>(params IAsyncEnumerable<TSource>[] sources)
+        {
+            RequireNonNull(sources, nameof(sources));
+            if (sources.Length == 0)
+            {
+                return Empty<TSource>();
+            }
+            if (sources.Length == 1)
+            {
+                return sources[0];
+            }
+            return new Merge<TSource>(sources);
+        }
     }
 }

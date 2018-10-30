@@ -40,5 +40,22 @@ namespace async_enumerable_dotnet_test
                 )
                 .AssertResult(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
         }
+
+        [Fact]
+        public async void ConcatWith_Normal()
+        {
+            await AsyncEnumerable.Range(1, 3)
+                .ConcatWith(AsyncEnumerable.Range(4, 2))
+                .AssertResult(1, 2, 3, 4, 5);
+        }
+
+        [Fact]
+        public async void ConcatWith_Take()
+        {
+            await AsyncEnumerable.Range(1, 5)
+                .Take(3)
+                .ConcatWith(AsyncEnumerable.Range(4, 2))
+                .AssertResult(1, 2, 3, 4, 5);
+        }
     }
 }
