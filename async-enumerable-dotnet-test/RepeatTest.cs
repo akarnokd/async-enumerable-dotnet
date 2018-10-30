@@ -4,6 +4,7 @@
 
 using Xunit;
 using async_enumerable_dotnet;
+using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet_test
 {
@@ -34,5 +35,15 @@ namespace async_enumerable_dotnet_test
                 .AssertResult(1, 2, 1, 2, 1, 2);
         }
 
+        [Fact]
+        public async void Limited_Condition_Task()
+        {
+            await AsyncEnumerable.Range(1, 2)
+                .Repeat(async n => {
+                    await Task.Delay(100);
+                    return n < 2;
+                })
+                .AssertResult(1, 2, 1, 2, 1, 2);
+        }
     }
 }

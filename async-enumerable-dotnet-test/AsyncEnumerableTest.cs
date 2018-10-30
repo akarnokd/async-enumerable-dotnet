@@ -210,6 +210,8 @@ namespace async_enumerable_dotnet_test
             Defaults.Add(typeof(Func<ValueTask>), (Func<ValueTask>)(() => new ValueTask()));
             Defaults.Add(typeof(Func<long, bool>), (Func<long, bool>)(v => false));
             Defaults.Add(typeof(Func<long, Exception, bool>), (Func<long, Exception, bool>)((v, w) => false));
+            Defaults.Add(typeof(Func<long, Exception, Task<bool>>), (Func<long, Exception, Task<bool>>)((v, w) => Task.FromResult(false)));
+            Defaults.Add(typeof(Func<long, Task<bool>>), (Func<long, Task<bool>>)(v => Task.FromResult(false)));
 
             Defaults.Add(typeof(Func<IAsyncEnumerable<int>, IAsyncEnumerable<int>>), (Func<IAsyncEnumerable<int>, IAsyncEnumerable<int>>)(w => w));
 

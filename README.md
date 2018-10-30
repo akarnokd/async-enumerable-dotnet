@@ -51,6 +51,7 @@ finally
 - `Merge` - run multiple sources at once and merge their items into a single async sequence
 - `Never` - the async sequence never produces any items and never terminates
 - `Range` - emit a range of numbers
+- `Switch` - switch between inner async sources produced by an outer async sequence
 - `Timer` - emit zero after some time delay
 - `Using` - use a resource for the duration of a generated actual `IAsyncEnumerable`
 - `Zip` - combine the next values of multiple sources via a function and emit its results
@@ -89,6 +90,7 @@ finally
 - `SkipUntil` - skip until another async sequence signals an item or completes
 - `SkipWhile` - skip items while the predicate returns true, start emitting when it turns false
 - `SwitchIfEmpty` - switch to an alternate async sequence if the main sequence turns out to be empty
+- `SwitchMap` - switch to a newer mapped-in async sequence, disposing the old one, whenever the source produces an item
 - `Take` - take at most a given number of items and stop the async sequence after that
 - `TakeLast` - take the last given number of items of the source async sequence and emit those
 - `TakeUntil` - take items from the main source until a secondary async sequence signals an item or completes

@@ -87,4 +87,71 @@ namespace async_enumerable_dotnet.impl
             }
         }
     }
+
+    internal sealed class RetryTask<T> : IAsyncEnumerable<T>
+    {
+        private readonly IAsyncEnumerable<T> _source;
+
+        private readonly Func<long, Exception, Task<bool>> _condition;
+
+        public RetryTask(IAsyncEnumerable<T> source, Func<long, Exception, Task<bool>> condition)
+        {
+            _source = source;
+            _condition = condition;
+        }
+
+        public IAsyncEnumerator<T> GetAsyncEnumerator()
+        {
+            return new RetryTaskEnumerator(_source, _source.GetAsyncEnumerator(), _condition);
+        }
+
+        private sealed class RetryTaskEnumerator : IAsyncEnumerator<T>
+        {
+            private readonly IAsyncEnumerable<T> _source;
+
+            private IAsyncEnumerator<T> _current;
+
+            private readonly Func<long, Exception, Task<bool>> _condition;
+
+            public T Current => _current.Current;
+
+            private long _index;
+
+            public RetryTaskEnumerator(IAsyncEnumerable<T> source, IAsyncEnumerator<T> current, Func<long, Exception, Task<bool>> condition)
+            {
+                _source = source;
+                _current = current;
+                _condition = condition;
+            }
+
+            public ValueTask DisposeAsync()
+            {
+                return _current.DisposeAsync();
+            }
+
+            public async ValueTask<bool> MoveNextAsync()
+            {
+                for (; ; )
+                {
+                    try
+                    {
+                        return await _current.MoveNextAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        if (await _condition(_index++, ex))
+                        {
+                            await _current.DisposeAsync();
+
+                            _current = _source.GetAsyncEnumerator();
+                        }
+                        else
+                        {
+                            throw;
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

@@ -5,6 +5,7 @@
 using System;
 using Xunit;
 using async_enumerable_dotnet;
+using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet_test
 {
@@ -35,6 +36,18 @@ namespace async_enumerable_dotnet_test
             await AsyncEnumerable.Range(1, 2)
                 .ConcatWith(AsyncEnumerable.Error<int>(new InvalidOperationException()))
                 .Retry((idx, ex) => idx < 2)
+                .AssertFailure(typeof(InvalidOperationException), 1, 2, 1, 2, 1, 2);
+        }
+
+        [Fact]
+        public async void Retry_Condition_Task()
+        {
+            await AsyncEnumerable.Range(1, 2)
+                .ConcatWith(AsyncEnumerable.Error<int>(new InvalidOperationException()))
+                .Retry(async (idx, ex) => {
+                    await Task.Delay(100);
+                    return idx < 2;
+                })
                 .AssertFailure(typeof(InvalidOperationException), 1, 2, 1, 2, 1, 2);
         }
     }

@@ -87,4 +87,70 @@ namespace async_enumerable_dotnet.impl
             }
         }
     }
+
+    internal sealed class RepeatTask<T> : IAsyncEnumerable<T>
+    {
+        private readonly IAsyncEnumerable<T> _source;
+
+        private readonly Func<long, Task<bool>> _condition;
+
+        public RepeatTask(IAsyncEnumerable<T> source, Func<long, Task<bool>> condition)
+        {
+            _source = source;
+            _condition = condition;
+        }
+
+        public IAsyncEnumerator<T> GetAsyncEnumerator()
+        {
+            return new RepeatTaskEnumerator(_source, _condition, _source.GetAsyncEnumerator());
+        }
+
+        private sealed class RepeatTaskEnumerator : IAsyncEnumerator<T>
+        {
+            private readonly IAsyncEnumerable<T> _source;
+
+            private readonly Func<long, Task<bool>> _condition;
+
+            private IAsyncEnumerator<T> _current;
+
+            private long _index;
+
+            public T Current => _current.Current;
+
+            public RepeatTaskEnumerator(IAsyncEnumerable<T> source, Func<long, Task<bool>> condition, IAsyncEnumerator<T> current)
+            {
+                _source = source;
+                _condition = condition;
+                _current = current;
+            }
+
+            public ValueTask DisposeAsync()
+            {
+                return _current.DisposeAsync();
+            }
+
+            public async ValueTask<bool> MoveNextAsync()
+            {
+                for (; ; )
+                {
+                    if (await _current.MoveNextAsync())
+                    {
+                        return true;
+                    }
+
+                    if (await _condition(_index++))
+                    {
+                        await _current.DisposeAsync();
+
+                        _current = _source.GetAsyncEnumerator();
+                    }
+                    else
+                    {
+                        return false;
+                    }
+
+                }
+            }
+        }
+    }
 }

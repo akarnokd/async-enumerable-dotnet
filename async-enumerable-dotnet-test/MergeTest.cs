@@ -112,5 +112,23 @@ namespace async_enumerable_dotnet_test
             }
         }
 
+
+        [Fact]
+        public async void Async_Normal()
+        {
+            await
+                AsyncEnumerable.FromArray(
+                    AsyncEnumerable.Range(1, 3),
+                    AsyncEnumerable.Empty<int>(),
+                    AsyncEnumerable.FromArray(4, 5, 6, 7),
+                    AsyncEnumerable.Empty<int>(),
+                    AsyncEnumerable.Just(8),
+                    AsyncEnumerable.FromEnumerable(new[] { 9, 10 }),
+                    AsyncEnumerable.Empty<int>()
+                )
+                .Merge()
+                .AssertResultSet(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+        }
+
     }
 }

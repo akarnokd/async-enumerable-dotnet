@@ -23,43 +23,25 @@ namespace async_enumerable_dotnet_benchmark
         {
             for (var i = 0; i < 100000; i++)
             {
-                if (i % 100 == 0)
+                if (i % 10 == 0)
                 {
                     Console.WriteLine(i);
                 }
-                var list = AsyncEnumerable.Range(1, 5)
-                    .Publish(a => 
-                        a.Take(3).MergeWith(a.Skip(3))
-                    )
-                    .ToList().GetAsyncEnumerator();
+                var list = AsyncEnumerable.Range(1, 100_000)
+                .SwitchMap(v => AsyncEnumerable.Range(v, 2))
+                .Last()
+                .GetAsyncEnumerator();
+
                 try
                 {
-                    /*
-                    var t = 0;
-                    while (!list.IsCompleted && !list.IsFaulted && !list.IsCanceled && t < 5000)
-                    {
-                        t++;
-                    }
-
-                    while (!list.IsCompleted && !list.IsFaulted && !list.IsCanceled)
-                    {
-                        await Task.Delay(1);
-                    }
-                    */
-
                     if (!list.MoveNextAsync().Result)
                     {
                         Console.WriteLine("Empty?");
                     }
 
-                    if (list.Current.Count != 5)
+                    if (list.Current != 100_001)
                     {
-                        foreach (var e in list.Current)
-                        {
-                            Console.Write(e);
-                            Console.Write(", ");
-                        }
-                        Console.WriteLine();
+                        Console.WriteLine(list.Current);
                         Console.ReadLine();
                         break;
                     }

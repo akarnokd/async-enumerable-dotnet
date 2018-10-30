@@ -921,13 +921,28 @@ namespace async_enumerable_dotnet
         /// <typeparam name="T">The element type.</typeparam>
         /// <param name="source">The source async sequence to repeatedly relay items of.</param>
         /// <param name="condition">The function called when the current run completes with
-        /// the current run index (zero-based) and should return to repeat the sequence once more, false to end it.</param>
+        /// the current run index (zero-based) and should return true to repeat the sequence once more, false to end it.</param>
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<T> Repeat<T>(this IAsyncEnumerable<T> source, Func<long, bool> condition)
         {
             RequireNonNull(source, nameof(source));
             RequireNonNull(condition, nameof(condition));
             return new Repeat<T>(source, long.MaxValue, condition);
+        }
+
+        /// <summary>
+        /// Repeatedly relay the source async sequence, once it completes the previous time, when the function returns true, ending the sequence otherwise.
+        /// </summary>
+        /// <typeparam name="T">The element type.</typeparam>
+        /// <param name="source">The source async sequence to repeatedly relay items of.</param>
+        /// <param name="condition">The function called when the current run completes with
+        /// the current run index (zero-based) and should return a task with true to repeat the sequence once more, false to end it.</param>
+        /// <returns>The new IAsyncEnumerable instance.</returns>
+        public static IAsyncEnumerable<T> Repeat<T>(this IAsyncEnumerable<T> source, Func<long, Task<bool>> condition)
+        {
+            RequireNonNull(source, nameof(source));
+            RequireNonNull(condition, nameof(condition));
+            return new RepeatTask<T>(source, condition);
         }
 
         /// <summary>
@@ -955,6 +970,20 @@ namespace async_enumerable_dotnet
             RequireNonNull(source, nameof(source));
             RequireNonNull(condition, nameof(condition));
             return new Retry<T>(source, long.MaxValue, condition);
+        }
+
+        /// <summary>
+        /// Retry a possibly failing async sequence if the condition returns true for the Exception and/or retry index.
+        /// </summary>
+        /// <typeparam name="T">The element type of the source async sequence.</typeparam>
+        /// <param name="source">The source async sequence that could fail and should be repeated.</param>
+        /// <param name="condition">Called when the sequence fails with the retry index (zero-based) and last failure Exception and should return a task with true if the sequence should be retried.</param>
+        /// <returns>The new IAsyncEnumerable instance.</returns>
+        public static IAsyncEnumerable<T> Retry<T>(this IAsyncEnumerable<T> source, Func<long, Exception, Task<bool>> condition)
+        {
+            RequireNonNull(source, nameof(source));
+            RequireNonNull(condition, nameof(condition));
+            return new RetryTask<T>(source, condition);
         }
 
         /// <summary>
@@ -1441,6 +1470,65 @@ namespace async_enumerable_dotnet
             RequireNonNull(source, nameof(source));
             RequireNonNull(func, nameof(func));
             return new Replay<TSource, TResult>(source, func);
+        }
+
+        /// <summary>
+        /// Switches to a newer source async sequence, disposing the old one,
+        /// when the source async sequence produces
+        /// a value and is mapped to an async sequence via a function.
+        /// </summary>
+        /// <typeparam name="TSource">The source value type.</typeparam>
+        /// <typeparam name="TResult">The result value type.</typeparam>
+        /// <param name="source">The source to map into async sequences and switch between them.</param>
+        /// <param name="mapper">The function that receives the source item and should
+        /// return an async sequence to be run.</param>
+        /// <returns>The new IAsyncEnumerable sequence.</returns>
+        public static IAsyncEnumerable<TResult> SwitchMap<TSource, TResult>(this IAsyncEnumerable<TSource> source, Func<TSource, IAsyncEnumerable<TResult>> mapper)
+        {
+            RequireNonNull(source, nameof(source));
+            RequireNonNull(mapper, nameof(mapper));
+            return new SwitchMap<TSource, TResult>(source, mapper);
+        }
+
+        /// <summary>
+        /// Switches to a newer source async sequence, disposing the old one,
+        /// when the source async sequence produces a new inner async sequence.
+        /// </summary>
+        /// <typeparam name="TSource">The source value type.</typeparam>
+        /// <param name="sources">The async sequence of async sequences to switch between.</param>
+        /// <returns>The new IAsyncEnumerable sequence.</returns>
+        public static IAsyncEnumerable<TSource> Switch<TSource>(this IAsyncEnumerable<IAsyncEnumerable<TSource>> sources)
+        {
+            RequireNonNull(sources, nameof(sources));
+            return sources.SwitchMap(v => v);
+        }
+
+        /// <summary>
+        /// Runs the inner async sequences, produced by an outer async sequence,
+        /// one after the other and relays their items.
+        /// </summary>
+        /// <typeparam name="TSource">The value type.</typeparam>
+        /// <param name="sources">The async sequence of async sequences to concatenate.</param>
+        /// <returns>The new IAsyncEnumerable sequence.</returns>
+        public static IAsyncEnumerable<TSource> Concat<TSource>(this IAsyncEnumerable<IAsyncEnumerable<TSource>> sources)
+        {
+            RequireNonNull(sources, nameof(sources));
+            return sources.ConcatMap(v => v);
+        }
+
+        /// <summary>
+        /// Runs the inner async sequences, produced by an outer async sequence,
+        /// some or all concurrently and relays their items single a serialized async sequence.
+        /// </summary>
+        /// <typeparam name="TSource">The value type.</typeparam>
+        /// <param name="sources">The async sequence of async sequences to merge at once.</param>
+        /// <param name="maxConcurrency">The maximum number of inner sequences to run at once.</param>
+        /// <param name="prefetch">The number of items to prefetch from each inner async sequence.</param>
+        /// <returns>The new IAsyncEnumerable instance.</returns>
+        public static IAsyncEnumerable<TSource> Merge<TSource>(this IAsyncEnumerable<IAsyncEnumerable<TSource>> sources, int maxConcurrency = int.MaxValue, int prefetch = 32)
+        {
+            RequireNonNull(sources, nameof(sources));
+            return sources.FlatMap(v => v, maxConcurrency, prefetch);
         }
     }
 }
