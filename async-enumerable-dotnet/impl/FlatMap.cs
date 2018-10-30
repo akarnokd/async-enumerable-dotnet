@@ -149,7 +149,7 @@ namespace async_enumerable_dotnet.impl
                             IAsyncEnumerator<TResult> innerSource;
                             try
                             {
-                                innerSource = _mapper(_source.Current)
+                                innerSource = _mapper(v)
                                     .GetAsyncEnumerator();
                             }
                             catch (Exception ex)

@@ -1414,15 +1414,33 @@ namespace async_enumerable_dotnet
         public static IAsyncEnumerable<TSource> Merge<TSource>(params IAsyncEnumerable<TSource>[] sources)
         {
             RequireNonNull(sources, nameof(sources));
-            if (sources.Length == 0)
+            switch (sources.Length)
             {
-                return Empty<TSource>();
+                case 0:
+                    return Empty<TSource>();
+                case 1:
+                    return sources[0];
+                default:
+                    return new Merge<TSource>(sources);
             }
-            if (sources.Length == 1)
-            {
-                return sources[0];
-            }
-            return new Merge<TSource>(sources);
+        }
+
+        /// <summary>
+        /// Shares and multicasts the source async sequence, caching some or
+        /// all of its items, for the duration
+        /// of a function and relays items from the returned async sequence.
+        /// </summary>
+        /// <typeparam name="TSource">The element type of the source.</typeparam>
+        /// <typeparam name="TResult">The result type.</typeparam>
+        /// <param name="source">The source async sequence to multicast.</param>
+        /// <param name="func">The function to transform the sequence without
+        /// consuming it multiple times.</param>
+        /// <returns>The new IAsyncEnumerable sequence.</returns>
+        public static IAsyncEnumerable<TResult> Replay<TSource, TResult>(this IAsyncEnumerable<TSource> source, Func<IAsyncEnumerable<TSource>, IAsyncEnumerable<TResult>> func)
+        {
+            RequireNonNull(source, nameof(source));
+            RequireNonNull(func, nameof(func));
+            return new Replay<TSource, TResult>(source, func);
         }
     }
 }

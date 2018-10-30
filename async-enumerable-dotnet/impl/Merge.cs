@@ -41,6 +41,7 @@ namespace async_enumerable_dotnet.impl
 
             private bool _once;
 
+            // ReSharper disable once SuggestBaseTypeForParameter
             public MergeEnumerator(IAsyncEnumerable<TSource>[] sources)
             {
                 var n = sources.Length;
@@ -111,7 +112,7 @@ namespace async_enumerable_dotnet.impl
 
             private static readonly Action<Task, object> DisposeHandlerAction = (t, state) => ((MergeEnumerator)state).DisposeHandler(t);
 
-            void DisposeHandler(Task t)
+            private void DisposeHandler(Task t)
             {
                 if (t.IsFaulted)
                 {
@@ -137,20 +138,20 @@ namespace async_enumerable_dotnet.impl
                 ResumeHelper.Resume(ref _resume);
             }
 
-            internal void InnerNext(InnerHandler sender, TSource item)
+            private void InnerNext(InnerHandler sender, TSource item)
             {
                 _queue.Enqueue(new Entry { Sender = sender, Value = item });
                 Signal();
             }
 
-            internal void InnerError(InnerHandler sender, Exception ex)
+            private void InnerError(Exception ex)
             {
                 ExceptionHelper.AddException(ref _error, ex);
                 Interlocked.Decrement(ref _done);
                 Signal();
             }
 
-            internal void InnerComplete(InnerHandler sender)
+            private void InnerComplete()
             {
                 Interlocked.Decrement(ref _done);
                 Signal();
@@ -162,7 +163,7 @@ namespace async_enumerable_dotnet.impl
                 internal InnerHandler Sender;
             }
 
-            internal sealed class InnerHandler
+            private sealed class InnerHandler
             {
                 private readonly IAsyncEnumerator<TSource> _source;
 
@@ -232,7 +233,7 @@ namespace async_enumerable_dotnet.impl
                         _done = true;
                         if (TryDispose())
                         {
-                            _parent.InnerError(this, ExceptionHelper.Extract(t.Exception));
+                            _parent.InnerError(ExceptionHelper.Extract(t.Exception));
                         }
                     }
                     else if (t.Result)
@@ -248,7 +249,7 @@ namespace async_enumerable_dotnet.impl
                         _done = true;
                         if (TryDispose())
                         {
-                            _parent.InnerComplete(this);
+                            _parent.InnerComplete();
                         }
                     }
 

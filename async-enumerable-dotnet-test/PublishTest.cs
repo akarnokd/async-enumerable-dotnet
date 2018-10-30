@@ -3,8 +3,8 @@
 // See LICENSE file in the project root for full license information.
 
 using Xunit;
-using System.Threading.Tasks;
 using async_enumerable_dotnet;
+using System;
 
 namespace async_enumerable_dotnet_test
 {
@@ -81,5 +81,15 @@ namespace async_enumerable_dotnet_test
                 )
                 .AssertResult(1, 2, 3, 4, 5);
         }
+
+
+        [Fact]
+        public async void Handler_Crash()
+        {
+            await AsyncEnumerable.Range(1, 5)
+                .Publish<int, int>(v => throw new InvalidOperationException())
+                .AssertFailure(typeof(InvalidOperationException));
+        }
+
     }
 }

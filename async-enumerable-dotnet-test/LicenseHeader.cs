@@ -52,12 +52,17 @@ namespace async_enumerable_dotnet_test
             var found = false;
 
             var ci = Environment.GetEnvironmentVariable("CI") != null;
-            
+
+            var sb = new StringBuilder();
+
             foreach (var entry in Directory.EnumerateFiles(path, "*.cs", SearchOption.AllDirectories))
             {
-                if (entry.Contains("AssemblyInfo") 
-                    || entry.Contains("Temporary")
-                    || entry.Contains("/obj/"))
+                var entryForward = entry.Replace("\\", "/");
+                if (entryForward.Contains("AssemblyInfo") 
+                    || entryForward.Contains("Temporary")
+                    || entryForward.Contains("/obj/")
+                    || entryForward.Contains("/Debug/")
+                    || entryForward.Contains("/Release/"))
                 {
                     continue;
                 }
@@ -69,7 +74,7 @@ namespace async_enumerable_dotnet_test
                 }
                 if (!text.StartsWith(HeaderLines))
                 {
-                    Console.WriteLine("Missing header: " + entry);
+                    sb.Append(entry).Append("\r\n");
                     found = true;
                     if (!ci)
                     {
@@ -80,7 +85,7 @@ namespace async_enumerable_dotnet_test
 
             if (found)
             {
-                throw new InvalidOperationException("Missing header found and added. Please rebuild the project of " + path);
+                throw new InvalidOperationException("Missing header found and added. Please rebuild the project of " + path + "\r\n" + sb);
             }
         }
     }

@@ -48,6 +48,7 @@ finally
 - `FromObservable` - convert an `IObservable` into an `IAsyncEnumerable`
 - `Interval` - periodically signal an ever increasing number
 - `Just` - emit a single constant value
+- `Merge` - run multiple sources at once and merge their items into a single async sequence
 - `Never` - the async sequence never produces any items and never terminates
 - `Range` - emit a range of numbers
 - `Timer` - emit zero after some time delay
@@ -72,10 +73,13 @@ finally
 - `Last` - signals the last item of the async sequence
 - `Latest` - runs the source async sequence as fast as it can and samples it with the frequency of the consumer
 - `Map` - transform one source value into some other value
+- `MergeWith` - run two async sources at once and merge their items into a single async sequence
 - `OnErrorResumeNext` - if the main source fails, switch to an alternative source
 - `Prefetch` - run the source async sequence to prefetch items for a slow consumer
+- `Publish` - consume an async sequence once while multicasting its items to intermediate consumers for the duration of a function.
 - `Reduce` - combine elements with an accumulator and emit the last result
 - `Repeat` - repeatedly consume the entire source async sequence (up to a number of times and/or condition)
+- `Replay` - consume an async sequence once, caching some or all of its items and multicasting them to intermediate consumers for the duration of a function.
 - `Retry` - retry a failed async sequence (up to a number of times or based on condition)
 - `Sample` - periodically take the latest item from the source sequence and emit it
 - `Scan` - perform rolling aggregation by emitting intermediate results

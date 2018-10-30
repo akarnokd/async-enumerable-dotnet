@@ -4,7 +4,6 @@
 
 using async_enumerable_dotnet;
 using System;
-using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet_benchmark
 {
@@ -15,14 +14,14 @@ namespace async_enumerable_dotnet_benchmark
         /// <summary>
         /// Don't worry about this program yet. I'm using it to
         /// diagnose await hangs and internal state that is otherwise
-        /// hard (or I don't know how) to debug as an Xunit test.
+        /// hard (or I don't know how) to debug as an XUnit test.
         /// </summary>
         /// <param name="args"></param>
         // ReSharper disable once UnusedParameter.Local
         // ReSharper disable once ArrangeTypeMemberModifiers
         static void Main(string[] args)
         {
-            for (int i = 0; i < 100000; i++)
+            for (var i = 0; i < 100000; i++)
             {
                 if (i % 100 == 0)
                 {

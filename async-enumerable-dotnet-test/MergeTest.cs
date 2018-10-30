@@ -72,7 +72,7 @@ namespace async_enumerable_dotnet_test
         [Fact]
         public async void Push()
         {
-            for (int i = 0; i < 10; i++)
+            for (var i = 0; i < 10; i++)
             {
                 var push = new MulticastAsyncEnumerable<int>();
 
@@ -84,7 +84,7 @@ namespace async_enumerable_dotnet_test
 
                 var t = Task.Run(async () =>
                 {
-                    for (int j = 0; j < 100_000; j++)
+                    for (var j = 0; j < 100_000; j++)
                     {
                         await push.Next(j);
                     }
@@ -104,7 +104,7 @@ namespace async_enumerable_dotnet_test
         [Fact]
         public async void Multicast_Merge()
         {
-            for (int i = 0; i < 100000; i++)
+            for (var i = 0; i < 100000; i++)
             {
                 await AsyncEnumerable.Range(1, 5)
                     .Publish(a => a.Take(3).MergeWith(a.Skip(3)))

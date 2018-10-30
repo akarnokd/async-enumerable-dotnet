@@ -6,13 +6,13 @@ using System;
 
 namespace async_enumerable_dotnet.impl
 {
-    internal sealed class Publish<TSource, TResult> : IAsyncEnumerable<TResult>
+    internal sealed class Replay<TSource, TResult> : IAsyncEnumerable<TResult>
     {
         private readonly IAsyncEnumerable<TSource> _source;
 
         private readonly Func<IAsyncEnumerable<TSource>, IAsyncEnumerable<TResult>> _func;
 
-        public Publish(IAsyncEnumerable<TSource> source, Func<IAsyncEnumerable<TSource>, IAsyncEnumerable<TResult>> func)
+        public Replay(IAsyncEnumerable<TSource> source, Func<IAsyncEnumerable<TSource>, IAsyncEnumerable<TResult>> func)
         {
             _source = source;
             _func = func;
@@ -20,7 +20,7 @@ namespace async_enumerable_dotnet.impl
 
         public IAsyncEnumerator<TResult> GetAsyncEnumerator()
         {
-            var subject = new MulticastAsyncEnumerable<TSource>();
+            var subject = new ReplayAsyncEnumerable<TSource>();
             IAsyncEnumerable<TResult> result;
             try
             {
