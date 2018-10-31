@@ -1530,5 +1530,26 @@ namespace async_enumerable_dotnet
             RequireNonNull(sources, nameof(sources));
             return sources.FlatMap(v => v, maxConcurrency, prefetch);
         }
+
+        /// <summary>
+        /// Combines the latest value of the other async sequence (if any) with
+        /// the main source item via a function and emits the function's returned value.
+        /// </summary>
+        /// <typeparam name="TSource">The source value type.</typeparam>
+        /// <typeparam name="TOther">The other value type.</typeparam>
+        /// <typeparam name="TResult">The result value type.</typeparam>
+        /// <param name="source">The source async sequence.</param>
+        /// <param name="other">The other async sequence.</param>
+        /// <param name="func">The function that receives the main value and
+        /// the other value whenever the main source has a new item and should
+        /// return the result to be emitted to the consumer.</param>
+        /// <returns>The new IAsyncEnumerable sequence.</returns>
+        public static IAsyncEnumerable<TResult> WithLatestFrom<TSource, TOther, TResult>(this IAsyncEnumerable<TSource> source, IAsyncEnumerable<TOther> other, Func<TSource, TOther, TResult> func)
+        {
+            RequireNonNull(source, nameof(source));
+            RequireNonNull(other, nameof(other));
+            RequireNonNull(func, nameof(func));
+            return new WithLatestFrom<TSource, TOther, TResult>(source, other, func);
+        }
     }
 }

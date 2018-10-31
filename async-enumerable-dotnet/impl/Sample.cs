@@ -64,7 +64,7 @@ namespace async_enumerable_dotnet.impl
                 _emitLast = emitLast;
                 _disposeTask = new TaskCompletionSource<bool>();
                 _cts = new CancellationTokenSource();
-                Volatile.Write(ref _latest, SampleHelper.EmptyIndicator);
+                Volatile.Write(ref _latest, EmptyHelper.EmptyIndicator);
             }
 
             public ValueTask DisposeAsync()
@@ -72,7 +72,7 @@ namespace async_enumerable_dotnet.impl
                 _cts.Cancel();
                 if (Interlocked.Increment(ref _disposeWip) == 1)
                 {
-                    Interlocked.Exchange(ref _timerLatest, SampleHelper.EmptyIndicator);
+                    Interlocked.Exchange(ref _timerLatest, EmptyHelper.EmptyIndicator);
                     return _source.DisposeAsync();
                 }
                 return ResumeHelper.Await(ref _disposeTask);
@@ -83,9 +83,9 @@ namespace async_enumerable_dotnet.impl
                 for (; ; )
                 {
                     var d = _done;
-                    var v = Interlocked.Exchange(ref _latest, SampleHelper.EmptyIndicator);
+                    var v = Interlocked.Exchange(ref _latest, EmptyHelper.EmptyIndicator);
 
-                    if (d && v == SampleHelper.EmptyIndicator)
+                    if (d && v == EmptyHelper.EmptyIndicator)
                     {
                         if (_error != null)
                         {
@@ -94,7 +94,7 @@ namespace async_enumerable_dotnet.impl
                         return false;
                     }
 
-                    if (v != SampleHelper.EmptyIndicator)
+                    if (v != EmptyHelper.EmptyIndicator)
                     {
                         Current = (T)v;
                         return true;
@@ -119,7 +119,7 @@ namespace async_enumerable_dotnet.impl
             {
                 // take the saved timerLatest and make it available to MoveNextAsync
                 // via latest
-                Interlocked.Exchange(ref _latest, Interlocked.Exchange(ref _timerLatest, SampleHelper.EmptyIndicator));
+                Interlocked.Exchange(ref _latest, Interlocked.Exchange(ref _timerLatest, EmptyHelper.EmptyIndicator));
 
                 Signal();
                 StartTimer();
@@ -158,7 +158,7 @@ namespace async_enumerable_dotnet.impl
             {
                 if (Interlocked.Decrement(ref _disposeWip) != 0)
                 {
-                    Interlocked.Exchange(ref _timerLatest, SampleHelper.EmptyIndicator);
+                    Interlocked.Exchange(ref _timerLatest, EmptyHelper.EmptyIndicator);
                     ResumeHelper.Complete(ref _disposeTask, _source.DisposeAsync());
                     return false;
                 }
@@ -172,7 +172,7 @@ namespace async_enumerable_dotnet.impl
                     _cts.Cancel();
                     if (_emitLast)
                     {
-                        Interlocked.Exchange(ref _latest, Interlocked.Exchange(ref _timerLatest, SampleHelper.EmptyIndicator));
+                        Interlocked.Exchange(ref _latest, Interlocked.Exchange(ref _timerLatest, EmptyHelper.EmptyIndicator));
                     }
                     _error = ExceptionHelper.Extract(t.Exception);
                     _done = true;
@@ -195,7 +195,7 @@ namespace async_enumerable_dotnet.impl
                     _cts.Cancel();
                     if (_emitLast)
                     {
-                        Interlocked.Exchange(ref _latest, Interlocked.Exchange(ref _timerLatest, SampleHelper.EmptyIndicator));
+                        Interlocked.Exchange(ref _latest, Interlocked.Exchange(ref _timerLatest, EmptyHelper.EmptyIndicator));
                     }
                     _done = true;
                     if (TryDispose())
@@ -205,13 +205,5 @@ namespace async_enumerable_dotnet.impl
                 }
             }
         }
-    }
-
-    /// <summary>
-    /// Hosts the singleton EmptyIndicator instance.
-    /// </summary>
-    internal static class SampleHelper
-    {
-        internal static readonly object EmptyIndicator = new object();
     }
 }

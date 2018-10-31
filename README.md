@@ -97,6 +97,7 @@ finally
 - `TakeWhile` - take items while predicate is true and stop when it turns false
 - `Timeout` - signal an error if the next item doesn't arrive within the specified time
 - `ToList` - collects all items into a List and signals it as the single result of the async sequence
+- `WithLatestFrom` - combines the elements of the main sequence with the latest value(s) from other sequence(s)
 
 ## End-consumers
 

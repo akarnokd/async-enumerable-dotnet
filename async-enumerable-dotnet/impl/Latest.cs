@@ -49,7 +49,7 @@ namespace async_enumerable_dotnet.impl
             {
                 _source = source;
                 _mainHandler = HandleMain;
-                Volatile.Write(ref _latest, LatestHelper.EmptyIndicator);
+                Volatile.Write(ref _latest, EmptyHelper.EmptyIndicator);
             }
 
             public ValueTask DisposeAsync()
@@ -66,8 +66,8 @@ namespace async_enumerable_dotnet.impl
                 for (; ; )
                 {
                     var d = _done;
-                    var v = Interlocked.Exchange(ref _latest, LatestHelper.EmptyIndicator);
-                    if (d && v == LatestHelper.EmptyIndicator)
+                    var v = Interlocked.Exchange(ref _latest, EmptyHelper.EmptyIndicator);
+                    if (d && v == EmptyHelper.EmptyIndicator)
                     {
                         if (_error != null)
                         {
@@ -76,7 +76,7 @@ namespace async_enumerable_dotnet.impl
                         return false;
                     }
 
-                    if (v != LatestHelper.EmptyIndicator)
+                    if (v != EmptyHelper.EmptyIndicator)
                     {
                         Current = (T)v;
                         return true;
@@ -148,13 +148,5 @@ namespace async_enumerable_dotnet.impl
                 }
             }
         }
-    }
-
-    /// <summary>
-    /// Hosts the EmptyIndicator singleton.
-    /// </summary>
-    internal static class LatestHelper
-    {
-        internal static readonly object EmptyIndicator = new object();
     }
 }
