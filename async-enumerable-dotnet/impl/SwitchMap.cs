@@ -3,8 +3,6 @@
 // See LICENSE file in the project root for full license information.
 
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -211,19 +209,19 @@ namespace async_enumerable_dotnet.impl
                 QueueDrainHelper.DisposeHandler(t, ref _allDisposeWip, ref _allDisposeError, _disposeTask);
             }
 
-            internal void InnerError(InnerHandler sender, Exception ex)
+            private void InnerError(InnerHandler sender, Exception ex)
             {
                 ExceptionHelper.AddException(ref _error, ex);
                 sender.Done = true;
                 Signal();
             }
 
-            internal void Signal()
+            private void Signal()
             {
                 ResumeHelper.Resume(ref _resume);
             }
 
-            internal sealed class InnerHandler
+            private sealed class InnerHandler
             {
                 private readonly IAsyncEnumerator<TResult> _source;
 
@@ -245,10 +243,10 @@ namespace async_enumerable_dotnet.impl
 
                 internal void MoveNext()
                 {
-                    QueueDrainHelper.MoveNext(_source, ref _sourceWip, ref _disposeWip, NextHandlerAction, this);
+                    QueueDrainHelper.MoveNext(_source, ref _sourceWip, ref _disposeWip, InnerNextHandlerAction, this);
                 }
 
-                private static readonly Action<Task<bool>, object> NextHandlerAction = (t, state) => ((InnerHandler)state).Next(t);
+                private static readonly Action<Task<bool>, object> InnerNextHandlerAction = (t, state) => ((InnerHandler)state).Next(t);
 
                 internal void Dispose()
                 {

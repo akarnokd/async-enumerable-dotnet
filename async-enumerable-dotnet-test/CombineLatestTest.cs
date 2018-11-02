@@ -81,7 +81,7 @@ namespace async_enumerable_dotnet_test
         public async void Error()
         {
             await AsyncEnumerable.CombineLatest(v => v.Sum(),
-                    AsyncEnumerable.Just<int>(1), 
+                    AsyncEnumerable.Just(1), 
                     AsyncEnumerable.Just(2).ConcatWith(
                         AsyncEnumerable.Error<int>(new InvalidOperationException())
                     )

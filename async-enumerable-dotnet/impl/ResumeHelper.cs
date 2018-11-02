@@ -125,38 +125,6 @@ namespace async_enumerable_dotnet.impl
             }
         }
 
-
-        /// <summary>
-        /// Complete the task completion source based on the ValueTask's outcome.
-        /// </summary>
-        /// <param name="tcs">The target field.</param>
-        /// <param name="task">The value task</param>
-        internal static void Complete(TaskCompletionSource<bool> tcs, ValueTask task)
-        {
-            if (task.IsCanceled)
-            {
-                tcs.TrySetCanceled();
-            }
-            else
-            if (task.IsFaulted)
-            {
-                tcs.TrySetException(task.AsTask().Exception);
-            }
-            else
-            if (task.IsCompleted)
-            {
-                tcs.TrySetResult(true);
-            }
-            else
-            {
-                task.AsTask()
-                    .ContinueWith(Completer,
-                        tcs,
-                        TaskContinuationOptions.ExecuteSynchronously
-                    );
-            }
-        }
-
         /// <summary>
         /// Complete the source in the field based on the ValueTask's outcome.
         /// </summary>

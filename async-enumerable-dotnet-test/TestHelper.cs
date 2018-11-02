@@ -125,5 +125,17 @@ namespace async_enumerable_dotnet_test
                 await source.DisposeAsync();
             }
         }
+
+        /// <summary>
+        /// Emits the given numbers after the same milliseconds from
+        /// the start.
+        /// </summary>
+        /// <param name="timestamps">The params array of timestamps.</param>
+        /// <returns>The new IAsyncEnumerable sequence.</returns>
+        internal static IAsyncEnumerable<long> TimeSequence(params long[] timestamps)
+        {
+            return AsyncEnumerable.FromArray(timestamps)
+                .FlatMap(v => AsyncEnumerable.Timer(TimeSpan.FromMilliseconds(v)).Map(w => v));
+        }
     }
 }

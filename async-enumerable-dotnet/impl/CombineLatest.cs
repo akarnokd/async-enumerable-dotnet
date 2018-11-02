@@ -4,8 +4,6 @@
 
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -36,7 +34,7 @@ namespace async_enumerable_dotnet.impl
 
             public TResult Current { get; private set; }
 
-            private bool once;
+            private bool _once;
 
             private TaskCompletionSource<bool> _resume;
 
@@ -68,7 +66,7 @@ namespace async_enumerable_dotnet.impl
                 Volatile.Write(ref _done, n);
             }
 
-            internal void MoveNextAll()
+            private void MoveNextAll()
             {
                 foreach (var inner in _sources)
                 {
@@ -91,9 +89,9 @@ namespace async_enumerable_dotnet.impl
 
             public async ValueTask<bool> MoveNextAsync()
             {
-                if (!once)
+                if (!_once)
                 {
-                    once = true;
+                    _once = true;
                     MoveNextAll();
                 }
 
@@ -120,7 +118,7 @@ namespace async_enumerable_dotnet.impl
 
                         if (entry.Done)
                         {
-                            if (inner._hasLatest)
+                            if (inner.HasLatest)
                             {
                                 _done--;
                             }
@@ -131,9 +129,9 @@ namespace async_enumerable_dotnet.impl
                             continue;
                         }
 
-                        if (!inner._hasLatest)
+                        if (!inner.HasLatest)
                         {
-                            inner._hasLatest = true;
+                            inner.HasLatest = true;
                             _latestRemaining--;
                         }
 
@@ -159,7 +157,7 @@ namespace async_enumerable_dotnet.impl
                 }
             }
 
-            internal void Dispose(IAsyncDisposable disposable)
+            private void Dispose(IAsyncDisposable disposable)
             {
                 disposable.DisposeAsync()
                     .AsTask()
@@ -173,7 +171,7 @@ namespace async_enumerable_dotnet.impl
                 QueueDrainHelper.DisposeHandler(t, ref _disposeWip, ref _disposeError, _disposeTask);
             }
 
-            internal void InnerNext(int index, TSource value)
+            private void InnerNext(int index, TSource value)
             {
                 _queue.Enqueue(new Entry
                 {
@@ -183,7 +181,7 @@ namespace async_enumerable_dotnet.impl
                 });
             }
 
-            internal void InnerError(int index, Exception ex)
+            private void InnerError(int index, Exception ex)
             {
                 ExceptionHelper.AddException(ref _error, ex);
                 _queue.Enqueue(new Entry {
@@ -191,44 +189,42 @@ namespace async_enumerable_dotnet.impl
                 });
             }
 
-            internal void InnerComplete(int index)
+            private void InnerComplete(int index)
             {
                 _queue.Enqueue(new Entry { Index = index, Done = true, Value = default });
             }
 
-            internal void Signal()
+            private void Signal()
             {
                 ResumeHelper.Resume(ref _resume);
             }
 
-            struct Entry
+            private struct Entry
             {
                 internal int Index;
                 internal TSource Value;
                 internal bool Done;
             }
 
-            internal sealed class InnerHandler
+            private sealed class InnerHandler
             {
                 private readonly IAsyncEnumerator<TSource> _source;
 
                 private readonly CombineLatestEnumerator _parent;
 
-                internal readonly int Index;
+                private readonly int _index;
 
                 private int _disposeWip;
 
                 private int _sourceWip;
 
-                internal bool _hasLatest;
-
-                public TSource Current => _source.Current;
+                internal bool HasLatest;
 
                 public InnerHandler(IAsyncEnumerator<TSource> source, CombineLatestEnumerator parent, int index)
                 {
                     _source = source;
                     _parent = parent;
-                    Index = index;
+                    _index = index;
                 }
 
                 internal void MoveNext()
@@ -252,15 +248,15 @@ namespace async_enumerable_dotnet.impl
                 {
                     if (t.IsFaulted)
                     {
-                        _parent.InnerError(Index, ExceptionHelper.Extract(t.Exception));
+                        _parent.InnerError(_index, ExceptionHelper.Extract(t.Exception));
                     }
                     else if (t.Result)
                     {
-                        _parent.InnerNext(Index, _source.Current);
+                        _parent.InnerNext(_index, _source.Current);
                     }
                     else
                     {
-                        _parent.InnerComplete(Index);
+                        _parent.InnerComplete(_index);
                     }
                     if (TryDispose())
                     {

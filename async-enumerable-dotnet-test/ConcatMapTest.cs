@@ -28,14 +28,7 @@ namespace async_enumerable_dotnet_test
         public async void Async_Filter()
         {
             await AsyncEnumerable.Range(1, 10)
-                .ConcatMap(v =>
-                {
-                    if (v % 2 == 0)
-                    {
-                        return AsyncEnumerable.Just(v);
-                    }
-                    return AsyncEnumerable.Empty<int>();
-                })
+                .ConcatMap(v => v % 2 == 0 ? AsyncEnumerable.Just(v) : AsyncEnumerable.Empty<int>())
                 .AssertResult(
                     2, 4, 6, 8, 10
                 );
@@ -71,14 +64,7 @@ namespace async_enumerable_dotnet_test
         public async void Enumerable_Filter()
         {
             await AsyncEnumerable.Range(1, 10)
-                .ConcatMap(v =>
-                {
-                    if (v % 2 == 0)
-                    {
-                        return new[] { v };
-                    }
-                    return Enumerable.Empty<int>();
-                })
+                .ConcatMap(v => v % 2 == 0 ? new[] { v } : Enumerable.Empty<int>())
                 .AssertResult(
                     2, 4, 6, 8, 10
                 );

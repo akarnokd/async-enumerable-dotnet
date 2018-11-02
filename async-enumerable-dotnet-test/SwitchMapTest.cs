@@ -79,5 +79,13 @@ namespace async_enumerable_dotnet_test
                 .SwitchMap<int, int>(v => throw new InvalidOperationException())
                 .AssertFailure(typeof(InvalidOperationException));
         }
+
+        [Fact]
+        public async void Nested()
+        {
+            await AsyncEnumerable.Just(AsyncEnumerable.Range(2, 5))
+                .Switch()
+                .AssertResult(2, 3, 4, 5, 6);
+        }
     }
 }

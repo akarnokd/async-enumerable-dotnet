@@ -1567,15 +1567,54 @@ namespace async_enumerable_dotnet
         {
             RequireNonNull(sources, nameof(sources));
             RequireNonNull(combiner, nameof(combiner));
-            if (sources.Length == 0)
+            switch (sources.Length)
             {
-                return Empty<TResult>();
+                case 0:
+                    return Empty<TResult>();
+                case 1:
+                    return sources[0].Map(v => combiner(new[] { v }));
+                default:
+                    return new CombineLatest<TSource, TResult>(sources, combiner);
             }
-            if (sources.Length == 1)
-            {
-                return sources[0].Map(v => combiner(new[] { v }));
-            }
-            return new CombineLatest<TSource, TResult>(sources, combiner);
         }
+
+        /// <summary>
+        /// Buffers items from the source into Lists until the boundary
+        /// sequence signals an item (or the maxSize is reached) upon which
+        /// the current buffer is emitted and a new buffer is started.
+        /// </summary>
+        /// <typeparam name="TSource">The element type of the source.</typeparam>
+        /// <typeparam name="TOther">The element type of the boundary sequence.</typeparam>
+        /// <param name="source">The source to buffer.</param>
+        /// <param name="boundary">The sequence indicating the boundaries of the buffers.</param>
+        /// <param name="maxSize">The maximum number of items to buffer.</param>
+        /// <returns>The new IAsyncEnumerable sequence.</returns>
+        public static IAsyncEnumerable<IList<TSource>> Buffer<TSource, TOther>(this IAsyncEnumerable<TSource> source, IAsyncEnumerable<TOther> boundary, int maxSize = int.MaxValue)
+        {
+            return Buffer<TSource, TOther, IList<TSource>>(source, boundary, () => new List<TSource>(), maxSize);
+        }
+
+        /// <summary>
+        /// Buffers items from the source into custom collections until the boundary
+        /// sequence signals an item (or the maxSize is reached) upon which
+        /// the current collections is emitted and a new collection is started.
+        /// </summary>
+        /// <typeparam name="TSource">The element type of the source.</typeparam>
+        /// <typeparam name="TOther">The element type of the boundary sequence.</typeparam>
+        /// <typeparam name="TCollection">The resulting collection type.</typeparam>
+        /// <param name="source">The source to buffer.</param>
+        /// <param name="boundary">The sequence indicating the boundaries of the buffers.</param>
+        /// <param name="collectionSupplier">The custom collection supplier.</param>
+        /// <param name="maxSize">The maximum number of items to buffer.</param>
+        /// <returns>The new IAsyncEnumerable sequence.</returns>
+        public static IAsyncEnumerable<TCollection> Buffer<TSource, TOther, TCollection>(this IAsyncEnumerable<TSource> source, IAsyncEnumerable<TOther> boundary, Func<TCollection> collectionSupplier, int maxSize = int.MaxValue) where TCollection : ICollection<TSource>
+        {
+            RequireNonNull(source, nameof(source));
+            RequireNonNull(boundary, nameof(boundary));
+            RequireNonNull(collectionSupplier, nameof(collectionSupplier));
+            RequirePositive(maxSize, nameof(maxSize));
+            return new BufferBoundaryExact<TSource, TOther, TCollection>(source, boundary, collectionSupplier, maxSize);
+        }
+
     }
 }

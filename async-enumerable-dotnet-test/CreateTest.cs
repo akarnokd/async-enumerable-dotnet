@@ -39,7 +39,7 @@ namespace async_enumerable_dotnet_test
         [Fact]
         public async void Range_Loop()
         {
-            for (int j = 0; j < 1000; j++)
+            for (var j = 0; j < 1000; j++)
             {
                 await Range();
             }
@@ -77,7 +77,7 @@ namespace async_enumerable_dotnet_test
         [Fact]
         public async void Take_Loop()
         {
-            for (int j = 0; j < 1000; j++)
+            for (var j = 0; j < 1000; j++)
             {
                 await Take();
             }
