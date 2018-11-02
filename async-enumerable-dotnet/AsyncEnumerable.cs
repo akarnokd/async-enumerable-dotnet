@@ -1616,5 +1616,85 @@ namespace async_enumerable_dotnet
             return new BufferBoundaryExact<TSource, TOther, TCollection>(source, boundary, collectionSupplier, maxSize);
         }
 
+        /// <summary>
+        /// Checks if the source items have been seen before by checking if
+        /// they are already successfully added to a HashSet or not, ensuring
+        /// only distinct source items pass through.
+        /// </summary>
+        /// <typeparam name="TSource">The element type of the source and result.</typeparam>
+        /// <param name="source">The source to have distinct items only of.</param>
+        /// <returns>The new IAsyncEnumerable sequence.</returns>
+        public static IAsyncEnumerable<TSource> Distinct<TSource>(this IAsyncEnumerable<TSource> source)
+        {
+            return Distinct(source, v => v, () => new HashSet<TSource>());
+        }
+
+        /// <summary>
+        /// Checks if the source items have been seen before by checking if
+        /// they are already successfully added to a HashSet or not, ensuring
+        /// only distinct source items pass through.
+        /// </summary>
+        /// <typeparam name="TSource">The element type of the source and result.</typeparam>
+        /// <param name="source">The source to have distinct items only of.</param>
+        /// <param name="comparer">The comparer for comparing items in the HashSet</param>
+        /// <returns>The new IAsyncEnumerable sequence.</returns>
+        public static IAsyncEnumerable<TSource> Distinct<TSource>(this IAsyncEnumerable<TSource> source, IEqualityComparer<TSource> comparer)
+        {
+            RequireNonNull(comparer, nameof(comparer));
+            return Distinct(source, v => v, () => new HashSet<TSource>(comparer));
+        }
+
+        /// <summary>
+        /// Checks if the source items have been seen before by checking if
+        /// a key extracted from such items is in a HashSet or not, ensuring
+        /// only distinct source items pass through.
+        /// </summary>
+        /// <typeparam name="TSource">The element type of the source and result.</typeparam>
+        /// <typeparam name="TKey">The key type used for comparing items.</typeparam>
+        /// <param name="source">The source to have distinct items only of.</param>
+        /// <param name="keySelector">The function that receives the source item and should return a key value for distinct comparison.</param>
+        /// <returns>The new IAsyncEnumerable sequence.</returns>
+        public static IAsyncEnumerable<TSource> Distinct<TSource, TKey>(this IAsyncEnumerable<TSource> source, Func<TSource, TKey> keySelector)
+        {
+            return Distinct(source, keySelector, () => new HashSet<TKey>());
+        }
+
+        /// <summary>
+        /// Checks if the source items have been seen before by checking if
+        /// a key extracted from such items is in a HashSet or not, ensuring
+        /// only distinct source items pass through.
+        /// </summary>
+        /// <typeparam name="TSource">The element type of the source and result.</typeparam>
+        /// <typeparam name="TKey">The key type used for comparing items.</typeparam>
+        /// <param name="source">The source to have distinct items only of.</param>
+        /// <param name="keySelector">The function that receives the source item and should return a key value for distinct comparison.</param>
+        /// <param name="keyComparer">The comparer for comparing keys in the HashSet</param>
+        /// <returns>The new IAsyncEnumerable sequence.</returns>
+        public static IAsyncEnumerable<TSource> Distinct<TSource, TKey>(this IAsyncEnumerable<TSource> source, Func<TSource, TKey> keySelector, IEqualityComparer<TKey> keyComparer)
+        {
+            RequireNonNull(keyComparer, nameof(keyComparer));
+            return Distinct(source, keySelector, () => new HashSet<TKey>(keyComparer));
+        }
+
+        /// <summary>
+        /// Checks if the source items have been seen before by checking
+        /// a key extracted from such items agains a set of keys and
+        /// drops such items, ensuring that only distinct source items pass
+        /// through.
+        /// </summary>
+        /// <typeparam name="TSource">The element type of the source and result.</typeparam>
+        /// <typeparam name="TKey">The key type used for comparing items.</typeparam>
+        /// <param name="source">The source to have distinct items only of.</param>
+        /// <param name="keySelector">The function that receives the source item and should return a key value for distinct comparison.</param>
+        /// <param name="setSupplier">The function that should provide a set implementation whose <see cref="ISet{T}.Add(T)"/> method's return
+        /// value decided is the source item should pass or not.</param>
+        /// <returns>The new IAsyncEnumerable sequence</returns>
+        public static IAsyncEnumerable<TSource> Distinct<TSource, TKey>(this IAsyncEnumerable<TSource> source, Func<TSource, TKey> keySelector, Func<ISet<TKey>> setSupplier)
+        {
+            RequireNonNull(source, nameof(source));
+            RequireNonNull(keySelector, nameof(keySelector));
+            RequireNonNull(setSupplier, nameof(setSupplier));
+            return new Distinct<TSource, TKey>(source, keySelector, setSupplier);
+        }
     }
 }

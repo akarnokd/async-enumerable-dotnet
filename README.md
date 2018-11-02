@@ -63,6 +63,8 @@ finally
 - `Collect` - collect items into a custom collection and emit the collection at the end
 - `ConcatMap` - concatenate in order the inner async sequences mapped from the main sequence
 - `ConcatWith` - concatenate in order with another async sequence
+- `Distinct` - makes sure only distinct elements get relayed
+- `DistinctUntilChanged` - relays an element only if it is distinct from the previous item
 - `Debounce` - wait a bit after each item and emit them if no newer item arrived from the source
 - `DefaultIfEmpty` - return a fallback value if the source async sequence turns out to be empty
 - `DoOnNext` - execute an action when an item becomes available
