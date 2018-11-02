@@ -1551,5 +1551,31 @@ namespace async_enumerable_dotnet
             RequireNonNull(func, nameof(func));
             return new WithLatestFrom<TSource, TOther, TResult>(source, other, func);
         }
+
+        /// <summary>
+        /// Combines the latest items from each async source into a single
+        /// sequence of results via a combiner function.
+        /// </summary>
+        /// <typeparam name="TSource">The element type of the sources.</typeparam>
+        /// <typeparam name="TResult">The result type.</typeparam>
+        /// <param name="combiner">The function that receives the latest elements
+        /// of all sources (if they all produced an item at least) and should
+        /// a value to be emitted to the consumer.</param>
+        /// <param name="sources">The params array of the async sequences to combine.</param>
+        /// <returns>The new IAsyncEnumerable sequence.</returns>
+        public static IAsyncEnumerable<TResult> CombineLatest<TSource, TResult>(Func<TSource[], TResult> combiner, params IAsyncEnumerable<TSource>[] sources)
+        {
+            RequireNonNull(sources, nameof(sources));
+            RequireNonNull(combiner, nameof(combiner));
+            if (sources.Length == 0)
+            {
+                return Empty<TResult>();
+            }
+            if (sources.Length == 1)
+            {
+                return sources[0].Map(v => combiner(new[] { v }));
+            }
+            return new CombineLatest<TSource, TResult>(sources, combiner);
+        }
     }
 }

@@ -38,6 +38,7 @@ finally
 
 - `Amb` - Relay items of the source that responds first, disposing the others
 - `Create` - generate values via async push
+- `CombineLatest` - combines the latest items of the source async sequences via a function into results
 - `Concat` - concatenate multiple async sequences
 - `Defer` - defer the creation of the actual `IAsyncEnumerable`
 - `Error` - signal an error
