@@ -62,7 +62,7 @@ namespace async_enumerable_dotnet_test
         public async void Custom_Set()
         {
             await AsyncEnumerable.Range(1, 5)
-                .Distinct(v => (v % 3), () => new HashSet<long>())
+                .Distinct(v => v % 3, () => new HashSet<long>())
                 .AssertResult(1, 2, 3);
         }
     }

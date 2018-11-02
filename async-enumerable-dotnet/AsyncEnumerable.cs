@@ -1678,7 +1678,7 @@ namespace async_enumerable_dotnet
 
         /// <summary>
         /// Checks if the source items have been seen before by checking
-        /// a key extracted from such items agains a set of keys and
+        /// a key extracted from such items against a set of keys and
         /// drops such items, ensuring that only distinct source items pass
         /// through.
         /// </summary>
@@ -1695,6 +1695,67 @@ namespace async_enumerable_dotnet
             RequireNonNull(keySelector, nameof(keySelector));
             RequireNonNull(setSupplier, nameof(setSupplier));
             return new Distinct<TSource, TKey>(source, keySelector, setSupplier);
+        }
+
+        /// <summary>
+        /// Checks if the current item is distinct from the previous item,
+        /// and if so it is no it is relayed.
+        /// </summary>
+        /// <typeparam name="TSource">The element type of the source and result sequences.</typeparam>
+        /// <param name="source">The source sequence to filter for distinct subsequent items.</param>
+        /// <returns>The new IAsyncEnumerable sequence.</returns>
+        public static IAsyncEnumerable<TSource> DistinctUntilChanged<TSource>(this IAsyncEnumerable<TSource> source)
+        {
+            return DistinctUntilChanged(source, v => v, EqualityComparer<TSource>.Default);
+        }
+
+        /// <summary>
+        /// Checks if the current item is distinct from the previous item,
+        /// and if so it is no it is relayed,
+        /// based on comparing the items via a custom equality comparer.
+        /// </summary>
+        /// <typeparam name="TSource">The element type of the source and result sequences.</typeparam>
+        /// <param name="source">The source sequence to filter for distinct subsequent items.</param>
+        /// <param name="comparer">The comparer for comparing the source items.</param>
+        /// <returns>The new IAsyncEnumerable sequence.</returns>
+        public static IAsyncEnumerable<TSource> DistinctUntilChanged<TSource>(this IAsyncEnumerable<TSource> source, IEqualityComparer<TSource> comparer)
+        {
+            return DistinctUntilChanged(source, v => v, comparer);
+        }
+
+        /// <summary>
+        /// Checks if the current item is distinct from the previous item,
+        /// and if so it is no it is relayed,
+        /// based on comparing keys extracted via a function.
+        /// </summary>
+        /// <typeparam name="TSource">The element type of the source and result sequences.</typeparam>
+        /// <typeparam name="TKey">The type of the keys extracted for comparison</typeparam>
+        /// <param name="source">The source sequence to filter for distinct subsequent items.</param>
+        /// <param name="keySelector">The function receiving the current source item and should return a key value for comparison.</param>
+        /// <returns>The new IAsyncEnumerable sequence.</returns>
+        public static IAsyncEnumerable<TSource> DistinctUntilChanged<TSource, TKey>(this IAsyncEnumerable<TSource> source, Func<TSource, TKey> keySelector)
+        {
+            return DistinctUntilChanged(source, keySelector, EqualityComparer<TKey>.Default);
+        }
+
+        /// <summary>
+        /// Checks if the current item is distinct from the previous item,
+        /// and if so it is no it is relayed,
+        /// based on comparing keys extracted via a function and using
+        /// a custom equality comparer.
+        /// </summary>
+        /// <typeparam name="TSource">The element type of the source and result sequences.</typeparam>
+        /// <typeparam name="TKey">The type of the keys extracted for comparison</typeparam>
+        /// <param name="source">The source sequence to filter for distinct subsequent items.</param>
+        /// <param name="keySelector">The function receiving the current source item and should return a key value for comparison.</param>
+        /// <param name="keyComparer">The comparer for comparing the key values extracted via <paramref name="keySelector"/>.</param>
+        /// <returns>The new IAsyncEnumerable sequence.</returns>
+        public static IAsyncEnumerable<TSource> DistinctUntilChanged<TSource, TKey>(this IAsyncEnumerable<TSource> source, Func<TSource, TKey> keySelector, IEqualityComparer<TKey> keyComparer)
+        {
+            RequireNonNull(source, nameof(source));
+            RequireNonNull(keySelector, nameof(keySelector));
+            RequireNonNull(keyComparer, nameof(keyComparer));
+            return new DistinctUntilChanged<TSource, TKey>(source, keySelector, keyComparer);
         }
     }
 }
