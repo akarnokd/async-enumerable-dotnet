@@ -1757,5 +1757,80 @@ namespace async_enumerable_dotnet
             RequireNonNull(keyComparer, nameof(keyComparer));
             return new DistinctUntilChanged<TSource, TKey>(source, keySelector, keyComparer);
         }
+
+        /// <summary>
+        /// Runs multiple async sequences mapped from the upstream source into 
+        /// inner async sequences via a function at once and relays items from each, 
+        /// one after the previous source terminated.
+        /// </summary>
+        /// <typeparam name="TSource">The element type of the source.</typeparam>
+        /// <typeparam name="TResult">The result type.</typeparam>
+        /// <param name="source">The source async sequence to map and concatenate eagerly.</param>
+        /// <param name="mapper">The function that receives an upstream item and should
+        /// return an async sequence to be consumed once the previous async sequence terminated.</param>
+        /// <param name="maxConcurrency">The maximum number of inner async sources to run at once.</param>
+        /// <param name="prefetch">The number of items to prefetch from each inner source.</param>
+        /// <returns>The new IAsyncEnumerable sequence.</returns>
+        public static IAsyncEnumerable<TResult> ConcatMapEager<TSource, TResult>(this IAsyncEnumerable<TSource> source, Func<TSource, IAsyncEnumerable<TResult>> mapper, int maxConcurrency = 32, int prefetch = 32)
+        {
+            RequireNonNull(source, nameof(source));
+            RequireNonNull(mapper, nameof(mapper));
+            RequirePositive(maxConcurrency, nameof(maxConcurrency));
+            RequirePositive(prefetch, nameof(prefetch));
+            return new ConcatMapEager<TSource, TResult>(source, mapper, maxConcurrency, prefetch);
+        }
+
+        /// <summary>
+        /// Runs multiple async sources at once and relays items, in order, from each 
+        /// one after the previous async source terminates.
+        /// </summary>
+        /// <typeparam name="TSource">The element type of the sources and result.</typeparam>
+        /// <param name="sources">The params array of sources to run at once but concatenate in order.</param>
+        /// <returns>The new IAsyncEnumerable sequence.</returns>
+        public static IAsyncEnumerable<TSource> ConcatEager<TSource>(params IAsyncEnumerable<TSource>[] sources)
+        {
+            return FromArray(sources).ConcatMapEager(v => v);
+        }
+
+        /// <summary>
+        /// Runs multiple async sources at once and relays items, in order, from each 
+        /// one after the previous async source terminates.
+        /// </summary>
+        /// <typeparam name="TSource">The element type of the sources and result.</typeparam>
+        /// <param name="maxConcurrency">The maximum number of inner async sources to run at once.</param>
+        /// <param name="sources">The params array of sources to run at once but concatenate in order.</param>
+        /// <returns>The new IAsyncEnumerable sequence.</returns>
+        public static IAsyncEnumerable<TSource> ConcatEager<TSource>(int maxConcurrency, params IAsyncEnumerable<TSource>[] sources)
+        {
+            return FromArray(sources).ConcatMapEager(v => v, maxConcurrency);
+        }
+
+        /// <summary>
+        /// Runs multiple async sources at once and relays items, in order, from each 
+        /// one after the previous async source terminates.
+        /// </summary>
+        /// <typeparam name="TSource">The element type of the sources and result.</typeparam>
+        /// <param name="maxConcurrency">The maximum number of inner async sources to run at once.</param>
+        /// <param name="prefetch">The number of items to prefetch from each inner source.</param>
+        /// <param name="sources">The params array of sources to run at once but concatenate in order.</param>
+        /// <returns>The new IAsyncEnumerable sequence.</returns>
+        public static IAsyncEnumerable<TSource> ConcatEager<TSource>(int maxConcurrency, int prefetch, params IAsyncEnumerable<TSource>[] sources)
+        {
+            return FromArray(sources).ConcatMapEager(v => v, maxConcurrency, prefetch);
+        }
+
+        /// <summary>
+        /// Runs multiple async sources at once and relays items, in order, from each 
+        /// one after the previous async source terminates.
+        /// </summary>
+        /// <typeparam name="TSource">The element type of the sources and result.</typeparam>
+        /// <param name="maxConcurrency">The maximum number of inner async sources to run at once.</param>
+        /// <param name="prefetch">The number of items to prefetch from each inner source.</param>
+        /// <param name="sources">The params array of sources to run at once but concatenate in order.</param>
+        /// <returns>The new IAsyncEnumerable sequence.</returns>
+        public static IAsyncEnumerable<TSource> ConcatEager<TSource>(this IAsyncEnumerable<IAsyncEnumerable<TSource>> sources, int maxConcurrency = 32, int prefetch = 32)
+        {
+            return sources.ConcatMapEager(v => v, maxConcurrency, prefetch);
+        }
     }
 }

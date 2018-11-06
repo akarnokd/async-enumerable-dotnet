@@ -23,7 +23,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async ValueTask Range()
+        public async void Range()
         {
             var result = AsyncEnumerable.Create<int>(async e =>
             {
@@ -41,7 +41,15 @@ namespace async_enumerable_dotnet_test
         {
             for (var j = 0; j < 1000; j++)
             {
-                await Range();
+                var result = AsyncEnumerable.Create<int>(async e =>
+                {
+                    for (var i = 0; i < 10 && !e.DisposeAsyncRequested; i++)
+                    {
+                        await e.Next(i);
+                    }
+                });
+
+                await result.AssertResult(0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
             }
         }
 
@@ -61,7 +69,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async ValueTask Take()
+        public async void Take()
         {
             await AsyncEnumerable.Create<int>(async e =>
             {
@@ -79,7 +87,15 @@ namespace async_enumerable_dotnet_test
         {
             for (var j = 0; j < 1000; j++)
             {
-                await Take();
+                await AsyncEnumerable.Create<int>(async e =>
+                {
+                    for (var i = 0; i < 10 && !e.DisposeAsyncRequested; i++)
+                    {
+                        await e.Next(i);
+                    }
+                })
+                .Take(5)
+                .AssertResult(0, 1, 2, 3, 4);
             }
         }
     }

@@ -49,6 +49,7 @@ namespace async_enumerable_dotnet.impl
 
             private readonly ConcurrentQueue<Entry> _queue;
 
+            // ReSharper disable once SuggestBaseTypeForParameter
             public CombineLatestEnumerator(IAsyncEnumerable<TSource>[] sources, Func<TSource[], TResult> combiner)
             {
                 var n = sources.Length;

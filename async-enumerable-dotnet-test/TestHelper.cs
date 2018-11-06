@@ -23,6 +23,8 @@ namespace async_enumerable_dotnet_test
         // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Global
         public static async ValueTask AssertResult<T>(this IAsyncEnumerator<T> source, params T[] values)
         {
+            var main = default(Exception);
+            var dispose = default(Exception);
             var idx = 0;
             try
             {
@@ -35,9 +37,33 @@ namespace async_enumerable_dotnet_test
 
                 Assert.True(values.Length == idx, "Source has less items than expected: " + values.Length + ", actual: " + idx);
             }
+            catch (Exception ex)
+            {
+                main = ex;
+            }
             finally
             {
-                await source.DisposeAsync();
+                try
+                {
+                    await source.DisposeAsync();
+                }
+                catch (Exception ex)
+                {
+                    dispose = ex;
+                }
+            }
+
+            if (main != null && dispose != null)
+            {
+                throw new AggregateException(main, dispose);
+            }
+            if (main != null)
+            {
+                throw main;
+            }
+            if (dispose != null)
+            {
+                throw dispose;
             }
         }
 

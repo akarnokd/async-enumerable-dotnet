@@ -40,6 +40,7 @@ finally
 - `Create` - generate values via async push
 - `CombineLatest` - combines the latest items of the source async sequences via a function into results
 - `Concat` - concatenate multiple async sequences
+- `ConcatEager` - run multiple async sequences at once but relay elements in order similar to `Concat`
 - `Defer` - defer the creation of the actual `IAsyncEnumerable`
 - `Error` - signal an error
 - `Empty` - the async sequence ends without any values
@@ -62,6 +63,7 @@ finally
 - `Buffer` - collect some number of items into buffer(s) and emit those buffers
 - `Collect` - collect items into a custom collection and emit the collection at the end
 - `ConcatMap` - concatenate in order the inner async sequences mapped from the main sequence
+- `ConcatMapEager` - run the async sources at once but relay elements in order similar to `ConcatMap`
 - `ConcatWith` - concatenate in order with another async sequence
 - `Distinct` - makes sure only distinct elements get relayed
 - `DistinctUntilChanged` - relays an element only if it is distinct from the previous item
@@ -118,6 +120,7 @@ finally
 
 - `MulticastAsyncEnumerable` - signals events to currently associated IAsyncEnumerator consumers (aka PublishSubject).
 - `ReplayAsyncEnumerable` - replays some or all items to its IAsyncEnumerator consumers (aka ReplaySubject).
+- `UnicastAsyncEnumerable` - buffers then replay items for an only consumer
 
 ### IAsyncConsumer
 
