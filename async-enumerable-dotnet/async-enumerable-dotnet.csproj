@@ -6,11 +6,11 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <LangVersion>latest</LangVersion>
     <PackageId>akarnokd.async-enumerable-dotnet</PackageId>
-    <Version>0.0.1.8</Version>
+    <Version>0.0.1.9</Version>
     <Authors>David Karnok</Authors>
     <Company />
-    <AssemblyVersion>0.0.1.8</AssemblyVersion>
-    <FileVersion>0.0.1.8</FileVersion>
+    <AssemblyVersion>0.0.1.9</AssemblyVersion>
+    <FileVersion>0.0.1.9</FileVersion>
     <PackageTags>async, concurrency, async-enumerable, operators, async-sequence</PackageTags>
     <RepositoryUrl>https://github.com/akarnokd/async-enumerable-dotnet</RepositoryUrl>
     <PackageProjectUrl>https://github.com/akarnokd/async-enumerable-dotnet#getting-started</PackageProjectUrl>
@@ -18,11 +18,11 @@
     <Copyright>(C) David Karnok</Copyright>
     <PackageLicenseUrl>https://www.apache.org/licenses/LICENSE-2.0</PackageLicenseUrl>
     <PackageReleaseNotes>New operators:
-- Buffer (boundary &amp; size)
-- CombineLatest
-- Distinct
-- DistinctUntilChanged
-- WithLatestFrom</PackageReleaseNotes>
+- ConcatEager
+- ConcatMapEager
+
+New push-pull adapter
+- UnicastAsyncEnumerable</PackageReleaseNotes>
     <RepositoryType>Github</RepositoryType>
     <Product>Async Enumerable operators for .NET</Product>
   </PropertyGroup>
