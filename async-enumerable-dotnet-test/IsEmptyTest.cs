@@ -2,34 +2,37 @@
 // Licensed under the Apache 2.0 License.
 // See LICENSE file in the project root for full license information.
 
+using System;
 using Xunit;
 using async_enumerable_dotnet;
 
 namespace async_enumerable_dotnet_test
 {
-    public class IgnoreElementsTest
+    public class IsEmptyTest
     {
         [Fact]
-        public async void Normal()
+        public async void NonEmpty()
         {
             await AsyncEnumerable.Range(1, 5)
-                .IgnoreElements()
-                .AssertResult();
+                .IsEmpty()
+                .AssertResult(false);
         }
-
+        
         [Fact]
         public async void Empty()
         {
             await AsyncEnumerable.Empty<int>()
-                .IgnoreElements()
-                .AssertResult();
+                .IsEmpty()
+                .AssertResult(true);
         }
 
         [Fact]
-        public void Current()
+        public async void Error()
         {
-            Assert.Equal(0, AsyncEnumerable.Range(1, 5)
-                .IgnoreElements().GetAsyncEnumerator().Current);
+            await AsyncEnumerable.Error<int>(new InvalidOperationException())
+                .IsEmpty()
+                .AssertFailure(typeof(InvalidOperationException));
         }
+
     }
 }

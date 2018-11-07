@@ -76,5 +76,15 @@ namespace async_enumerable_dotnet_test
                 .Latest()
                 .AssertFailure(typeof(InvalidOperationException));
         }
+        
+        [Fact]
+        public async void Take()
+        {
+            await AsyncEnumerable.Interval(1, 5, TimeSpan.FromMilliseconds(200))
+                .Latest()
+                .Take(1)
+                .AssertResult(1L);
+        }
+
     }
 }

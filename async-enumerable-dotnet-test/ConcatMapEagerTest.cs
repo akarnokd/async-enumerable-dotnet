@@ -88,7 +88,7 @@ namespace async_enumerable_dotnet_test
         [Fact]
         public async void Main_Error()
         {
-            await AsyncEnumerable.Range(1, 5).ConcatWith(AsyncEnumerable.Error<int>(new InvalidOperationException()))
+            await AsyncEnumerable.Range(1, 5).WithError(new InvalidOperationException())
                 .ConcatMapEager(v => AsyncEnumerable.Range(v * 10, 5))
                 .AssertFailure(typeof(InvalidOperationException),
                     10, 11, 12, 13, 14,
@@ -107,7 +107,7 @@ namespace async_enumerable_dotnet_test
                     var res = AsyncEnumerable.Range(v * 10, 5);
                     if (v == 3)
                     {
-                        res = res.ConcatWith(AsyncEnumerable.Error<int>(new InvalidOperationException()));
+                        res = res.WithError(new InvalidOperationException());
                     }
                     return res;
                 })

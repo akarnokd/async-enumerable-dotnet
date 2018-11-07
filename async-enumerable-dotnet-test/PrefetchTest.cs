@@ -30,7 +30,7 @@ namespace async_enumerable_dotnet_test
         public async void Error()
         {
             await AsyncEnumerable.Range(1, 10)
-                .ConcatWith(AsyncEnumerable.Error<int>(new InvalidOperationException()))
+                .WithError(new InvalidOperationException())
                 .Prefetch(2)
                 .AssertFailure(typeof(InvalidOperationException), 1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
         }

@@ -387,22 +387,7 @@ namespace async_enumerable_dotnet.impl
 
             internal void MoveNext()
             {
-                if (Interlocked.Increment(ref _wip) == 1)
-                {
-                    do
-                    {
-                        if (Interlocked.Increment(ref _dispose) == 1)
-                        {
-                            _source.MoveNextAsync()
-                                .AsTask()
-                                .ContinueWith(HandleAction, this);
-                        }
-                        else
-                        {
-                            break;
-                        }
-                    } while (Interlocked.Decrement(ref _wip) != 0);
-                }
+                QueueDrainHelper.MoveNext(_source, ref _wip, ref _dispose, HandleAction, this);
             }
 
             private static readonly Action<Task<bool>, object>

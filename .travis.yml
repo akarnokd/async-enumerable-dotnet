@@ -5,4 +5,4 @@ mono: none
 sudo: required
 
 script:
-  - dotnet test ./async-enumerable-dotnet-test/async-enumerable-dotnet-test.csproj
+  - dotnet test ./async-enumerable-dotnet-test/async-enumerable-dotnet-test.csproj -v m

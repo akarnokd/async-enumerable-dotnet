@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using async_enumerable_dotnet;
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 
 namespace async_enumerable_dotnet_test
 {

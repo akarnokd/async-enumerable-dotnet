@@ -17,7 +17,7 @@ namespace async_enumerable_dotnet_test
             var list = new List<int>();
             await AsyncEnumerable.Range(1, 5)
                 .DoOnNext(v => list.Add(v))
-                .ForEach();
+                .AssertResult(1, 2, 3, 4, 5);
 
             Assert.Equal(new[] { 1, 2, 3, 4, 5 }, list);
         }
@@ -27,11 +27,12 @@ namespace async_enumerable_dotnet_test
         {
             var list = new List<int>();
             await AsyncEnumerable.Range(1, 5)
-                .DoOnNext(async v => {
+                .DoOnNext(async v =>
+                {
                     await Task.Delay(100);
                     list.Add(v);
                 })
-                .ForEach();
+                .AssertResult(1, 2, 3, 4, 5);
 
             Assert.Equal(new[] { 1, 2, 3, 4, 5 }, list);
         }

@@ -57,7 +57,7 @@ namespace async_enumerable_dotnet_test
         [Fact]
         public async void Error_Outer()
         {
-            await AsyncEnumerable.Just(2).ConcatWith(AsyncEnumerable.Error<int>(new InvalidOperationException()))
+            await AsyncEnumerable.Just(2).WithError(new InvalidOperationException())
                 .SwitchMap(v => AsyncEnumerable.Range(v, 5))
                 .AssertFailure(typeof(InvalidOperationException), 2, 3, 4, 5, 6);
         }
@@ -67,7 +67,7 @@ namespace async_enumerable_dotnet_test
         {
             await AsyncEnumerable.Just(2)
                 .SwitchMap(v => AsyncEnumerable.Range(v, 5)
-                    .ConcatWith(AsyncEnumerable.Error<int>(new InvalidOperationException()))
+                        .WithError(new InvalidOperationException())
                 )
                 .AssertFailure(typeof(InvalidOperationException), 2, 3, 4, 5, 6);
         }

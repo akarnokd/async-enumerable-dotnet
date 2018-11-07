@@ -157,8 +157,6 @@ namespace async_enumerable_dotnet.impl
 
                 private int _wip;
 
-                private bool _done;
-
                 public InnerHandler(IAsyncEnumerator<TSource> source, MergeEnumerator parent)
                 {
                     _source = source;
@@ -175,10 +173,6 @@ namespace async_enumerable_dotnet.impl
 
                 internal void MoveNext()
                 {
-                    if (_done)
-                    {
-                        return;
-                    }
                     QueueDrainHelper.MoveNext(_source, ref _wip, ref _disposeWip, NextHandlerAction, this);
                 }
 
@@ -198,7 +192,6 @@ namespace async_enumerable_dotnet.impl
                 {
                     if (t.IsFaulted)
                     {
-                        _done = true;
                         if (TryDispose())
                         {
                             _parent.InnerError(ExceptionHelper.Extract(t.Exception));
@@ -214,7 +207,6 @@ namespace async_enumerable_dotnet.impl
                     }
                     else
                     {
-                        _done = true;
                         if (TryDispose())
                         {
                             _parent.InnerComplete();

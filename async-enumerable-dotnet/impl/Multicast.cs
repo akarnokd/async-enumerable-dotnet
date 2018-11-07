@@ -93,7 +93,7 @@ namespace async_enumerable_dotnet.impl
             {
                 if (TryDisposeSource())
                 {
-                    await _subject.Error(t.Exception);
+                    await _subject.Error(ExceptionHelper.Extract(t.Exception));
                 }
             }
             else if (t.Result)

@@ -91,5 +91,13 @@ namespace async_enumerable_dotnet_test
                 .AssertFailure(typeof(InvalidOperationException));
         }
 
+
+        [Fact]
+        public async void Error()
+        {
+            await AsyncEnumerable.Error<int>(new InvalidOperationException())
+                .Publish(v => v.Map(w => w + 1))
+                .AssertFailure(typeof(InvalidOperationException));
+        }
     }
 }

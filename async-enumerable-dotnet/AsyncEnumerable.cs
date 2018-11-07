@@ -1832,5 +1832,119 @@ namespace async_enumerable_dotnet
         {
             return sources.ConcatMapEager(v => v, maxConcurrency, prefetch);
         }
+
+        /// <summary>
+        /// Returns the element from the async sequence with the given index (zero-based) or
+        /// signals an IndexOutOfBoundsException if the sequence is shorter.
+        /// </summary>
+        /// <typeparam name="TSource">The element type.</typeparam>
+        /// <param name="source">The source sequence to get an element of.</param>
+        /// <param name="index">The index of the element, zero-based.</param>
+        /// <returns>The new IAsyncEnumerable sequence.</returns>
+        public static IAsyncEnumerable<TSource> ElementAt<TSource>(this IAsyncEnumerable<TSource> source, long index)
+        {
+            RequireNonNull(source, nameof(source));
+            return new ElementAt<TSource>(source, index, default, false);
+        }
+
+        /// <summary>
+        /// Returns the element from the async sequence with the given index (zero-based) or
+        /// the specified default item if the sequence is shorter.
+        /// </summary>
+        /// <typeparam name="TSource">The element type.</typeparam>
+        /// <param name="source">The source sequence to get an element of.</param>
+        /// <param name="index">The index of the element, zero-based.</param>
+        /// <param name="defaultItem">The default item to return if the sequence is shorter.</param>
+        /// <returns>The new IAsyncEnumerable sequence.</returns>
+        public static IAsyncEnumerable<TSource> ElementAt<TSource>(this IAsyncEnumerable<TSource> source, long index, TSource defaultItem)
+        {
+            RequireNonNull(source, nameof(source));
+            return new ElementAt<TSource>(source, index, defaultItem, true);
+        }
+
+        /// <summary>
+        /// Counts the number of elements in the source async sequence.
+        /// </summary>
+        /// <typeparam name="TSource">The element type of the source.</typeparam>
+        /// <param name="source">The source to count.</param>
+        /// <returns>The new IAsyncEnumerable sequence.</returns>
+        public static IAsyncEnumerable<long> Count<TSource>(this IAsyncEnumerable<TSource> source)
+        {
+            RequireNonNull(source, nameof(source));
+            return new Count<TSource>(source);
+        }
+
+        /// <summary>
+        /// Signals true if the source async sequence is empty.
+        /// </summary>
+        /// <typeparam name="TSource">The element type of the source.</typeparam>
+        /// <param name="source">The source to check for emptiness.</param>
+        /// <returns>The new IAsyncEnumerable sequence.</returns>
+        public static IAsyncEnumerable<bool> IsEmpty<TSource>(this IAsyncEnumerable<TSource> source)
+        {
+            RequireNonNull(source, nameof(source));
+            return new IsEmpty<TSource>(source);
+        }
+
+        /// <summary>
+        /// Signals true if any of the source items matched the predicate.
+        /// </summary>
+        /// <typeparam name="TSource">The source element type.</typeparam>
+        /// <param name="source">The source async sequence.</param>
+        /// <param name="predicate">The predicate that receives a source item and should return true if matches.</param>
+        /// <returns>The new IAsyncEnumerable sequence.</returns>
+        public static IAsyncEnumerable<bool> Any<TSource>(this IAsyncEnumerable<TSource> source,
+            Func<TSource, bool> predicate)
+        {
+            RequireNonNull(source, nameof(source));
+            RequireNonNull(predicate, nameof(predicate));
+            return new Any<TSource>(source, predicate);
+        }
+        
+        /// <summary>
+        /// Signals true if any of the source items matched the async predicate.
+        /// </summary>
+        /// <typeparam name="TSource">The source element type.</typeparam>
+        /// <param name="source">The source async sequence.</param>
+        /// <param name="predicate">The predicate that receives a source item and should return a task of true if matches.</param>
+        /// <returns>The new IAsyncEnumerable sequence.</returns>
+        public static IAsyncEnumerable<bool> Any<TSource>(this IAsyncEnumerable<TSource> source,
+            Func<TSource, Task<bool>> predicate)
+        {
+            RequireNonNull(source, nameof(source));
+            RequireNonNull(predicate, nameof(predicate));
+            return new AnyTask<TSource>(source, predicate);
+        }
+        
+        /// <summary>
+        /// Signals true if all of the source items matched the predicate.
+        /// </summary>
+        /// <typeparam name="TSource">The source element type.</typeparam>
+        /// <param name="source">The source async sequence.</param>
+        /// <param name="predicate">The predicate that receives a source item and should return true if matches.</param>
+        /// <returns>The new IAsyncEnumerable sequence.</returns>
+        public static IAsyncEnumerable<bool> All<TSource>(this IAsyncEnumerable<TSource> source,
+            Func<TSource, bool> predicate)
+        {
+            RequireNonNull(source, nameof(source));
+            RequireNonNull(predicate, nameof(predicate));
+            return new All<TSource>(source, predicate);
+        }
+        
+        /// <summary>
+        /// Signals true if all of the source items matched the async predicate.
+        /// </summary>
+        /// <typeparam name="TSource">The source element type.</typeparam>
+        /// <param name="source">The source async sequence.</param>
+        /// <param name="predicate">The predicate that receives a source item and should return a task of true if matches.</param>
+        /// <returns>The new IAsyncEnumerable sequence.</returns>
+        public static IAsyncEnumerable<bool> All<TSource>(this IAsyncEnumerable<TSource> source,
+            Func<TSource, Task<bool>> predicate)
+        {
+            RequireNonNull(source, nameof(source));
+            RequireNonNull(predicate, nameof(predicate));
+            return new AllTask<TSource>(source, predicate);
+        }
+
     }
 }

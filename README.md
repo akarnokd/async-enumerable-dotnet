@@ -60,22 +60,27 @@ finally
 
 ## Intermediate operators
 
+- `Any` - signals true if any of the source items matched a predicate
+- `All` - signals true if all of the source items matched a predicate
 - `Buffer` - collect some number of items into buffer(s) and emit those buffers
 - `Collect` - collect items into a custom collection and emit the collection at the end
 - `ConcatMap` - concatenate in order the inner async sequences mapped from the main sequence
 - `ConcatMapEager` - run the async sources at once but relay elements in order similar to `ConcatMap`
 - `ConcatWith` - concatenate in order with another async sequence
+- `Count` - count the number of items in the async sequence
 - `Distinct` - makes sure only distinct elements get relayed
 - `DistinctUntilChanged` - relays an element only if it is distinct from the previous item
 - `Debounce` - wait a bit after each item and emit them if no newer item arrived from the source
 - `DefaultIfEmpty` - return a fallback value if the source async sequence turns out to be empty
 - `DoOnNext` - execute an action when an item becomes available
 - `DoOnDispose` - execute an action when the async sequence gets disposed.
+- `ElementAt` - get the element at a specified index or an error/default value
 - `Filter` - prevent items from passing through which don't pass a predicate
 - `First` - signals the first item of the async sequence
 - `FlatMap` - map the source items into `IAsyncEnumerable`s and merge their values into a single async sequence
 - `GroupBy` - groups the source elements into distinct async groups
 - `IgnoreElements` - ignores items and ends when the source async sequence ends
+- `IsEmpty` - signals a single true if the source is empty
 - `Last` - signals the last item of the async sequence
 - `Latest` - runs the source async sequence as fast as it can and samples it with the frequency of the consumer
 - `Map` - transform one source value into some other value
