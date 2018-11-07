@@ -2,6 +2,7 @@
 // Licensed under the Apache 2.0 License.
 // See LICENSE file in the project root for full license information.
 
+using System;
 using Xunit;
 using async_enumerable_dotnet;
 
@@ -40,5 +41,14 @@ namespace async_enumerable_dotnet_test
                 .Reduce(() => 10, (a, b) => a + b)
                 .AssertResult(10);
         }
+        
+        [Fact]
+        public async void WithSeed_Crash()
+        {
+            await AsyncEnumerable.Empty<int>()
+                .Reduce<int, int>(() => throw new InvalidOperationException(), (a, b) => a + b)
+                .AssertFailure(typeof(InvalidOperationException));
+        }
+
     }
 }

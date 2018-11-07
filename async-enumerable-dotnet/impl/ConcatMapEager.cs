@@ -198,8 +198,8 @@ namespace async_enumerable_dotnet.impl
 
                     if (src != null)
                     {
-                        var inner = new InnerHandler(src, this);
                         Interlocked.Increment(ref _disposeWip);
+                        var inner = new InnerHandler(src, this);
                         _inners.Enqueue(inner);
 
                         if (_disposeRequested)
@@ -208,7 +208,6 @@ namespace async_enumerable_dotnet.impl
                             {
                                 inner2.Dispose();
                             }
-                            return;
                         }
 
                         if (TryDispose())

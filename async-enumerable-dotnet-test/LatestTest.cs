@@ -2,6 +2,7 @@
 // Licensed under the Apache 2.0 License.
 // See LICENSE file in the project root for full license information.
 
+using System;
 using Xunit;
 using async_enumerable_dotnet;
 using System.Threading.Tasks;
@@ -66,6 +67,14 @@ namespace async_enumerable_dotnet_test
             {
                 await en.DisposeAsync();
             }
+        }
+
+        [Fact]
+        public async void Error()
+        {
+            await AsyncEnumerable.Error<int>(new InvalidOperationException())
+                .Latest()
+                .AssertFailure(typeof(InvalidOperationException));
         }
     }
 }

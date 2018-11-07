@@ -71,6 +71,22 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
+        public async void Error_EmitLast()
+        {
+            await AsyncEnumerable.Error<int>(new InvalidOperationException())
+                .Debounce(TimeSpan.FromMilliseconds(1000), true)
+                .AssertFailure(typeof(InvalidOperationException));
+        }
+
+        [Fact]
+        public async void Item_Error_EmitLast()
+        {
+            await AsyncEnumerable.Just(1).WithError(new InvalidOperationException())
+                .Debounce(TimeSpan.FromMilliseconds(1000), true)
+                .AssertFailure(typeof(InvalidOperationException), 1);
+        }
+
+        [Fact]
         public async void Delayed_Completion_After_Debounced_Item()
         {
             await AsyncEnumerable.Just(1)
@@ -97,6 +113,24 @@ namespace async_enumerable_dotnet_test
             await AsyncEnumerable.Range(1, 1_000_000)
                 .Debounce(TimeSpan.FromSeconds(10), true)
                 .AssertResult(1_000_000);
+        }
+
+        [Fact]
+        public async void Take()
+        {
+            await AsyncEnumerable.Interval(1, 5, TimeSpan.FromMilliseconds(200))
+                .Debounce(TimeSpan.FromMilliseconds(100))
+                .Take(1)
+                .AssertResult(1L);
+        }
+        
+        [Fact]
+        public async void Take_EmitLatest()
+        {
+            await AsyncEnumerable.Interval(1, 5, TimeSpan.FromMilliseconds(200))
+                .Debounce(TimeSpan.FromMilliseconds(100), true)
+                .Take(1)
+                .AssertResult(1L);
         }
     }
 }

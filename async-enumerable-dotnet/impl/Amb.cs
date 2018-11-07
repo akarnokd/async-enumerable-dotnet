@@ -104,7 +104,7 @@ namespace async_enumerable_dotnet.impl
                     {
                         if (task.IsFaulted)
                         {
-                            _winTask.TrySetException(task.Exception);
+                            _winTask.TrySetException(ExceptionHelper.Extract(task.Exception));
                         }
                         else
                         {
@@ -118,29 +118,15 @@ namespace async_enumerable_dotnet.impl
             {
                 d.DisposeAsync()
                     .AsTask()
-                    .ContinueWith(t => DisposeHandle(t.Exception));
+                    .ContinueWith(DisposeHandleAction, this);
             }
 
-            private void DisposeHandle(Exception ex)
-            {
-                if (ex != null)
-                {
-                    ExceptionHelper.AddException(ref _disposeError, ex);
-                }
+            private static readonly Action<Task, object> DisposeHandleAction =
+                (t, state) => ((AmbEnumerator) state).DisposeHandle(t);
 
-                if (Interlocked.Decrement(ref _disposeWip) == 0)
-                {
-                    ex = _disposeError;
-                    _disposeError = null;
-                    if (ex != null)
-                    {
-                        _disposeTask.TrySetException(ex);
-                    }
-                    else
-                    {
-                        _disposeTask.TrySetResult(false);
-                    }
-                }
+            private void DisposeHandle(Task t)
+            {
+                QueueDrainHelper.DisposeHandler(t, ref _disposeWip, ref _disposeError, _disposeTask);
             }
         }
 

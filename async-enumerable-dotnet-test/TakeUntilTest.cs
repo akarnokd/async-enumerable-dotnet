@@ -50,5 +50,25 @@ namespace async_enumerable_dotnet_test
             Assert.Equal(1, disposedMain);
             Assert.Equal(2, disposedOther);
         }
+
+        [Fact]
+        public async void MainError()
+        {
+            await AsyncEnumerable.Error<int>(new InvalidOperationException())
+                .TakeUntil(AsyncEnumerable.Timer(TimeSpan.FromMilliseconds(200)))
+                .AssertFailure(typeof(InvalidOperationException));
+
+        }
+
+        
+        [Fact]
+        public async void OtherError()
+        {
+            await AsyncEnumerable.Timer(TimeSpan.FromMilliseconds(200))
+                .TakeUntil(AsyncEnumerable.Error<int>(new InvalidOperationException()))
+                .AssertFailure(typeof(InvalidOperationException));
+
+        }
+
     }
 }

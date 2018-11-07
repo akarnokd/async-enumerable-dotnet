@@ -29,6 +29,25 @@ namespace async_enumerable_dotnet_test
                 Assert.True(consumer.Completed);
             }
         }
+
+        [Fact]
+        public async void Take()
+        {
+            var consumer = new BasicObserver<long>();
+
+            using (AsyncEnumerable.Timer(TimeSpan.FromMilliseconds(200))
+                .ToObservable()
+                .Subscribe(consumer))
+            {
+                await Task.Delay(100);
+            }
+
+            await Task.Delay(200);
+
+            Assert.Empty(consumer.Values);
+            Assert.Null(consumer.Error);
+            Assert.False(consumer.Completed);
+        }
         
         [Fact]
         public async void Error()

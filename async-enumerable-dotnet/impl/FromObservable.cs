@@ -4,7 +4,6 @@
 
 using System;
 using System.Collections.Concurrent;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet.impl
@@ -22,18 +21,18 @@ namespace async_enumerable_dotnet.impl
         {
             var consumer = new FromObservableEnumerator();
             var d = _source.Subscribe(consumer);
-            consumer.SetDisposable(d);
+            consumer.Upstream = d;
             return consumer;
         }
 
-        private sealed class FromObservableEnumerator : IAsyncEnumerator<T>, IObserver<T>, IDisposable
+        private sealed class FromObservableEnumerator : IAsyncEnumerator<T>, IObserver<T>
         {
             private readonly ConcurrentQueue<T> _queue;
 
             private volatile bool _done;
             private Exception _error;
 
-            private IDisposable _upstream;
+            internal IDisposable Upstream;
 
             public T Current { get; private set; }
 
@@ -44,15 +43,10 @@ namespace async_enumerable_dotnet.impl
                 _queue = new ConcurrentQueue<T>();
             }
 
-            public void Dispose()
-            {
-                // deliberately no-op as `this` is the terminal indicator
-            }
-
             public ValueTask DisposeAsync()
             {
                 Current = default;
-                Interlocked.Exchange(ref _upstream, this)?.Dispose();
+                Upstream.Dispose();
                 return new ValueTask();
             }
 
@@ -100,14 +94,6 @@ namespace async_enumerable_dotnet.impl
             {
                 _queue.Enqueue(value);
                 Signal();
-            }
-
-            internal void SetDisposable(IDisposable d)
-            {
-                if (Interlocked.CompareExchange(ref _upstream, d, null) != null)
-                {
-                    d?.Dispose();
-                } 
             }
 
             private void Signal()

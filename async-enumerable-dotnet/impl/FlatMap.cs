@@ -95,23 +95,7 @@ namespace async_enumerable_dotnet.impl
 
             internal void MoveNext()
             {
-                if (Interlocked.Increment(ref _sourceWip) == 1)
-                {
-                    do
-                    {
-                        if (Interlocked.Increment(ref _sourceDisposeWip) == 1)
-                        {
-                            _source.MoveNextAsync()
-                                .AsTask()
-                                .ContinueWith(HandleAction, this);
-                        }
-                        else
-                        {
-                            break;
-                        }
-                    }
-                    while (Interlocked.Decrement(ref _sourceWip) != 0);
-                }
+                QueueDrainHelper.MoveNext(_source, ref _sourceWip, ref _sourceDisposeWip, HandleAction, this);
             }
 
             private static readonly Action<Task<bool>, object>
@@ -203,28 +187,12 @@ namespace async_enumerable_dotnet.impl
 
             private void DisposeHandler(Task t)
             {
-                if (t.IsFaulted)
-                {
-                    ExceptionHelper.AddException(ref _allDisposeError, ExceptionHelper.Extract(t.Exception));
-                }
-                DisposeOne();
+                QueueDrainHelper.DisposeHandler(t, ref _allDisposeWip, ref _allDisposeError, _allDisposeTask);
             }
 
             private void DisposeOne()
             {
-                if (Interlocked.Decrement(ref _allDisposeWip) == 0)
-                {
-                    var ex = _allDisposeError;
-                    if (ex != null)
-                    {
-                        _allDisposeError = null;
-                        _allDisposeTask.TrySetException(ex);
-                    }
-                    else
-                    {
-                        _allDisposeTask.TrySetResult(true);
-                    }
-                }
+                QueueDrainHelper.DisposeOne(ref _allDisposeWip, ref _allDisposeError, _allDisposeTask);
             }
 
             public async ValueTask<bool> MoveNextAsync()

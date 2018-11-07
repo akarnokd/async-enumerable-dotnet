@@ -137,23 +137,7 @@ namespace async_enumerable_dotnet.impl
 
         private void HandleDispose(Task t)
         {
-            if (t.IsFaulted)
-            {
-                ExceptionHelper.AddException(ref _disposeError, t.Exception);
-            }
-            if (Interlocked.Decrement(ref _disposeWip) == 0)
-            {
-                var ex = _disposeError;
-                if (ex != null)
-                {
-                    _disposeError = null;
-                    _disposeTask.TrySetException(ex);
-                }
-                else
-                {
-                    _disposeTask.TrySetResult(true);
-                }
-            }
+            QueueDrainHelper.DisposeHandler(t, ref _disposeWip, ref _disposeError, _disposeTask);
         }
     }
 }

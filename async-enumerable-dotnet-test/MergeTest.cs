@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using async_enumerable_dotnet;
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace async_enumerable_dotnet_test
 {
@@ -130,5 +131,15 @@ namespace async_enumerable_dotnet_test
                 .AssertResultSet(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
         }
 
+        [Fact]
+        public async void Take()
+        {
+            await AsyncEnumerable.Merge(
+                    AsyncEnumerable.Timer(TimeSpan.FromMilliseconds(100)),
+                    AsyncEnumerable.Timer(TimeSpan.FromMilliseconds(200))
+                )
+                .Take(1)
+                .AssertResult(0L);
+        }
     }
 }

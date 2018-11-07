@@ -2,6 +2,7 @@
 // Licensed under the Apache 2.0 License.
 // See LICENSE file in the project root for full license information.
 
+using System;
 using Xunit;
 using async_enumerable_dotnet;
 using System.Collections.Generic;
@@ -65,5 +66,14 @@ namespace async_enumerable_dotnet_test
                 .Distinct(v => v % 3, () => new HashSet<long>())
                 .AssertResult(1, 2, 3);
         }
+        
+        [Fact]
+        public async void Custom_Crash()
+        {
+            await AsyncEnumerable.Range(1, 5)
+                .Distinct(v => v % 3, () => throw new InvalidOperationException())
+                .AssertFailure(typeof(InvalidOperationException));
+        }
+
     }
 }

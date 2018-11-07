@@ -41,5 +41,21 @@ namespace async_enumerable_dotnet_test
                 .SkipUntil(AsyncEnumerable.Timer(TimeSpan.FromMilliseconds(5 * scale / 2)))
                 .AssertResult(3, 4, 5);
         }
+
+        [Fact]
+        public async void Error_Main()
+        {
+            await AsyncEnumerable.Error<int>(new InvalidOperationException())
+                .SkipUntil(AsyncEnumerable.Timer(TimeSpan.FromMilliseconds(200)))
+                .AssertFailure(typeof(InvalidOperationException));
+        }
+
+        [Fact]
+        public async void Error_Other()
+        {
+            await AsyncEnumerable.Timer(TimeSpan.FromMilliseconds(200))
+                .SkipUntil(AsyncEnumerable.Error<int>(new InvalidOperationException()))
+                .AssertFailure(typeof(InvalidOperationException));
+        }
     }
 }

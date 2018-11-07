@@ -2,6 +2,7 @@
 // Licensed under the Apache 2.0 License.
 // See LICENSE file in the project root for full license information.
 
+using System;
 using Xunit;
 using async_enumerable_dotnet;
 using System.Collections.Generic;
@@ -157,5 +158,41 @@ namespace async_enumerable_dotnet_test
                         1, 1)
                 );
         }
+
+        [Fact]
+        public async void Error()
+        {
+            await AsyncEnumerable.Range(1, 5).WithError(new InvalidOperationException())
+                .GroupBy(v => 1)
+                .FlatMap(v => v)
+                .AssertFailure(typeof(AggregateException), 1, 2, 3, 4, 5);
+        }
+
+        [Fact]
+        public async void KeySelector_Crash()
+        {
+            await AsyncEnumerable.Range(1, 5)
+                .GroupBy<int, int>(v => throw new InvalidOperationException())
+                .AssertFailure(typeof(InvalidOperationException));
+        }
+        
+        [Fact]
+        public async void KeySelector_Crash_After_Take()
+        {
+            await AsyncEnumerable.Range(1, 5)
+                .GroupBy(v =>
+                {
+                    if (v == 5)
+                    {
+                        throw new InvalidOperationException();
+                    }
+
+                    return v % 2;
+                })
+                .Take(1)
+                .FlatMap(v => v)
+                .AssertFailure(typeof(AggregateException), 1, 3);
+        }
+
     }
 }

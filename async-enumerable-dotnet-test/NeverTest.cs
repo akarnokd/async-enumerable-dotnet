@@ -24,7 +24,10 @@ namespace async_enumerable_dotnet_test
         {
             var en = AsyncEnumerable.Never<int>().GetAsyncEnumerator();
 
+            Assert.Equal(0, AsyncEnumerable.Never<int>().GetAsyncEnumerator().Current);
+
             // no await as the test would never end otherwise
+
             en.MoveNextAsync();
             en.DisposeAsync();
         }

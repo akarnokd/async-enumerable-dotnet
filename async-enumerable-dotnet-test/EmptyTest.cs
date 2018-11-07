@@ -15,5 +15,11 @@ namespace async_enumerable_dotnet_test
             await AsyncEnumerable.Empty<int>()
                 .AssertResult();
         }
+
+        [Fact]
+        public void Current()
+        {
+            Assert.Equal(0, AsyncEnumerable.Empty<int>().GetAsyncEnumerator().Current);
+        }
     }
 }

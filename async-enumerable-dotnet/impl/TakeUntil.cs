@@ -53,6 +53,7 @@ namespace async_enumerable_dotnet.impl
             {
                 _source = source;
                 _other = other;
+                _disposed = 2;
                 _disposeReady = new TaskCompletionSource<bool>();
             }
 
@@ -101,10 +102,10 @@ namespace async_enumerable_dotnet.impl
                 if (Interlocked.Decrement(ref _disposeMain) != 0)
                 {
                     Dispose(_source);
-                }
-                else if (t.IsFaulted)
+                } else
+                if (t.IsFaulted)
                 {
-                    newTask.TrySetException(t.Exception);
+                    newTask.TrySetException(ExceptionHelper.Extract(t.Exception));
                 }
                 else
                 {
@@ -129,7 +130,7 @@ namespace async_enumerable_dotnet.impl
                     Dispose(_other);
                 }
                 else if (t.IsFaulted) {
-                    _otherError = t.Exception;
+                    _otherError = ExceptionHelper.Extract(t.Exception);
                     var oldTask = Interlocked.Exchange(ref _currentTask, TakeUntilHelper.UntilTask);
                     if (oldTask != TakeUntilHelper.UntilTask)
                     {
@@ -156,26 +157,17 @@ namespace async_enumerable_dotnet.impl
 
             private void Dispose(IAsyncDisposable en)
             {
-                en.DisposeAsync().AsTask()
-                    .ContinueWith(t =>
-                    {
-                        if (t.IsFaulted)
-                        {
-                            ExceptionHelper.AddException(ref _disposeException, t.Exception);
-                        }
-                        if (Interlocked.Increment(ref _disposed) == 2)
-                        {
-                            var ex = _disposeException;
-                            if (ex != null)
-                            {
-                                _disposeReady.TrySetException(ex);
-                            }
-                            else
-                            {
-                                _disposeReady.TrySetResult(false);
-                            }
-                        }
-                    });
+                en.DisposeAsync()
+                    .AsTask()
+                    .ContinueWith(DisposeHandlerAction, this);
+            }
+
+            private static readonly Action<Task, object> DisposeHandlerAction = (t, state) =>
+                ((TakeUntilEnumerator) state).DisposeHandler(t);
+            
+            private void DisposeHandler(Task t)
+            {
+                 QueueDrainHelper.DisposeHandler(t, ref _disposed, ref _disposeException, _disposeReady);
             }
         }
     }

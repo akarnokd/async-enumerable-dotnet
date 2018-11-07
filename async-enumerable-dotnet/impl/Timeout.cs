@@ -59,10 +59,6 @@ namespace async_enumerable_dotnet.impl
             public ValueTask<bool> MoveNextAsync()
             {
                 var idx = Volatile.Read(ref _index);
-                if (idx == long.MaxValue)
-                {
-                    return new ValueTask<bool>(false);
-                }
 
                 var result = new TaskCompletionSource<bool>();
 
@@ -73,16 +69,8 @@ namespace async_enumerable_dotnet.impl
                 Task.Delay(_timeout, _token.Token)
                     .ContinueWith(t => Timeout(idx, result), _token.Token);
 
-                var task = _source.MoveNextAsync();
-
-                if (task.IsCompleted || task.IsFaulted)
-                {
-                    Next(idx, task, result);
-                }
-                else
-                {
-                    task.AsTask().ContinueWith(t => Next(idx, t, result));
-                }
+                _source.MoveNextAsync()
+                    .AsTask().ContinueWith(t => Next(idx, t, result));
 
                 return new ValueTask<bool>(result.Task);
             }
@@ -92,26 +80,6 @@ namespace async_enumerable_dotnet.impl
                 if (Interlocked.CompareExchange(ref _index, long.MaxValue, idx) == idx)
                 {
                     result.TrySetException(new TimeoutException());
-                }
-            }
-
-            private void Next(long idx, ValueTask<bool> task, TaskCompletionSource<bool> result)
-            {
-                if (Interlocked.Decrement(ref _disposeWip) != 0)
-                {
-                    DisposeTask();
-                }
-                if (Interlocked.CompareExchange(ref _index, idx + 1, idx) == idx)
-                {
-                    _token?.Cancel();
-                    if (task.IsFaulted)
-                    {
-                        result.TrySetException(task.AsTask().Exception);
-                    }
-                    else
-                    {
-                        result.TrySetResult(task.Result);
-                    }
                 }
             }
 
@@ -126,7 +94,7 @@ namespace async_enumerable_dotnet.impl
                     _token?.Cancel();
                     if (task.IsFaulted)
                     {
-                        result.TrySetException(task.Exception);
+                        result.TrySetException(ExceptionHelper.Extract(task.Exception));
                     }
                     else
                     {

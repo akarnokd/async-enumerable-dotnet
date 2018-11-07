@@ -139,5 +139,22 @@ namespace async_enumerable_dotnet_test
                 }
             }
         }
+
+        [Fact]
+        public async void Mapper_Crash()
+        {
+            await AsyncEnumerable.Range(1, 5)
+                .ConcatMapEager<int, int>(v => throw new InvalidOperationException())
+                .AssertFailure(typeof(InvalidOperationException));
+        }
+
+        [Fact]
+        public async void Take()
+        {
+            await TestHelper.TimeSequence(0, 200, 400, 600)
+                .ConcatMapEager(v => AsyncEnumerable.Timer(TimeSpan.FromMilliseconds(100)))
+                .Take(1)
+                .AssertResult(0L);
+        }
     }
 }

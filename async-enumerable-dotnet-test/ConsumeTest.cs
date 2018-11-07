@@ -2,6 +2,9 @@
 // Licensed under the Apache 2.0 License.
 // See LICENSE file in the project root for full license information.
 
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Xunit;
 using async_enumerable_dotnet;
 
@@ -22,6 +25,38 @@ namespace async_enumerable_dotnet_test
 
             await t1;
             await t2;
+        }
+
+        [Fact]
+        public async void Error()
+        {
+            var push = new MulticastAsyncEnumerable<int>();
+
+            var t1 = push.AssertFailure(typeof(InvalidOperationException));
+            var t2 = push.AssertFailure(typeof(InvalidOperationException));
+
+            await AsyncEnumerable.Error<int>(new InvalidOperationException())
+                .Consume(push);
+
+            await t1;
+            await t2;
+        }
+
+        [Fact]
+        public async void Cancel()
+        {
+            var cts = new CancellationTokenSource();
+
+            var push = new UnicastAsyncEnumerable<long>();
+
+            var t = AsyncEnumerable.Timer(TimeSpan.FromMilliseconds(500))
+                .Consume(push, cts.Token);
+
+            await Task.Delay(100, cts.Token);
+            
+            cts.Cancel();
+
+            await t;
         }
     }
 }

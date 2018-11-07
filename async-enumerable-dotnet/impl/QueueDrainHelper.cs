@@ -44,6 +44,12 @@ namespace async_enumerable_dotnet.impl
             {
                 ExceptionHelper.AddException(ref allDisposeError, ExceptionHelper.Extract(t.Exception));
             }
+            DisposeOne(ref allDisposeWip, ref allDisposeError, allDisposeTask);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void DisposeOne(ref int allDisposeWip, ref Exception allDisposeError, TaskCompletionSource<bool> allDisposeTask)
+        {
             if (Interlocked.Decrement(ref allDisposeWip) == 0)
             {
                 var ex = allDisposeError;

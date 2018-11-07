@@ -37,7 +37,8 @@ namespace async_enumerable_dotnet.impl
             try
             {
                 source = _sourceProvider(resource);
-            } catch (Exception ex)
+            } 
+            catch (Exception ex)
             {
                 try
                 {
@@ -81,7 +82,16 @@ namespace async_enumerable_dotnet.impl
                 {
                     error = ex;
                 }
-                await _source.DisposeAsync();
+
+                try
+                {
+                    await _source.DisposeAsync();
+                }
+                catch (Exception ex2)
+                {
+                    error = error == null ? ex2 : new AggregateException(error, ex2);
+                }
+
                 if (error != null)
                 {
                     throw error;

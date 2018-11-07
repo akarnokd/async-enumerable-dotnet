@@ -10,6 +10,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Sdk;
 
 namespace async_enumerable_dotnet_test
 {
@@ -126,7 +127,8 @@ namespace async_enumerable_dotnet_test
         }
 
         // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Global
-        public static async ValueTask AssertFailure<T>(this IAsyncEnumerator<T> source, Type exception, params T[] values)
+        public static async ValueTask AssertFailure<T>(this IAsyncEnumerator<T> source, Type exception,
+            params T[] values)
         {
             var idx = 0;
             try
@@ -138,7 +140,11 @@ namespace async_enumerable_dotnet_test
                     idx++;
                 }
 
-                Assert.True(false, "Did not throw the exception " + exception);
+                Assert.True(false, "Did not throw any exception but expected: " + exception);
+            }
+            catch (TrueException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -162,6 +168,18 @@ namespace async_enumerable_dotnet_test
         {
             return AsyncEnumerable.FromArray(timestamps)
                 .FlatMap(v => AsyncEnumerable.Timer(TimeSpan.FromMilliseconds(v)).Map(w => v));
+        }
+
+        /// <summary>
+        /// Concatenate with the error signal.
+        /// </summary>
+        /// <param name="source">The source to append an error to</param>
+        /// <param name="error">Th error to append</param>
+        /// <typeparam name="TSource">The element type of the sequence</typeparam>
+        /// <returns>The new IAsyncEnumerable instance.</returns>
+        internal static IAsyncEnumerable<TSource> WithError<TSource>(this IAsyncEnumerable<TSource> source, Exception error)
+        {
+            return source.ConcatWith(AsyncEnumerable.Error<TSource>(error));
         }
     }
 }

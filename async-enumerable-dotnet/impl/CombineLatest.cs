@@ -180,6 +180,7 @@ namespace async_enumerable_dotnet.impl
                     Done = false,
                     Value = value
                 });
+                Signal();
             }
 
             private void InnerError(int index, Exception ex)
@@ -188,11 +189,13 @@ namespace async_enumerable_dotnet.impl
                 _queue.Enqueue(new Entry {
                     Index = index, Done = true, Value = default
                 });
+                Signal();
             }
 
             private void InnerComplete(int index)
             {
                 _queue.Enqueue(new Entry { Index = index, Done = true, Value = default });
+                Signal();
             }
 
             private void Signal()
@@ -249,19 +252,25 @@ namespace async_enumerable_dotnet.impl
                 {
                     if (t.IsFaulted)
                     {
-                        _parent.InnerError(_index, ExceptionHelper.Extract(t.Exception));
+                        if (TryDispose())
+                        {
+                            _parent.InnerError(_index, ExceptionHelper.Extract(t.Exception));
+                        }
                     }
                     else if (t.Result)
                     {
-                        _parent.InnerNext(_index, _source.Current);
+                        var v = _source.Current;
+                        if (TryDispose())
+                        {
+                            _parent.InnerNext(_index, v);
+                        }
                     }
                     else
                     {
-                        _parent.InnerComplete(_index);
-                    }
-                    if (TryDispose())
-                    {
-                        _parent.Signal();
+                        if (TryDispose())
+                        {
+                            _parent.InnerComplete(_index);
+                        }
                     }
                 }
 

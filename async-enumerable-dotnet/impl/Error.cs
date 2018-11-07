@@ -32,22 +32,21 @@ namespace async_enumerable_dotnet.impl
                 _error = error;
             }
 
-            public T Current => throw _error;
+            public T Current => default;
 
             public ValueTask DisposeAsync()
             {
                 return new ValueTask();
             }
 
-            public async ValueTask<bool> MoveNextAsync()
+            public ValueTask<bool> MoveNextAsync()
             {
                 if (_once)
                 {
-                    await Task.CompletedTask;
-                    return false;
+                    return new ValueTask<bool>(false);
                 }
                 _once = true;
-                throw _error;
+                return new ValueTask<bool>(Task.FromException<bool>(_error));
             }
         }
     }

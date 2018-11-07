@@ -36,8 +36,6 @@ namespace async_enumerable_dotnet.impl
 
             private readonly TimeSpan _delay;
 
-            private readonly Action<Task<bool>> _mainHandler;
-
             private readonly bool _emitLast;
 
             public T Current { get; private set; }
@@ -65,7 +63,6 @@ namespace async_enumerable_dotnet.impl
             {
                 _source = source;
                 _delay = delay;
-                _mainHandler = HandleMain;
                 _emitLast = emitLast;
             }
 
@@ -112,25 +109,12 @@ namespace async_enumerable_dotnet.impl
 
             internal void MoveNext()
             {
-                if (Interlocked.Increment(ref _sourceWip) == 1)
-                {
-                    do
-                    {
-                        if (Interlocked.Increment(ref _disposeWip) == 1)
-                        {
-                            _source.MoveNextAsync()
-                                .AsTask()
-                                .ContinueWith(_mainHandler);
-                        }
-                        else
-                        {
-                            break;
-                        }
-                    }
-                    while (Interlocked.Decrement(ref _sourceWip) != 0);
-                }
+                QueueDrainHelper.MoveNext(_source, ref _sourceWip, ref _disposeWip, MainHandlerAction, this);
             }
 
+            private static readonly Action<Task<bool>, object> MainHandlerAction =
+                (t, state) => ((DebounceEnumerator) state).HandleMain(t);
+            
             private bool TryDispose()
             {
                 if (Interlocked.Decrement(ref _disposeWip) != 0)

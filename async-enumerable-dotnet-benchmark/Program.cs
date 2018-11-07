@@ -27,14 +27,9 @@ namespace async_enumerable_dotnet_benchmark
                 {
                     Console.WriteLine(j);
                 }
-                var list = AsyncEnumerable.Create<int>(async e =>
-                {
-                    for (var i = 0; i < 10 && !e.DisposeAsyncRequested; i++)
-                    {
-                        await e.Next(i);
-                    }
-                })
-                .Last()
+                var list = TimeSequence(0, 200, 400, 600)
+                        .ConcatMapEager(v => AsyncEnumerable.Timer(TimeSpan.FromMilliseconds(100)))
+                        .Take(1)
                 .GetAsyncEnumerator();
 
                 try
@@ -44,7 +39,7 @@ namespace async_enumerable_dotnet_benchmark
                         Console.WriteLine("Empty?");
                     }
 
-                    if (list.Current != 9)
+                    if (list.Current != 0)
                     {
                         Console.WriteLine(list.Current);
                         Console.ReadLine();
@@ -56,6 +51,12 @@ namespace async_enumerable_dotnet_benchmark
                     list.DisposeAsync().AsTask().Wait();
                 }
             }
+        }
+        
+        private static IAsyncEnumerable<long> TimeSequence(params long[] timestamps)
+        {
+            return AsyncEnumerable.FromArray(timestamps)
+                .FlatMap(v => AsyncEnumerable.Timer(TimeSpan.FromMilliseconds(v)).Map(w => v));
         }
     }
 }

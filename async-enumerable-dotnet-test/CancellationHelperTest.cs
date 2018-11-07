@@ -11,7 +11,7 @@ namespace async_enumerable_dotnet_test
     public class CancellationHelperTest
     {
         private CancellationTokenSource _cts;
-        
+
         [Fact]
         public void Cancel()
         {
@@ -20,6 +20,18 @@ namespace async_enumerable_dotnet_test
             Assert.Same(_cts, CancellationHelper.Cancelled);
 
             Assert.False(CancellationHelper.Cancel(ref _cts));
+        }
+
+        [Fact]
+        public void Replace_After_Cancel()
+        {
+            Assert.True(CancellationHelper.Cancel(ref _cts));
+
+            var cts = new CancellationTokenSource();
+            
+            Assert.False(CancellationHelper.Replace(ref _cts, cts));
+            
+            Assert.True(cts.IsCancellationRequested);
         }
     }
 }

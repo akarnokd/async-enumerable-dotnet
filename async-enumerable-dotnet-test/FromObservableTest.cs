@@ -53,6 +53,32 @@ namespace async_enumerable_dotnet_test
             Assert.Equal(n, expected);
         }
 
+        [Fact]
+        public async void Error()
+        {
+            await new ObservableError()
+                .ToAsyncEnumerable()
+                .AssertFailure(typeof(InvalidOperationException));
+
+        }
+
+        private sealed class ObservableError : IObservable<int>
+        {
+            public IDisposable Subscribe(IObserver<int> observer)
+            {
+                observer.OnError(new InvalidOperationException());
+                return new EmptyDisposable();
+            }
+
+            private sealed class EmptyDisposable : IDisposable
+            {
+                public void Dispose()
+                {
+                    // deliberately no-op
+                }
+            }
+        }
+        
         private sealed class ObservableRange : IObservable<int>
         {
             private readonly int _start;

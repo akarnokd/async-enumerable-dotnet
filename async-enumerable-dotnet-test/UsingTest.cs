@@ -2,6 +2,7 @@
 // Licensed under the Apache 2.0 License.
 // See LICENSE file in the project root for full license information.
 
+using System;
 using Xunit;
 using async_enumerable_dotnet;
 
@@ -22,5 +23,63 @@ namespace async_enumerable_dotnet_test
 
             Assert.Equal(1, cleanup);
         }
+
+        [Fact]
+        public async void ResourceSupplier_Crash()
+        {
+            await AsyncEnumerable.Using<int, int>(() => throw new InvalidOperationException(),
+                    v => AsyncEnumerable.Range(v, 5), v => { })
+                .AssertFailure(typeof(InvalidOperationException));
+        }
+        
+        [Fact]
+        public async void SourceSupplier_Crash()
+        {
+            await AsyncEnumerable.Using<int, int>(() => 1,
+                    v => throw new InvalidOperationException(), v => { })
+                .AssertFailure(typeof(InvalidOperationException));
+        }
+
+        [Fact]
+        public async void SourceSupplier_And_Cleanup_Crash()
+        {
+            await AsyncEnumerable.Using<int, int>(() => 1,
+                    v => throw new InvalidOperationException(), v => throw new IndexOutOfRangeException())
+                .AssertFailure(typeof(AggregateException));
+        }
+
+        [Fact]
+        public async void Cleanup_Crash()
+        {
+            try
+            {
+                await AsyncEnumerable.Using(() => 1,
+                        v => AsyncEnumerable.Range(v, 5), v => throw new IndexOutOfRangeException())
+                    .AssertResult(1, 2, 3, 4, 5);
+                Assert.False(true, "Should have thrown");
+            }
+            catch (IndexOutOfRangeException)
+            {
+                // expected
+            }
+        }
+        
+        [Fact]
+        public async void Upstream_Dispose_Crash()
+        {
+            try
+            {
+                await AsyncEnumerable.Using(() => 1,
+                        v => AsyncEnumerable.Range(v, 5).DoOnDispose(() => throw new InvalidOperationException()),
+                        v => { })
+                    .AssertResult(1, 2, 3, 4, 5);
+                Assert.False(true, "Should have thrown!");
+            }
+            catch (InvalidOperationException)
+            {
+                // expected
+            }
+        }
+
     }
 }

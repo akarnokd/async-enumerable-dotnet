@@ -65,6 +65,7 @@ namespace async_enumerable_dotnet.impl
                 _disposeTask = new TaskCompletionSource<bool>();
                 _cts = new CancellationTokenSource();
                 Volatile.Write(ref _latest, EmptyHelper.EmptyIndicator);
+                Volatile.Write(ref _timerLatest, EmptyHelper.EmptyIndicator);
             }
 
             public ValueTask DisposeAsync()
@@ -132,23 +133,7 @@ namespace async_enumerable_dotnet.impl
 
             internal void MoveNext()
             {
-                if (Interlocked.Increment(ref _consumerWip) == 1)
-                {
-                    do
-                    {
-                        if (Interlocked.Increment(ref _disposeWip) == 1)
-                        {
-                            _source.MoveNextAsync()
-                                .AsTask()
-                                .ContinueWith(HandleAction, this);
-                        }
-                        else
-                        {
-                            break;
-                        }
-                    }
-                    while (Interlocked.Decrement(ref _consumerWip) != 0);
-                }
+                QueueDrainHelper.MoveNext(_source, ref _consumerWip, ref _disposeWip, HandleAction, this);
             }
             
             private static readonly Action<Task<bool>, object> HandleAction =

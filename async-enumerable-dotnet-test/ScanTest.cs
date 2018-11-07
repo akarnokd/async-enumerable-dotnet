@@ -2,6 +2,7 @@
 // Licensed under the Apache 2.0 License.
 // See LICENSE file in the project root for full license information.
 
+using System;
 using Xunit;
 using async_enumerable_dotnet;
 
@@ -56,5 +57,14 @@ namespace async_enumerable_dotnet_test
                 .Scan(() => 100, (a, b) => a + b)
                 .AssertResult(100);
         }
+        
+        [Fact]
+        public async void Seed_Crash()
+        {
+            await AsyncEnumerable.Empty<int>()
+                .Scan<int, int>(() => throw new InvalidOperationException(), (a, b) => a + b)
+                .AssertFailure(typeof(InvalidOperationException));
+        }
+
     }
 }

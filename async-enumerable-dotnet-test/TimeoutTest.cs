@@ -34,5 +34,13 @@ namespace async_enumerable_dotnet_test
 
             Assert.Equal(1, disposed);
         }
+
+        [Fact]
+        public async void Error()
+        {
+            await AsyncEnumerable.Error<int>(new InvalidOperationException())
+                .Timeout(TimeSpan.FromMilliseconds(10000))
+                .AssertFailure(typeof(InvalidOperationException));
+        }
     }
 }

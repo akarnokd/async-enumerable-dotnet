@@ -168,5 +168,22 @@ namespace async_enumerable_dotnet_test
 
             Assert.Equal(2, disposed);
         }
+
+        [Fact]
+        public async void Timer()
+        {
+            await AsyncEnumerable.Range(1, 10)
+                .FlatMap(v => AsyncEnumerable.Timer(TimeSpan.FromMilliseconds(100)))
+                .Take(5)
+                .AssertResult(0L, 0L, 0L, 0L, 0L);
+        }
+
+        [Fact]
+        public async void Mapper_Crash()
+        {
+            await AsyncEnumerable.Range(1, 5)
+                .FlatMap<int, int>(v => throw new InvalidOperationException())
+                .AssertFailure(typeof(InvalidOperationException));
+        }
     }
 }

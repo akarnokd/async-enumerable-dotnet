@@ -2,6 +2,7 @@
 // Licensed under the Apache 2.0 License.
 // See LICENSE file in the project root for full license information.
 
+using System;
 using Xunit;
 using async_enumerable_dotnet;
 using System.Collections.Generic;
@@ -24,6 +25,14 @@ namespace async_enumerable_dotnet_test
             await AsyncEnumerable.Empty<int>()
                 .Collect(() => new List<int>(), (a, b) => a.Add(b))
                 .AssertResult(new List<int>());
+        }
+
+        [Fact]
+        public async void Initial_Crash()
+        {
+            await AsyncEnumerable.Empty<int>()
+                .Collect<int, IList<int>>(() => throw new InvalidOperationException(), (a, b) => a.Add(b))
+                .AssertFailure(typeof(InvalidOperationException));
         }
     }
 }

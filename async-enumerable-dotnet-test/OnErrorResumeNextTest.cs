@@ -25,5 +25,13 @@ namespace async_enumerable_dotnet_test
                 .OnErrorResumeNext(e => AsyncEnumerable.Range(6, 5))
                 .AssertResult(6, 7, 8, 9, 10);
         }
+
+        [Fact]
+        public async void Handler_Crash()
+        {
+            await AsyncEnumerable.Error<int>(new InvalidOperationException())
+                .OnErrorResumeNext(e => throw e)
+                .AssertFailure(typeof(AggregateException));
+        }
     }
 }

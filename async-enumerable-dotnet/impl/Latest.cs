@@ -43,12 +43,9 @@ namespace async_enumerable_dotnet.impl
 
             public T Current { get; private set; }
 
-            private readonly Action<Task<bool>> _mainHandler;
-
             public LatestEnumerator(IAsyncEnumerator<T> source)
             {
                 _source = source;
-                _mainHandler = HandleMain;
                 Volatile.Write(ref _latest, EmptyHelper.EmptyIndicator);
             }
 
@@ -89,25 +86,12 @@ namespace async_enumerable_dotnet.impl
 
             internal void MoveNext()
             {
-                if (Interlocked.Increment(ref _consumerWip) == 1)
-                {
-                    do
-                    {
-                        if (Interlocked.Increment(ref _disposeWip) == 1)
-                        {
-                            _source.MoveNextAsync()
-                                .AsTask()
-                                .ContinueWith(_mainHandler);
-                        }
-                        else
-                        {
-                            break;
-                        }
-                    }
-                    while (Interlocked.Decrement(ref _consumerWip) != 0);
-                }
+                QueueDrainHelper.MoveNext(_source, ref _consumerWip, ref _disposeWip, MainHandlerAction, this);
             }
 
+            private static readonly Action<Task<bool>, object> MainHandlerAction =
+                (t, state) => ((LatestEnumerator) state).HandleMain(t);
+            
             private bool TryDispose()
             {
                 if (Interlocked.Decrement(ref _disposeWip) != 0)

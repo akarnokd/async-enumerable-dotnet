@@ -60,5 +60,14 @@ namespace async_enumerable_dotnet_test
                 .Last()
                 .AssertResult(1_000_000);
         }
+
+        [Fact]
+        public async void Take()
+        {
+            await AsyncEnumerable.Interval(1, 5, TimeSpan.FromMilliseconds(200))
+                .Prefetch(128)
+                .Take(1)
+                .AssertResult(1L);
+        }
     }
 }

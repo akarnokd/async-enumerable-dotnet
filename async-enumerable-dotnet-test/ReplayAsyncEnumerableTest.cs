@@ -712,5 +712,25 @@ namespace async_enumerable_dotnet_test
 
             Assert.False(push.HasConsumers);
         }
+
+        [Fact]
+        public async void Unbounded_Take()
+        {
+            var push = new ReplayAsyncEnumerable<int>();
+
+            var t1 = push.Take(1).AssertResult(1);
+
+            var t2 = push.Take(2).AssertResult(1, 2);
+
+            await push.Next(1);
+
+            await push.Next(2);
+
+            await t1;
+
+            await t2;
+        }
+
+
     }
 }

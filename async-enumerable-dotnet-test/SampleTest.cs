@@ -69,5 +69,22 @@ namespace async_enumerable_dotnet_test
                 .Sample(TimeSpan.FromMilliseconds(500))
                 .AssertFailure(typeof(InvalidOperationException));
         }
+        
+        [Fact]
+        public async void Error_EmitLast()
+        {
+            await AsyncEnumerable.Error<int>(new InvalidOperationException())
+                .Sample(TimeSpan.FromMilliseconds(500), true)
+                .AssertFailure(typeof(InvalidOperationException));
+        }
+
+        [Fact]
+        public async void Take()
+        {
+            await TestHelper.TimeSequence(100, 300)
+                .Sample(TimeSpan.FromMilliseconds(200))
+                .Take(1)
+                .AssertResult(100);
+        }
     }
 }

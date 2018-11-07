@@ -2,6 +2,7 @@
 // Licensed under the Apache 2.0 License.
 // See LICENSE file in the project root for full license information.
 
+using System;
 using System.Linq;
 using Xunit;
 using async_enumerable_dotnet;
@@ -31,5 +32,26 @@ namespace async_enumerable_dotnet_test
 
             await result.AssertResult(3, 6, 9);
         }
+
+        [Fact]
+        public async void Error_One()
+        {
+            await AsyncEnumerable.Zip(v => v.Sum(), 
+                    AsyncEnumerable.Error<int>(new InvalidOperationException()),
+                    AsyncEnumerable.Range(1, 5)
+                )
+                .AssertFailure(typeof(InvalidOperationException));
+        }
+        
+        [Fact]
+        public async void Error_Both()
+        {
+            await AsyncEnumerable.Zip(v => v.Sum(), 
+                    AsyncEnumerable.Error<int>(new InvalidOperationException()),
+                    AsyncEnumerable.Error<int>(new InvalidOperationException())
+                )
+                .AssertFailure(typeof(AggregateException));
+        }
+
     }
 }

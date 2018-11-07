@@ -49,7 +49,16 @@ namespace async_enumerable_dotnet.impl
                 {
                     ex = e;
                 }
-                await _source.DisposeAsync();
+
+                try
+                {
+                    await _source.DisposeAsync();
+                }
+                catch (Exception ex2)
+                {
+                    ex = ex == null ? ex2 : new AggregateException(ex, ex2);
+                }
+
                 if (ex != null)
                 {
                     throw ex;
@@ -105,8 +114,15 @@ namespace async_enumerable_dotnet.impl
                 {
                     ex = e;
                 }
+                try
+                {
+                    await _source.DisposeAsync().ConfigureAwait(false);
+                }
+                catch (Exception ex2)
+                {
+                    ex = ex == null ? ex2 : new AggregateException(ex, ex2);
+                }
 
-                await _source.DisposeAsync().ConfigureAwait(false);
                 if (ex != null)
                 {
                     throw ex;

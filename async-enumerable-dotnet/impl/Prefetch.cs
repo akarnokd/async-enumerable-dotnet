@@ -55,13 +55,10 @@ namespace async_enumerable_dotnet.impl
 
             private TaskCompletionSource<bool> _disposeTask;
 
-            private readonly Action<Task<bool>> _sourceHandler;
-
             public PrefetchEnumerator(IAsyncEnumerator<T> source, int prefetch, int limit)
             {
                 _source = source;
                 _limit = limit;
-                _sourceHandler = SourceHandler;
                 _queue = new ConcurrentQueue<T>();
                 Volatile.Write(ref _outstanding, prefetch);
             }
@@ -77,24 +74,12 @@ namespace async_enumerable_dotnet.impl
 
             internal void MoveNext()
             {
-                if (Interlocked.Increment(ref _consumerWip) == 1)
-                {
-                    do
-                    {
-                        if (Interlocked.Increment(ref _disposeWip) == 1)
-                        {
-                            _source.MoveNextAsync()
-                                .AsTask().ContinueWith(_sourceHandler);
-                        }
-                        else
-                        {
-                            break;
-                        }
-                    }
-                    while (Interlocked.Decrement(ref _consumerWip) != 0);
-                }
+                QueueDrainHelper.MoveNext(_source, ref _consumerWip, ref _disposeWip, SourceHandlerAction, this);
             }
 
+            private static readonly Action<Task<bool>, object> SourceHandlerAction =
+                (t, state) => ((PrefetchEnumerator) state).SourceHandler(t);
+            
             private void Signal()
             {
                 ResumeHelper.Resume(ref _resume);
@@ -124,12 +109,12 @@ namespace async_enumerable_dotnet.impl
                 }
                 else
                 {
-                    Signal();
-
                     if (next && Interlocked.Decrement(ref _outstanding) != 0)
                     {
                         MoveNext();
                     }
+
+                    Signal();
                 }
             }
 

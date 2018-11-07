@@ -20,6 +20,16 @@ namespace async_enumerable_dotnet_test
                 )
                 .AssertResult(1L, 2L, 3L, 4L, 5L);
         }
+        
+        [Fact]
+        public async void First_Win_Error()
+        {
+            await AsyncEnumerable.Amb(
+                    AsyncEnumerable.Error<long>(new InvalidOperationException()),
+                    AsyncEnumerable.Interval(11, 5, TimeSpan.FromMilliseconds(200))
+                )
+                .AssertFailure(typeof(InvalidOperationException));
+        }
 
         [Fact]
         public async void First_Win_Empty()
@@ -41,6 +51,16 @@ namespace async_enumerable_dotnet_test
                 .AssertResult(11L, 12L, 13L, 14L, 15L);
         }
 
+        [Fact]
+        public async void Second_Win_Error()
+        {
+            await AsyncEnumerable.Amb(
+                    AsyncEnumerable.Interval(1, 5, TimeSpan.FromMilliseconds(200)),
+                    AsyncEnumerable.Error<long>(new InvalidOperationException())
+                )
+                .AssertFailure(typeof(InvalidOperationException));
+        }
+        
         [Fact]
         public async void Second_Win_Empty()
         {

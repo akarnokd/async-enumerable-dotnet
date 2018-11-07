@@ -2,6 +2,7 @@
 // Licensed under the Apache 2.0 License.
 // See LICENSE file in the project root for full license information.
 
+using System;
 using Xunit;
 using async_enumerable_dotnet.impl;
 using System.Threading.Tasks;
@@ -75,6 +76,30 @@ namespace async_enumerable_dotnet_test
 
                 await t2;
             }
+        }
+
+        [Fact]
+        public void OneAwaiterMax()
+        {
+            var rsm = new SlimResume();
+
+            rsm.OnCompleted(() => { });
+
+            try
+            {
+                rsm.OnCompleted(() => { });
+                Assert.False(true, "Should have thrown");
+            }
+            catch (InvalidOperationException)
+            {
+                // expected
+            }
+        }
+
+        [Fact]
+        public void DoubleSignal()
+        {
+            SlimResume.Completed.Signal();
         }
     }
 }

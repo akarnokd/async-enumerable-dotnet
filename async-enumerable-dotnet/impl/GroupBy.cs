@@ -97,7 +97,8 @@ namespace async_enumerable_dotnet.impl
                             {
                                 await gr.Value.Error(ex);
                             }
-                            break;
+
+                            throw;
                         }
                     }
                 }
@@ -152,7 +153,7 @@ namespace async_enumerable_dotnet.impl
                             await gr.Value.Error(ex);
                         }
                         _done = true;
-                        return false;
+                        throw;
                     }
                 }
             }

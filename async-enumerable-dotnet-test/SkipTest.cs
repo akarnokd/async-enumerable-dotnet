@@ -32,5 +32,14 @@ namespace async_enumerable_dotnet_test
                 .Skip(10)
                 .AssertResult();
         }
+        
+        [Fact]
+        public async void More()
+        {
+            await AsyncEnumerable.Range(1, 10)
+                .Skip(11)
+                .AssertResult();
+        }
+
     }
 }

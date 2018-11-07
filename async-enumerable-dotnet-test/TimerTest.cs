@@ -35,5 +35,13 @@ namespace async_enumerable_dotnet_test
             
             Assert.Equal(0, value);
         }
+
+        [Fact]
+        public async void Normal()
+        {
+            var cts = new CancellationTokenSource();
+            await AsyncEnumerable.Timer(TimeSpan.FromMilliseconds(100), cts.Token)
+                .AssertResult(0L);
+        }
     }
 }

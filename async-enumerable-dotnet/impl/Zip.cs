@@ -37,8 +37,6 @@ namespace async_enumerable_dotnet.impl
 
             private readonly ValueTask<bool>[] _tasks;
 
-            private bool _done;
-
             public ZipArrayEnumerator(IAsyncEnumerator<TSource>[] enumerators, Func<TSource[], TResult> zipper)
             {
                 _enumerators = enumerators;
@@ -54,17 +52,11 @@ namespace async_enumerable_dotnet.impl
                 {
                     await en.DisposeAsync().ConfigureAwait(false);
                 }
+                Current = default;
             }
 
             public async ValueTask<bool> MoveNextAsync()
             {
-                if (_done)
-                {
-                    return false;
-                }
-
-                Current = default;
-
                 var values = new TSource[_enumerators.Length];
 
                 for (var i = 0; i < _enumerators.Length; i++)
@@ -91,13 +83,13 @@ namespace async_enumerable_dotnet.impl
                     }
                     catch (Exception ex)
                     {
+                        fullRow = false;
                         errors = errors == null ? ex : new AggregateException(errors, ex);
                     }
                 }
 
                 if (!fullRow)
                 {
-                    _done = true;
                     if (errors != null)
                     {
                         throw errors;

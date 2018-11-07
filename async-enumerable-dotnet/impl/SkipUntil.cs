@@ -120,38 +120,32 @@ namespace async_enumerable_dotnet.impl
 
             internal void MoveNextMain()
             {
-                if (Interlocked.Increment(ref _wipMain) == 1)
-                {
-                    do
-                    {
-                        if (Interlocked.Increment(ref _disposeMain) == 1)
-                        {
-                            _source.MoveNextAsync()
-                                .AsTask()
-                                .ContinueWith(HandleMainAction, this);
-                        }
-                        else
-                        {
-                            break;
-                        }
-                    }
-                    while (Interlocked.Decrement(ref _wipMain) != 0);
-                }
+                QueueDrainHelper.MoveNext(_source, ref _wipMain, ref _disposeMain, HandleMainAction, this);
             }
 
             private static readonly Action<Task<bool>, object> HandleMainAction =
                 (t, state) => ((SkipUntilEnumerator)state).HandleMain(t);
 
-            private void HandleMain(Task<bool> t)
+
+            private bool TryDispose()
             {
                 if (Interlocked.Decrement(ref _disposeMain) != 0)
                 {
                     Dispose(_source);
+                    return false;
                 }
-                else if (t.IsFaulted)
+
+                return true;
+            }
+            private void HandleMain(Task<bool> t)
+            {
+                if (t.IsFaulted)
                 {
-                    Interlocked.CompareExchange(ref _error, t.Exception, null);
-                    Signal();
+                    Interlocked.CompareExchange(ref _error, ExceptionHelper.Extract(t.Exception), null);
+                    if (TryDispose())
+                    {
+                        Signal();
+                    }
                 }
                 else
                 {
@@ -163,7 +157,11 @@ namespace async_enumerable_dotnet.impl
                     {
                         Volatile.Write(ref _done, true);
                     }
-                    Signal();
+
+                    if (TryDispose())
+                    {
+                        Signal();
+                    }
                 }
             }
 
@@ -188,7 +186,7 @@ namespace async_enumerable_dotnet.impl
                 {
                     if (t.IsFaulted)
                     {
-                        Interlocked.CompareExchange(ref _error, t.Exception, null);
+                        Interlocked.CompareExchange(ref _error, ExceptionHelper.Extract(t.Exception), null);
                         Signal();
                     }
                     else
@@ -220,22 +218,7 @@ namespace async_enumerable_dotnet.impl
 
             private void DisposeHandler(Task t)
             {
-                if (t.IsFaulted)
-                {
-                    ExceptionHelper.AddException(ref _disposeErrors, t.Exception);
-                }
-                if (Interlocked.Decrement(ref _disposed) == 0)
-                {
-                    var ex = _disposeErrors;
-                    if (ex != null)
-                    {
-                        _disposeTask.TrySetException(ex);
-                    }
-                    else
-                    {
-                        _disposeTask.TrySetResult(false);
-                    }
-                }
+                QueueDrainHelper.DisposeHandler(t, ref _disposed, ref _disposeErrors, _disposeTask);
             }
         }
     }

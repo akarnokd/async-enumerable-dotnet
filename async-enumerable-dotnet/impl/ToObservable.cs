@@ -31,8 +31,6 @@ namespace async_enumerable_dotnet.impl
 
             private readonly IAsyncEnumerator<T> _source;
 
-            private readonly Action<Task<bool>> _handleMain;
-
             private int _wip;
 
             private int _dispose;
@@ -41,49 +39,53 @@ namespace async_enumerable_dotnet.impl
             {
                 _downstream = downstream;
                 _source = source;
-                _handleMain = HandleMain;
             }
 
             internal void MoveNext()
             {
-                if (Interlocked.Increment(ref _wip) == 1)
-                {
-                    do
-                    {
-                        if (Interlocked.Increment(ref _dispose) == 1)
-                        {
-                            _source.MoveNextAsync()
-                                .AsTask()
-                                .ContinueWith(_handleMain);
-                        }
-                        else
-                        {
-                            break;
-                        }
-                    } while (Interlocked.Decrement(ref _wip) != 0);
-                }
+                QueueDrainHelper.MoveNext(_source, ref _wip, ref _dispose, MainHandlerAction, this);
             }
 
-            private void HandleMain(Task<bool> task)
+            private static readonly Action<Task<bool>, object> MainHandlerAction =
+                (t, state) => ((ToObservableHandler) state).HandleMain(t);
+
+            private bool TryDispose()
             {
                 if (Interlocked.Decrement(ref _dispose) != 0)
                 {
                     _source.DisposeAsync();
-                } else
+                    return false;
+                }
+
+                return true;
+            }
+            
+            private void HandleMain(Task<bool> task)
+            {
                 if (task.IsFaulted)
                 {
-                    _downstream.OnError(ExceptionHelper.Extract(task.Exception));
+                    if (TryDispose())
+                    {
+                        _downstream.OnError(ExceptionHelper.Extract(task.Exception));
+                    }
                 }
                 else
                 {
                     if (task.Result)
                     {
-                        _downstream.OnNext(_source.Current);
-                        MoveNext();
+                        var v = _source.Current;
+                        if (TryDispose())
+                        {
+                            _downstream.OnNext(v);
+                            MoveNext();
+                        }
                     }
                     else
                     {
-                        _downstream.OnCompleted();
+                        if (TryDispose())
+                        {
+                            _downstream.OnCompleted();
+                        }
                     }
                 }
 
