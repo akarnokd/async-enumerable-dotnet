@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using async_enumerable_dotnet.impl;
 
 namespace async_enumerable_dotnet
 {
@@ -50,6 +51,11 @@ namespace async_enumerable_dotnet
         }
 
         /// <summary>
+        /// Signaled when a task queue becomes non-empty.
+        /// </summary>
+        private TaskCompletionSource<bool> _taskQueued;
+
+        /// <summary>
         /// Construct a fresh TestTaskRunner with the given
         /// (optional) start virtual time.
         /// </summary>
@@ -60,6 +66,16 @@ namespace async_enumerable_dotnet
             _queue = new SortedList<IndexDueTime, TaskTask>(IndexDueTimeComparer.Default);
         }
 
+        /// <summary>
+        /// Signals when the first task has been queued.
+        /// </summary>
+        /// <returns>The task to await for the queue to become non-empty.</returns>
+        public async Task TaskQueued()
+        {
+            await ResumeHelper.Await(ref _taskQueued);
+            ResumeHelper.Clear(ref _taskQueued);
+        }
+        
         /// <summary>
         /// Advance the virtual time by the given amount and
         /// signal all timed tasks in the meantime.
@@ -109,6 +125,8 @@ namespace async_enumerable_dotnet
                     DueTime = task.DueTime
                 }, task);
             }
+
+            ResumeHelper.Resume(ref _taskQueued);
         }
 
         /// <summary>

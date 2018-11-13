@@ -3,6 +3,7 @@
 // See LICENSE file in the project root for full license information.
 
 using System;
+using System.Runtime.CompilerServices;
 using Xunit;
 using async_enumerable_dotnet;
 using System.Threading;
@@ -82,6 +83,82 @@ namespace async_enumerable_dotnet_test
                 .AssertResult(1L, 2L, 3L, 4L, 5L);
 
             Assert.Equal(129, disposed);
+        }
+
+        [Fact]
+        public async void First_Win_Sync()
+        {
+            var ttr = new TestTaskRunner();
+
+            var t = AsyncEnumerable.Amb(
+                AsyncEnumerable.Range(1, 5)
+                    .DoOnNext(async v => { await ttr.CreateCompleteTask(500); }),
+                AsyncEnumerable.Range(6, 5)
+                    .DoOnNext(async v => { await ttr.CreateCompleteTask(1000); })
+            )
+                .GetAsyncEnumerator()
+            ;
+
+            try
+            {
+                for (var i = 1; i <= 5; i++)
+                {
+                    var t0 = t.MoveNextAsync();
+
+                    await ttr.TaskQueued();
+
+                    ttr.AdvanceTimeBy(500);
+
+                    await t0;
+
+                    Assert.Equal(i, t.Current);
+                }
+                
+                Assert.False(await t.MoveNextAsync());
+            }
+            finally
+            {
+                await t.DisposeAsync();
+            }
+
+        }
+        
+        [Fact]
+        public async void Second_Win_Sync()
+        {
+            var ttr = new TestTaskRunner();
+
+            var t = AsyncEnumerable.Amb(
+                        AsyncEnumerable.Range(1, 5)
+                            .DoOnNext(async v => { await ttr.CreateCompleteTask(1000); }),
+                        AsyncEnumerable.Range(6, 5)
+                            .DoOnNext(async v => { await ttr.CreateCompleteTask(500); })
+                    )
+                    .GetAsyncEnumerator()
+                ;
+
+            try
+            {
+                for (var i = 6; i <= 10; i++)
+                {
+                    var t0 = t.MoveNextAsync();
+
+                    await ttr.TaskQueued();
+
+                    ttr.AdvanceTimeBy(500);
+
+                    await t0;
+
+                    Assert.Equal(i, t.Current);
+                }
+                
+                Assert.False(await t.MoveNextAsync());
+            }
+            finally
+            {
+                await t.DisposeAsync();
+            }
+
         }
     }
 }
