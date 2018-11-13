@@ -129,7 +129,8 @@ namespace async_enumerable_dotnet
 
                 if (has)
                 {
-                    Volatile.Write(ref _now, t.DueTime);
+                    // don't allow time to go back for past-scheduled work
+                    Volatile.Write(ref _now, Math.Max(Now, t.DueTime));
                     t.Signal();
                 }
                 else

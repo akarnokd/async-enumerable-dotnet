@@ -322,5 +322,23 @@ namespace async_enumerable_dotnet_test
                 Assert.False(ttr.HasTasks);
             }
         }
+
+        [Fact]
+        public async void Time_Moves_Forward()
+        {
+            var ttr = new TestTaskRunner(1000);
+
+            var t1 = ttr.CreateLambdaTask<long>(tcs => tcs.SetResult(ttr.Now), 0, true);
+            var t2 = ttr.CreateLambdaTask<long>(tcs => tcs.SetResult(ttr.Now), 500, true);
+            var t3 = ttr.CreateLambdaTask<long>(tcs => tcs.SetResult(ttr.Now), 1000, true);
+            var t4 = ttr.CreateLambdaTask<long>(tcs => tcs.SetResult(ttr.Now), 1500, true);
+            
+            ttr.AdvanceTimeBy(500);
+            
+            Assert.Equal(1000, await t1);
+            Assert.Equal(1000, await t2);
+            Assert.Equal(1000, await t3);
+            Assert.Equal(1500, await t4);
+        }
     }
 }
