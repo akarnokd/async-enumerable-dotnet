@@ -105,7 +105,7 @@ namespace async_enumerable_dotnet_test
                 {
                     var t0 = t.MoveNextAsync();
 
-                    await ttr.TaskQueued();
+                    await ttr.TaskQueued(i * 500);
 
                     ttr.AdvanceTimeBy(500);
 
@@ -143,7 +143,7 @@ namespace async_enumerable_dotnet_test
                 {
                     var t0 = t.MoveNextAsync();
 
-                    await ttr.TaskQueued();
+                    await ttr.TaskQueued((i - 5) * 500);
 
                     ttr.AdvanceTimeBy(500);
 

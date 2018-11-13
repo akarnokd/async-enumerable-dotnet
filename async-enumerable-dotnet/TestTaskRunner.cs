@@ -75,6 +75,31 @@ namespace async_enumerable_dotnet
             await ResumeHelper.Await(ref _taskQueued);
             ResumeHelper.Clear(ref _taskQueued);
         }
+
+        /// <summary>
+        /// Resumes only when a specific task with a given delay
+        /// has been queued up.
+        /// </summary>
+        /// <param name="dueTime">The due time of the task that should be present.</param>
+        /// <returns>The task to await</returns>
+        public async Task TaskQueued(long dueTime)
+        {
+            for (;;)
+            {
+                lock (_queue)
+                {
+                    foreach (var t in _queue.Values)
+                    {
+                        if (t.DueTime == dueTime)
+                        {
+                            return;
+                        }
+                    }
+                }
+
+                await TaskQueued();
+            }
+        }
         
         /// <summary>
         /// Advance the virtual time by the given amount and
@@ -136,10 +161,11 @@ namespace async_enumerable_dotnet
         /// </summary>
         /// <param name="error">The error to signal</param>
         /// <param name="delayMillis">The time to delay this task.</param>
+        /// <param name="absolute">Should the <paramref name="delayMillis"/> be interpreted as absolute time?</param>
         /// <returns>The task to await</returns>
-        public Task CreateErrorTask(Exception error, long delayMillis = 0L)
+        public Task CreateErrorTask(Exception error, long delayMillis = 0L, bool absolute = false)
         {
-            var now = Volatile.Read(ref _now) + delayMillis;
+            var now = (absolute ? 0L : Volatile.Read(ref _now)) + delayMillis;
             var tcs = new TaskCompletionSource<bool>();
             Enqueue(new ErrorTaskTask<bool>(now, tcs, error));
             return tcs.Task;
@@ -152,10 +178,11 @@ namespace async_enumerable_dotnet
         /// </summary>
         /// <param name="error">The error to signal</param>
         /// <param name="delayMillis">The time to delay this task.</param>
+        /// <param name="absolute">Should the <paramref name="delayMillis"/> be interpreted as absolute time?</param>
         /// <returns>The task to await</returns>
-        public Task<T> CreateErrorTask<T>(Exception error, long delayMillis = 0L)
+        public Task<T> CreateErrorTask<T>(Exception error, long delayMillis = 0L, bool absolute = false)
         {
-            var now = Volatile.Read(ref _now) + delayMillis;
+            var now = (absolute ? 0L : Volatile.Read(ref _now)) + delayMillis;
             var tcs = new TaskCompletionSource<T>();
             Enqueue(new ErrorTaskTask<T>(now, tcs, error));
             return tcs.Task;
@@ -166,10 +193,11 @@ namespace async_enumerable_dotnet
         /// after the specified virtual time elapses
         /// </summary>
         /// <param name="delayMillis">The time to delay this task.</param>
+        /// <param name="absolute">Should the <paramref name="delayMillis"/> be interpreted as absolute time?</param>
         /// <returns>The task to await</returns>
-        public Task CreateCompleteTask(long delayMillis = 0L)
+        public Task CreateCompleteTask(long delayMillis = 0L, bool absolute = false)
         {
-            var now = Volatile.Read(ref _now) + delayMillis;
+            var now = (absolute ? 0L : Volatile.Read(ref _now)) + delayMillis;
             var tcs = new TaskCompletionSource<bool>();
             Enqueue(new ValueTaskTask<bool>(now, tcs, true));
             return tcs.Task;
@@ -183,10 +211,11 @@ namespace async_enumerable_dotnet
         /// <typeparam name="T">The value type.</typeparam>
         /// <param name="item">The item to signal as the result.</param>
         /// <param name="delayMillis">The time to delay this task.</param>
+        /// <param name="absolute">Should the <paramref name="delayMillis"/> be interpreted as absolute time?</param>
         /// <returns>The task to await</returns>
-        public Task<T> CreateValueTask<T>(T item, long delayMillis = 0L)
+        public Task<T> CreateValueTask<T>(T item, long delayMillis = 0L, bool absolute = false)
         {
-            var now = Volatile.Read(ref _now) + delayMillis;
+            var now = (absolute ? 0L : Volatile.Read(ref _now)) + delayMillis;
             var tcs = new TaskCompletionSource<T>();
             Enqueue(new ValueTaskTask<T>(now, tcs, item));
             return tcs.Task;
@@ -197,10 +226,11 @@ namespace async_enumerable_dotnet
         /// the specified virtual time elapses.
         /// </summary>
         /// <param name="delayMillis">The time to delay this task.</param>
+        /// <param name="absolute">Should the <paramref name="delayMillis"/> be interpreted as absolute time?</param>
         /// <returns>The task to await</returns>
-        public Task CreateCancelTask(long delayMillis = 0L)
+        public Task CreateCancelTask(long delayMillis = 0L, bool absolute = false)
         {
-            var now = Volatile.Read(ref _now) + delayMillis;
+            var now = (absolute ? 0L : Volatile.Read(ref _now)) + delayMillis;
             var tcs = new TaskCompletionSource<bool>();
             Enqueue(new CanceledTaskTask<bool>(now, tcs));
             return tcs.Task;
@@ -212,10 +242,11 @@ namespace async_enumerable_dotnet
         /// </summary>
         /// <typeparam name="T">The value type.</typeparam>
         /// <param name="delayMillis">The time to delay this task.</param>
+        /// <param name="absolute">Should the <paramref name="delayMillis"/> be interpreted as absolute time?</param>
         /// <returns>The task to await</returns>
-        public Task<T> CreateCancelTask<T>(long delayMillis = 0L)
+        public Task<T> CreateCancelTask<T>(long delayMillis = 0L, bool absolute = false)
         {
-            var now = Volatile.Read(ref _now) + delayMillis;
+            var now = (absolute ? 0L : Volatile.Read(ref _now)) + delayMillis;
             var tcs = new TaskCompletionSource<T>();
             Enqueue(new CanceledTaskTask<T>(now, tcs));
             return tcs.Task;
@@ -228,10 +259,11 @@ namespace async_enumerable_dotnet
         /// </summary>
         /// <param name="action">The action to invoke before completing the task.</param>
         /// <param name="delayMillis">The time to delay this task.</param>
+        /// <param name="absolute">Should the <paramref name="delayMillis"/> be interpreted as absolute time?</param>
         /// <returns>The task to await</returns>
-        public Task CreateActionTask(Action action, long delayMillis = 0L)
+        public Task CreateActionTask(Action action, long delayMillis = 0L, bool absolute = false)
         {
-            var now = Volatile.Read(ref _now) + delayMillis;
+            var now = (absolute ? 0L : Volatile.Read(ref _now)) + delayMillis;
             var tcs = new TaskCompletionSource<bool>();
             Enqueue(new ActionTaskTask(now, tcs, action));
             return tcs.Task;
@@ -245,10 +277,11 @@ namespace async_enumerable_dotnet
         /// </summary>
         /// <param name="action">The action to invoke.</param>
         /// <param name="delayMillis">The time to delay this task.</param>
+        /// <param name="absolute">Should the <paramref name="delayMillis"/> be interpreted as absolute time?</param>
         /// <returns>The task to await</returns>
-        public Task<T> CreateLambdaTask<T>(Action<TaskCompletionSource<T>> action, long delayMillis = 0L)
+        public Task<T> CreateLambdaTask<T>(Action<TaskCompletionSource<T>> action, long delayMillis = 0L, bool absolute = false)
         {
-            var now = Volatile.Read(ref _now) + delayMillis;
+            var now = (absolute ? 0L : Volatile.Read(ref _now)) + delayMillis;
             var tcs = new TaskCompletionSource<T>();
             Enqueue(new LambdaTaskTask<T>(now, tcs, action));
             return tcs.Task;
