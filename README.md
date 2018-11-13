@@ -127,6 +127,10 @@ finally
 - `ReplayAsyncEnumerable` - replays some or all items to its IAsyncEnumerator consumers (aka ReplaySubject).
 - `UnicastAsyncEnumerable` - buffers then replay items for an only consumer
 
+## Other components
+
+- `TestTaskRunner` - a class that creates tasks (of value, error or cancellation) that signal when a virtual time is moved forward (aka TestScheduler)
+
 ### IAsyncConsumer
 
 Represents a push-like consumer where items, an error and/or completion can be signaled and awaited:

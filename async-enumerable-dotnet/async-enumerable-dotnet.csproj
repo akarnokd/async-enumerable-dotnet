@@ -10,7 +10,7 @@
     <Authors>David Karnok</Authors>
     <Company />
     <AssemblyVersion>0.0.2.0</AssemblyVersion>
-    <FileVersion>0.0.1.0</FileVersion>
+    <FileVersion>0.0.2.0</FileVersion>
     <PackageTags>async, concurrency, async-enumerable, operators, async-sequence</PackageTags>
     <RepositoryUrl>https://github.com/akarnokd/async-enumerable-dotnet</RepositoryUrl>
     <PackageProjectUrl>https://github.com/akarnokd/async-enumerable-dotnet#getting-started</PackageProjectUrl>
