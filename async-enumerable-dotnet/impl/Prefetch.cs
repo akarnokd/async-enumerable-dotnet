@@ -93,6 +93,11 @@ namespace async_enumerable_dotnet.impl
                     _error = ExceptionHelper.Extract(t.Exception);
                     _done = true;
                 }
+                else if (t.IsCanceled)
+                {
+                    _error = new OperationCanceledException();
+                    _done = true;
+                }
                 else if (t.Result)
                 {
                     _queue.Enqueue(_source.Current);

@@ -3,6 +3,8 @@
 // See LICENSE file in the project root for full license information.
 
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Xunit;
 using async_enumerable_dotnet;
 
@@ -68,6 +70,14 @@ namespace async_enumerable_dotnet_test
                 .Prefetch(128)
                 .Take(1)
                 .AssertResult(1L);
+        }
+
+        [Fact]
+        public async void Cancel()
+        {
+            await AsyncEnumerable.FromTask(Task.FromCanceled<int>(new CancellationToken(true)))
+                .Prefetch(1)
+                .AssertFailure(typeof(OperationCanceledException));
         }
     }
 }
