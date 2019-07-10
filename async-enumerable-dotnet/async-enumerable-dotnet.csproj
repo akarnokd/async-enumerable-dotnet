@@ -32,7 +32,7 @@ New operators:
 
     <ItemGroup>
         <!-- ... -->
-        <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.2" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
+        <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.3" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
         <!-- ... -->
     </ItemGroup>
 </Project>
