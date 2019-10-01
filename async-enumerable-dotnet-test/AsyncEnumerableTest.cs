@@ -190,18 +190,18 @@ namespace async_enumerable_dotnet_test
             Defaults.Add(typeof(long), 1L);
 
             Defaults.Add(typeof(IEnumerable<int>), Enumerable.Empty<int>());
-            Defaults.Add(typeof(IAsyncEnumerable<int>), AsyncEnumerable.Empty<int>());
-            Defaults.Add(typeof(IAsyncEnumerable<int>[]), new[] { AsyncEnumerable.Empty<int>() });
+            Defaults.Add(typeof(async_enumerable_dotnet.IAsyncEnumerable<int>), AsyncEnumerable.Empty<int>());
+            Defaults.Add(typeof(async_enumerable_dotnet.IAsyncEnumerable<int>[]), new[] { AsyncEnumerable.Empty<int>() });
 
             Defaults.Add(typeof(Func<int>), (Func<int>)(() => 1));
             Defaults.Add(typeof(Func<int, bool>), (Func<int, bool>)(v => true));
             Defaults.Add(typeof(Func<int, int>), (Func<int, int>)(v => v));
             Defaults.Add(typeof(Func<int, int, int>), (Func<int, int, int>)((v, w) => v));
             Defaults.Add(typeof(Func<int[], int>), (Func<int[], int>)(v => v[0]));
-            Defaults.Add(typeof(Func<IAsyncEnumerable<int>>), (Func<IAsyncEnumerable<int>>)AsyncEnumerable.Empty<int>);
+            Defaults.Add(typeof(Func<async_enumerable_dotnet.IAsyncEnumerable<int>>), (Func<async_enumerable_dotnet.IAsyncEnumerable<int>>)AsyncEnumerable.Empty<int>);
             Defaults.Add(typeof(Func<int, IEnumerable<int>>), (Func<int, IEnumerable<int>>)(v => Enumerable.Empty<int>()));
-            Defaults.Add(typeof(Func<int, IAsyncEnumerable<int>>), (Func<int, IAsyncEnumerable<int>>)(v => AsyncEnumerable.Empty<int>()));
-            Defaults.Add(typeof(Func<Exception, IAsyncEnumerable<int>>), (Func<Exception, IAsyncEnumerable<int>>)(v => AsyncEnumerable.Empty<int>()));
+            Defaults.Add(typeof(Func<int, async_enumerable_dotnet.IAsyncEnumerable<int>>), (Func<int, async_enumerable_dotnet.IAsyncEnumerable<int>>)(v => AsyncEnumerable.Empty<int>()));
+            Defaults.Add(typeof(Func<Exception, async_enumerable_dotnet.IAsyncEnumerable<int>>), (Func<Exception, async_enumerable_dotnet.IAsyncEnumerable<int>>)(v => AsyncEnumerable.Empty<int>()));
             Defaults.Add(typeof(Func<int, Task>), (Func<int, Task>)(v => null));
             Defaults.Add(typeof(Func<int, Task<int>>), (Func<int, Task<int>>)(v => null));
             Defaults.Add(typeof(Func<int, Task<bool>>), (Func<int, Task<bool>>)(v => null));
@@ -214,7 +214,7 @@ namespace async_enumerable_dotnet_test
             Defaults.Add(typeof(Func<long, Task<bool>>), (Func<long, Task<bool>>)(v => Task.FromResult(false)));
             Defaults.Add(typeof(Func<ISet<int>>), (Func<ISet<int>>)(() => null));
 
-            Defaults.Add(typeof(Func<IAsyncEnumerable<int>, IAsyncEnumerable<int>>), (Func<IAsyncEnumerable<int>, IAsyncEnumerable<int>>)(w => w));
+            Defaults.Add(typeof(Func<async_enumerable_dotnet.IAsyncEnumerable<int>, async_enumerable_dotnet.IAsyncEnumerable<int>>), (Func<async_enumerable_dotnet.IAsyncEnumerable<int>, async_enumerable_dotnet.IAsyncEnumerable<int>>)(w => w));
 
             Defaults.Add(typeof(Action), (Action)(() => { }));
             Defaults.Add(typeof(Action<int>), (Action<int>)(v => { }));

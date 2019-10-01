@@ -16,13 +16,13 @@ namespace async_enumerable_dotnet_test
 {
     internal static class TestHelper
     {
-        public static ValueTask AssertResult<T>(this IAsyncEnumerable<T> source, params T[] values)
+        public static ValueTask AssertResult<T>(this async_enumerable_dotnet.IAsyncEnumerable<T> source, params T[] values)
         {
             return AssertResult(source.GetAsyncEnumerator(), values);
         }
 
         // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Global
-        public static async ValueTask AssertResult<T>(this IAsyncEnumerator<T> source, params T[] values)
+        public static async ValueTask AssertResult<T>(this async_enumerable_dotnet.IAsyncEnumerator<T> source, params T[] values)
         {
             var main = default(Exception);
             var dispose = default(Exception);
@@ -68,18 +68,18 @@ namespace async_enumerable_dotnet_test
             }
         }
 
-        public static async ValueTask AssertThen<T>(this IAsyncEnumerable<T> source, Action<IList<T>> outcomeHandler)
+        public static async ValueTask AssertThen<T>(this async_enumerable_dotnet.IAsyncEnumerable<T> source, Action<IList<T>> outcomeHandler)
         {
             var list = await source.ToListAsync();
             outcomeHandler(list);
         }
 
-        public static ValueTask AssertResultSet<T>(this IAsyncEnumerable<T> source, params T[] values)
+        public static ValueTask AssertResultSet<T>(this async_enumerable_dotnet.IAsyncEnumerable<T> source, params T[] values)
         {
             return AssertResultSet(source, EqualityComparer<T>.Default, values);
         }
 
-        public static async ValueTask AssertResultSet<T>(this IAsyncEnumerable<T> source, IEqualityComparer<T> comparer, params T[] values)
+        public static async ValueTask AssertResultSet<T>(this async_enumerable_dotnet.IAsyncEnumerable<T> source, IEqualityComparer<T> comparer, params T[] values)
         {
             var set = new HashSet<T>(values, comparer);
             var en = source.GetAsyncEnumerator();
@@ -121,13 +121,13 @@ namespace async_enumerable_dotnet_test
             return obj != null ? obj.ToString() : "null";
         }
 
-        public static ValueTask AssertFailure<T>(this IAsyncEnumerable<T> source, Type exception, params T[] values)
+        public static ValueTask AssertFailure<T>(this async_enumerable_dotnet.IAsyncEnumerable<T> source, Type exception, params T[] values)
         {
             return AssertFailure(source.GetAsyncEnumerator(), exception, values);
         }
 
         // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Global
-        public static async ValueTask AssertFailure<T>(this IAsyncEnumerator<T> source, Type exception,
+        public static async ValueTask AssertFailure<T>(this async_enumerable_dotnet.IAsyncEnumerator<T> source, Type exception,
             params T[] values)
         {
             var idx = 0;
@@ -164,7 +164,7 @@ namespace async_enumerable_dotnet_test
         /// </summary>
         /// <param name="timestamps">The params array of timestamps.</param>
         /// <returns>The new IAsyncEnumerable sequence.</returns>
-        internal static IAsyncEnumerable<long> TimeSequence(params long[] timestamps)
+        internal static async_enumerable_dotnet.IAsyncEnumerable<long> TimeSequence(params long[] timestamps)
         {
             return AsyncEnumerable.FromArray(timestamps)
                 .FlatMap(v => AsyncEnumerable.Timer(TimeSpan.FromMilliseconds(v)).Map(w => v));
@@ -177,7 +177,7 @@ namespace async_enumerable_dotnet_test
         /// <param name="error">Th error to append</param>
         /// <typeparam name="TSource">The element type of the sequence</typeparam>
         /// <returns>The new IAsyncEnumerable instance.</returns>
-        internal static IAsyncEnumerable<TSource> WithError<TSource>(this IAsyncEnumerable<TSource> source, Exception error)
+        internal static async_enumerable_dotnet.IAsyncEnumerable<TSource> WithError<TSource>(this async_enumerable_dotnet.IAsyncEnumerable<TSource> source, Exception error)
         {
             return source.ConcatWith(AsyncEnumerable.Error<TSource>(error));
         }

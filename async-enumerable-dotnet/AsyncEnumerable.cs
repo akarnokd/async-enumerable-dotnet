@@ -273,7 +273,7 @@ namespace async_enumerable_dotnet
         /// <returns>The new IAsyncEnumerable instance.</returns>
         public static IAsyncEnumerable<int> Range(int start, int count)
         {
-            return new Range(start, start + count);
+            return new impl.Range(start, start + count);
         }
 
         /// <summary>
