@@ -22,7 +22,7 @@ namespace async_enumerable_dotnet_test
         }
 
         // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Global
-        public static async ValueTask AssertResult<T>(this async_enumerable_dotnet.IAsyncEnumerator<T> source, params T[] values)
+        public static async ValueTask AssertResult<T>(this IAsyncEnumerator<T> source, params T[] values)
         {
             var main = default(Exception);
             var dispose = default(Exception);
@@ -127,7 +127,7 @@ namespace async_enumerable_dotnet_test
         }
 
         // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Global
-        public static async ValueTask AssertFailure<T>(this async_enumerable_dotnet.IAsyncEnumerator<T> source, Type exception,
+        public static async ValueTask AssertFailure<T>(this IAsyncEnumerator<T> source, Type exception,
             params T[] values)
         {
             var idx = 0;
