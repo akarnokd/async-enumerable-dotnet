@@ -21,9 +21,11 @@ namespace async_enumerable_dotnet.impl
             _other = other;
         }
 
-        public IAsyncEnumerator<TSource> GetAsyncEnumerator()
+        public IAsyncEnumerator<TSource> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            var en = new TakeUntilEnumerator(_source.GetAsyncEnumerator(), _other.GetAsyncEnumerator());
+            var cancelMain = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            var cancelOther = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            var en = new TakeUntilEnumerator(_source.GetAsyncEnumerator(cancelMain.Token), _other.GetAsyncEnumerator(cancelOther.Token), cancelMain, cancelOther);
             en.MoveNextOther();
             return en;
         }
@@ -35,6 +37,10 @@ namespace async_enumerable_dotnet.impl
             private readonly IAsyncEnumerator<TOther> _other;
 
             private readonly TaskCompletionSource<bool> _disposeReady;
+
+            private readonly CancellationTokenSource _cancelMain;
+
+            private readonly CancellationTokenSource _cancelOther;
 
             public TSource Current => _source.Current;
 
@@ -50,12 +56,15 @@ namespace async_enumerable_dotnet.impl
 
             private Exception _disposeException;
 
-            public TakeUntilEnumerator(IAsyncEnumerator<TSource> source, IAsyncEnumerator<TOther> other)
+            public TakeUntilEnumerator(IAsyncEnumerator<TSource> source, IAsyncEnumerator<TOther> other,
+                CancellationTokenSource cancelMain, CancellationTokenSource cancelOther)
             {
                 _source = source;
                 _other = other;
-                _disposed = 2;
                 _disposeReady = new TaskCompletionSource<bool>();
+                _cancelMain = cancelMain;
+                _cancelOther = cancelOther;
+                Volatile.Write(ref _disposed, 2);
             }
 
             public async ValueTask DisposeAsync()
@@ -103,14 +112,24 @@ namespace async_enumerable_dotnet.impl
                 if (Interlocked.Decrement(ref _disposeMain) != 0)
                 {
                     Dispose(_source);
-                } else
-                if (t.IsFaulted)
+                } 
+                else if (t.IsCanceled)
+                {
+                    newTask.TrySetCanceled();
+                    _cancelOther.Cancel();
+                }
+                else if (t.IsFaulted)
                 {
                     newTask.TrySetException(ExceptionHelper.Extract(t.Exception));
+                    _cancelOther.Cancel();
                 }
                 else
                 {
                     newTask.TrySetResult(t.Result);
+                    if (!t.Result)
+                    {
+                        _cancelOther.Cancel();
+                    }
                 }
             }
 
@@ -130,9 +149,20 @@ namespace async_enumerable_dotnet.impl
                 {
                     Dispose(_other);
                 }
+                else if (t.IsCanceled)
+                {
+                    _otherError = new OperationCanceledException();
+                    var oldTask = Interlocked.Exchange(ref _currentTask, TakeUntilHelper.UntilTask);
+                    _cancelMain.Cancel();
+                    if (oldTask != TakeUntilHelper.UntilTask)
+                    {
+                        oldTask?.TrySetCanceled();
+                    }
+                }
                 else if (t.IsFaulted) {
                     _otherError = ExceptionHelper.Extract(t.Exception);
                     var oldTask = Interlocked.Exchange(ref _currentTask, TakeUntilHelper.UntilTask);
+                    _cancelMain.Cancel();
                     if (oldTask != TakeUntilHelper.UntilTask)
                     {
                         oldTask?.TrySetException(t.Exception);
@@ -141,6 +171,7 @@ namespace async_enumerable_dotnet.impl
                 else
                 {
                     var oldTask = Interlocked.Exchange(ref _currentTask, TakeUntilHelper.UntilTask);
+                    _cancelMain.Cancel();
                     if (oldTask != TakeUntilHelper.UntilTask)
                     {
                         if (Interlocked.Increment(ref _disposeMain) == 1)

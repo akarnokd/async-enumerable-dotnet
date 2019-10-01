@@ -5,6 +5,7 @@
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace async_enumerable_dotnet.impl
 {
@@ -20,9 +21,9 @@ namespace async_enumerable_dotnet.impl
             _scanner = scanner;
         }
 
-        public IAsyncEnumerator<T> GetAsyncEnumerator()
+        public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            return new ScanEnumerator(_source.GetAsyncEnumerator(), _scanner);
+            return new ScanEnumerator(_source.GetAsyncEnumerator(cancellationToken), _scanner);
         }
 
         private sealed class ScanEnumerator : IAsyncEnumerator<T>
@@ -84,7 +85,7 @@ namespace async_enumerable_dotnet.impl
             _scanner = scanner;
         }
 
-        public IAsyncEnumerator<TResult> GetAsyncEnumerator()
+        public IAsyncEnumerator<TResult> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
             TResult initial;
             try
@@ -96,7 +97,7 @@ namespace async_enumerable_dotnet.impl
                 return new Error<TResult>.ErrorEnumerator(ex);
             }
 
-            return new ScanSeedEnumerator(_source.GetAsyncEnumerator(), _scanner, initial);
+            return new ScanSeedEnumerator(_source.GetAsyncEnumerator(cancellationToken), _scanner, initial);
         }
 
         private sealed class ScanSeedEnumerator : IAsyncEnumerator<TResult>

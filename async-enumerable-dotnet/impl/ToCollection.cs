@@ -15,7 +15,7 @@ namespace async_enumerable_dotnet.impl
         internal static async ValueTask<List<T>> ToList<T>(IAsyncEnumerable<T> source)
         {
             var result = new List<T>();
-            var en = source.GetAsyncEnumerator();
+            var en = source.GetAsyncEnumerator(default);
             try
             {
                 while (await en.MoveNextAsync())
@@ -34,7 +34,7 @@ namespace async_enumerable_dotnet.impl
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static async ValueTask<T[]> ToArray<T>(IAsyncEnumerable<T> source)
         {
-            var en = source.GetAsyncEnumerator();
+            var en = source.GetAsyncEnumerator(default);
             try
             {
                 if (await en.MoveNextAsync())

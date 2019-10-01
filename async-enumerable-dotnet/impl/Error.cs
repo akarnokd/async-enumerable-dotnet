@@ -5,6 +5,7 @@
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace async_enumerable_dotnet.impl
 {
@@ -17,7 +18,7 @@ namespace async_enumerable_dotnet.impl
             _error = error;
         }
 
-        public IAsyncEnumerator<T> GetAsyncEnumerator()
+        public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
             return new ErrorEnumerator(_error);
         }

@@ -5,6 +5,7 @@
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace async_enumerable_dotnet.impl
 {
@@ -20,9 +21,9 @@ namespace async_enumerable_dotnet.impl
             _handler = handler;
         }
 
-        public IAsyncEnumerator<T> GetAsyncEnumerator()
+        public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            return new DoOnDisposeEnumerator(_source.GetAsyncEnumerator(), _handler);
+            return new DoOnDisposeEnumerator(_source.GetAsyncEnumerator(cancellationToken), _handler);
         }
 
         private sealed class DoOnDisposeEnumerator : IAsyncEnumerator<T>
@@ -85,9 +86,9 @@ namespace async_enumerable_dotnet.impl
             _handler = handler;
         }
 
-        public IAsyncEnumerator<T> GetAsyncEnumerator()
+        public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            return new DoOnDisposeEnumerator(_source.GetAsyncEnumerator(), _handler);
+            return new DoOnDisposeEnumerator(_source.GetAsyncEnumerator(cancellationToken), _handler);
         }
 
         private sealed class DoOnDisposeEnumerator : IAsyncEnumerator<T>

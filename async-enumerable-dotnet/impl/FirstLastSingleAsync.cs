@@ -13,7 +13,7 @@ namespace async_enumerable_dotnet.impl
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static async ValueTask<T> First<T>(IAsyncEnumerable<T> source, T defaultItem, bool hasDefault)
         {
-            var enumerator = source.GetAsyncEnumerator();
+            var enumerator = source.GetAsyncEnumerator(default);
             try
             {
                 if (await enumerator.MoveNextAsync())
@@ -41,7 +41,7 @@ namespace async_enumerable_dotnet.impl
             var hasLast = false;
             var last = default(T);
 
-            var enumerator = source.GetAsyncEnumerator();
+            var enumerator = source.GetAsyncEnumerator(default);
             try
             {
 
@@ -70,7 +70,7 @@ namespace async_enumerable_dotnet.impl
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static async ValueTask<T> Single<T>(IAsyncEnumerable<T> source, T defaultItem, bool hasDefault)
         {
-            var enumerator = source.GetAsyncEnumerator();
+            var enumerator = source.GetAsyncEnumerator(default);
             try
             {
                 if (!await enumerator.MoveNextAsync())

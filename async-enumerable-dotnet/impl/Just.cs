@@ -4,6 +4,7 @@
 
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace async_enumerable_dotnet.impl
 {
@@ -16,7 +17,7 @@ namespace async_enumerable_dotnet.impl
             _value = value;
         }
 
-        public IAsyncEnumerator<T> GetAsyncEnumerator()
+        public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
             return new JustEnumerator(_value);
         }

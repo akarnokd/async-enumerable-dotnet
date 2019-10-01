@@ -4,6 +4,7 @@
 
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace async_enumerable_dotnet.impl
 {
@@ -19,14 +20,16 @@ namespace async_enumerable_dotnet.impl
             _other = other;
         }
 
-        public IAsyncEnumerator<T> GetAsyncEnumerator()
+        public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            return new SwitchIfEmptyEnumerator(_source.GetAsyncEnumerator(), _other);
+            return new SwitchIfEmptyEnumerator(_source.GetAsyncEnumerator(cancellationToken), _other, cancellationToken);
         }
 
         private sealed class SwitchIfEmptyEnumerator : IAsyncEnumerator<T>
         {
             private readonly IAsyncEnumerable<T> _other;
+
+            private readonly CancellationToken _ct;
 
             private IAsyncEnumerator<T> _source;
 
@@ -36,10 +39,11 @@ namespace async_enumerable_dotnet.impl
 
             public T Current => _source.Current;
 
-            public SwitchIfEmptyEnumerator(IAsyncEnumerator<T> source, IAsyncEnumerable<T> other)
+            public SwitchIfEmptyEnumerator(IAsyncEnumerator<T> source, IAsyncEnumerable<T> other, CancellationToken ct)
             {
                 _source = source;
                 _other = other;
+                _ct = ct;
             }
 
             public ValueTask DisposeAsync()
@@ -67,7 +71,7 @@ namespace async_enumerable_dotnet.impl
 
                 await _source.DisposeAsync();
 
-                _source = _other.GetAsyncEnumerator();
+                _source = _other.GetAsyncEnumerator(_ct);
                 _once = true;
 
                 return await _source.MoveNextAsync();

@@ -28,9 +28,10 @@ namespace async_enumerable_dotnet.impl
             _prefetch = prefetch;
         }
 
-        public IAsyncEnumerator<TResult> GetAsyncEnumerator()
+        public IAsyncEnumerator<TResult> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            var en = new ConcatMapEagerEnumerator(_source.GetAsyncEnumerator(), _mapper, _maxConcurrency, _prefetch);
+            var en = new ConcatMapEagerEnumerator(_source.GetAsyncEnumerator(cancellationToken), _mapper, _maxConcurrency, _prefetch,
+                cancellationToken);
             en.MoveNextSource();
             return en;
         }
@@ -42,6 +43,8 @@ namespace async_enumerable_dotnet.impl
             private readonly Func<TSource, IAsyncEnumerable<TResult>> _mapper;
 
             private readonly int _prefetch;
+
+            private readonly CancellationToken _ct;
 
             private int _sourceOutstanding;
 
@@ -64,7 +67,9 @@ namespace async_enumerable_dotnet.impl
             private Exception _disposeError;
             private readonly TaskCompletionSource<bool> _disposeTask;
 
-            public ConcatMapEagerEnumerator(IAsyncEnumerator<TSource> source, Func<TSource, IAsyncEnumerable<TResult>> mapper, int maxConcurrency, int prefetch)
+            public ConcatMapEagerEnumerator(IAsyncEnumerator<TSource> source, 
+                Func<TSource, IAsyncEnumerable<TResult>> mapper, int maxConcurrency, int prefetch,
+                CancellationToken ct)
             {
                 _source = source;
                 _mapper = mapper;
@@ -73,6 +78,7 @@ namespace async_enumerable_dotnet.impl
                 _disposeWip = 1;
                 _inners = new ConcurrentQueue<InnerHandler>();
                 _disposeTask = new TaskCompletionSource<bool>();
+                _ct = ct;
             }
 
             public ValueTask DisposeAsync()
@@ -180,10 +186,11 @@ namespace async_enumerable_dotnet.impl
                 }
                 else if (t.Result)
                 {
+                    var cts = CancellationTokenSource.CreateLinkedTokenSource(_ct);
                     IAsyncEnumerator<TResult> src;
                     try
                     {
-                        src = _mapper(_source.Current).GetAsyncEnumerator();
+                        src = _mapper(_source.Current).GetAsyncEnumerator(cts.Token);
                     }
                     catch (Exception ex)
                     {
@@ -200,7 +207,7 @@ namespace async_enumerable_dotnet.impl
                     if (src != null)
                     {
                         Interlocked.Increment(ref _disposeWip);
-                        var inner = new InnerHandler(src, this);
+                        var inner = new InnerHandler(src, this, cts);
                         _inners.Enqueue(inner);
 
                         if (_disposeRequested)
@@ -256,6 +263,8 @@ namespace async_enumerable_dotnet.impl
 
                 internal volatile bool Done;
 
+                private readonly CancellationTokenSource _cts;
+
                 private int _wip;
                 private int _disposeWip;
 
@@ -264,7 +273,7 @@ namespace async_enumerable_dotnet.impl
 
                 private int _consumed;
 
-                public InnerHandler(IAsyncEnumerator<TResult> source, ConcatMapEagerEnumerator parent)
+                public InnerHandler(IAsyncEnumerator<TResult> source, ConcatMapEagerEnumerator parent, CancellationTokenSource cts)
                 {
                     _source = source;
                     _parent = parent;
@@ -272,6 +281,7 @@ namespace async_enumerable_dotnet.impl
                     var p = parent._prefetch;
                     _outstanding = p;
                     _limit = p - (p >> 2);
+                    _cts = cts;
                 }
 
                 internal void MoveNext()
@@ -283,6 +293,7 @@ namespace async_enumerable_dotnet.impl
 
                 internal void Dispose()
                 {
+                    _cts.Cancel();
                     if (Interlocked.Increment(ref _disposeWip) == 1)
                     {
                         _parent.Dispose(_source);

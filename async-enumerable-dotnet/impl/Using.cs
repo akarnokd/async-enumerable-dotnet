@@ -5,6 +5,7 @@
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace async_enumerable_dotnet.impl
 {
@@ -23,7 +24,7 @@ namespace async_enumerable_dotnet.impl
             _resourceCleanup = resourceCleanup;
         }
 
-        public IAsyncEnumerator<TSource> GetAsyncEnumerator()
+        public IAsyncEnumerator<TSource> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
             TResource resource;
             try
@@ -52,7 +53,7 @@ namespace async_enumerable_dotnet.impl
                 return new Error<TSource>.ErrorEnumerator(ex);
             }
 
-            return new UsingEnumerator(source.GetAsyncEnumerator(), resource, _resourceCleanup);
+            return new UsingEnumerator(source.GetAsyncEnumerator(cancellationToken), resource, _resourceCleanup);
         }
 
         private sealed class UsingEnumerator : IAsyncEnumerator<TSource>

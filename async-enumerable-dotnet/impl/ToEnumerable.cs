@@ -5,6 +5,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace async_enumerable_dotnet.impl
 {
@@ -19,7 +20,8 @@ namespace async_enumerable_dotnet.impl
 
         public IEnumerator<T> GetEnumerator()
         {
-            return new ToEnumerator(_source.GetAsyncEnumerator());
+            var cts = new CancellationTokenSource();
+            return new ToEnumerator(_source.GetAsyncEnumerator(cts.Token), cts);
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -31,9 +33,12 @@ namespace async_enumerable_dotnet.impl
         {
             private readonly IAsyncEnumerator<T> _source;
 
-            public ToEnumerator(IAsyncEnumerator<T> source)
+            private readonly CancellationTokenSource _cts;
+
+            public ToEnumerator(IAsyncEnumerator<T> source, CancellationTokenSource cts)
             {
                 _source = source;
+                _cts = cts;
             }
 
             public T Current => _source.Current;
@@ -42,6 +47,7 @@ namespace async_enumerable_dotnet.impl
 
             public void Dispose()
             {
+                _cts.Cancel();
                 _source.DisposeAsync().AsTask().Wait();
             }
 

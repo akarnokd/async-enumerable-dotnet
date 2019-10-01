@@ -3,6 +3,7 @@
 // See LICENSE file in the project root for full license information.
 
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet.impl
@@ -16,22 +17,25 @@ namespace async_enumerable_dotnet.impl
             _sources = sources;
         }
 
-        public IAsyncEnumerator<T> GetAsyncEnumerator()
+        public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            return new ConcatEnumerator(_sources);
+            return new ConcatEnumerator(_sources, cancellationToken);
         }
 
         private sealed class ConcatEnumerator : IAsyncEnumerator<T>
         {
             private readonly IAsyncEnumerable<T>[] _sources;
 
+            private readonly CancellationToken _ct;
+
             private int _index;
 
             private IAsyncEnumerator<T> _current;
 
-            public ConcatEnumerator(IAsyncEnumerable<T>[] sources)
+            public ConcatEnumerator(IAsyncEnumerable<T>[] sources, CancellationToken ct)
             {
                 _sources = sources;
+                _ct = ct;
             }
 
             public T Current => _current.Current;
@@ -58,7 +62,7 @@ namespace async_enumerable_dotnet.impl
                         }
 
                         _index = idx + 1;
-                        _current = _sources[idx].GetAsyncEnumerator();
+                        _current = _sources[idx].GetAsyncEnumerator(_ct);
                     }
 
                     if (await _current.MoveNextAsync())
@@ -82,20 +86,23 @@ namespace async_enumerable_dotnet.impl
             _sources = sources;
         }
 
-        public IAsyncEnumerator<T> GetAsyncEnumerator()
+        public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            return new ConcatEnumerator(_sources.GetEnumerator());
+            return new ConcatEnumerator(_sources.GetEnumerator(), cancellationToken);
         }
 
         private sealed class ConcatEnumerator : IAsyncEnumerator<T>
         {
             private readonly IEnumerator<IAsyncEnumerable<T>> _sources;
 
+            private readonly CancellationToken _ct;
+
             private IAsyncEnumerator<T> _current;
 
-            public ConcatEnumerator(IEnumerator<IAsyncEnumerable<T>> sources)
+            public ConcatEnumerator(IEnumerator<IAsyncEnumerable<T>> sources, CancellationToken ct)
             {
                 _sources = sources;
+                _ct = ct;
             }
 
             public T Current => _current.Current;
@@ -118,7 +125,7 @@ namespace async_enumerable_dotnet.impl
                     {
                         if (_sources.MoveNext())
                         {
-                            _current = _sources.Current.GetAsyncEnumerator();
+                            _current = _sources.Current.GetAsyncEnumerator(_ct);
                         }
                         else
                         {

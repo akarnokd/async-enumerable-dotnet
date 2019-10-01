@@ -5,6 +5,7 @@
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace async_enumerable_dotnet.impl
 {
@@ -17,7 +18,7 @@ namespace async_enumerable_dotnet.impl
             _func = func;
         }
 
-        public IAsyncEnumerator<T> GetAsyncEnumerator()
+        public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
             return new FromTaskFuncEnumerator(_func);
         }
@@ -65,7 +66,7 @@ namespace async_enumerable_dotnet.impl
             _task = task;
         }
 
-        public IAsyncEnumerator<T> GetAsyncEnumerator()
+        public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
             return new FromTaskEnumerator(_task);
         }

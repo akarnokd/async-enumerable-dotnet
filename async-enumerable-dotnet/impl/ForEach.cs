@@ -14,7 +14,7 @@ namespace async_enumerable_dotnet.impl
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static async ValueTask ForEachAction<T>(IAsyncEnumerable<T> source, Action<T> onNext, Action<Exception> onError, Action onComplete)
         {
-            var enumerator = source.GetAsyncEnumerator();
+            var enumerator = source.GetAsyncEnumerator(default);
             try
             {
                 for (; ; )
@@ -51,7 +51,7 @@ namespace async_enumerable_dotnet.impl
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static async ValueTask Consume<T>(this IAsyncEnumerable<T> source, IAsyncConsumer<T> consumer, CancellationToken ct)
         {
-            var en = source.GetAsyncEnumerator();
+            var en = source.GetAsyncEnumerator(default);
             try
             {
                 if (!ct.IsCancellationRequested)

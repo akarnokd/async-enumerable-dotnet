@@ -18,9 +18,9 @@ namespace async_enumerable_dotnet.impl
             _source = source;
         }
 
-        public IAsyncEnumerator<T> GetAsyncEnumerator()
+        public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            var en = new LatestEnumerator(_source.GetAsyncEnumerator());
+            var en = new LatestEnumerator(_source.GetAsyncEnumerator(cancellationToken));
             en.MoveNext();
             return en;
         }
@@ -105,7 +105,16 @@ namespace async_enumerable_dotnet.impl
 
             private void HandleMain(Task<bool> t)
             {
-                if (t.IsFaulted)
+                if (t.IsCanceled)
+                {
+                    _error = new OperationCanceledException();
+                    _done = true;
+                    if (TryDispose())
+                    {
+                        ResumeHelper.Resume(ref _resumeTask);
+                    }
+                }
+                else if (t.IsFaulted)
                 {
                     _error = ExceptionHelper.Extract(t.Exception);
                     _done = true;

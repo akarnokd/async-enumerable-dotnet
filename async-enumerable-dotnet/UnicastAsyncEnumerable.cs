@@ -96,10 +96,14 @@ namespace async_enumerable_dotnet
         /// Returns an <see cref="IAsyncEnumerator{T}"/> representing an active asynchronous sequence.
         /// </summary>
         /// <returns>The active asynchronous sequence to be consumed.</returns>
-        public IAsyncEnumerator<TSource> GetAsyncEnumerator()
+        public IAsyncEnumerator<TSource> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
             if (Interlocked.CompareExchange(ref _once, 1, 0) == 0)
             {
+                cancellationToken.Register(v => {
+                    var w = (v as UnicastAsyncEnumerable<TSource>);
+                    w._disposed = true;
+                }, this);
                 return new UnicastEnumerator(this);
             }
             return new Error<TSource>.ErrorEnumerator(new InvalidOperationException("The UnicastAsyncEnumerable has its only allowed consumer already"));

@@ -5,6 +5,7 @@
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace async_enumerable_dotnet.impl
 {
@@ -20,14 +21,17 @@ namespace async_enumerable_dotnet.impl
             _zipper = zipper;
         }
 
-        public IAsyncEnumerator<TResult> GetAsyncEnumerator()
+        public IAsyncEnumerator<TResult> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
             var enumerators = new IAsyncEnumerator<TSource>[_sources.Length];
+            var tokenSources = new CancellationTokenSource[_sources.Length];
             for (var i = 0; i < _sources.Length; i++)
             {
-                enumerators[i] = _sources[i].GetAsyncEnumerator();
+                var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                tokenSources[i] = cts;
+                enumerators[i] = _sources[i].GetAsyncEnumerator(cts.Token);
             }
-            return new ZipArrayEnumerator(enumerators, _zipper);
+            return new ZipArrayEnumerator(enumerators, _zipper, tokenSources);
         }
 
         private sealed class ZipArrayEnumerator : IAsyncEnumerator<TResult>
@@ -38,11 +42,15 @@ namespace async_enumerable_dotnet.impl
 
             private readonly ValueTask<bool>[] _tasks;
 
-            public ZipArrayEnumerator(IAsyncEnumerator<TSource>[] enumerators, Func<TSource[], TResult> zipper)
+            private readonly CancellationTokenSource[] _tokenSources;
+
+            public ZipArrayEnumerator(IAsyncEnumerator<TSource>[] enumerators, Func<TSource[], TResult> zipper,
+                CancellationTokenSource[] tokenSources)
             {
                 _enumerators = enumerators;
                 _zipper = zipper;
                 _tasks = new ValueTask<bool>[enumerators.Length];
+                _tokenSources = tokenSources;
             }
 
             public TResult Current { get; private set; }
@@ -96,6 +104,10 @@ namespace async_enumerable_dotnet.impl
                         throw errors;
                     }
 
+                    foreach (var cts in _tokenSources)
+                    {
+                        cts.Cancel();
+                    }
                     return false;
                 }
 

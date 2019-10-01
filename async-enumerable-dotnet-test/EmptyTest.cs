@@ -19,7 +19,7 @@ namespace async_enumerable_dotnet_test
         [Fact]
         public void Current()
         {
-            Assert.Equal(0, AsyncEnumerable.Empty<int>().GetAsyncEnumerator().Current);
+            Assert.Equal(0, AsyncEnumerable.Empty<int>().GetAsyncEnumerator(default).Current);
         }
     }
 }

@@ -96,7 +96,7 @@ namespace async_enumerable_dotnet_test
                 AsyncEnumerable.Range(6, 5)
                     .DoOnNext(async v => { await ttr.CreateCompleteTask(1000); })
             )
-                .GetAsyncEnumerator()
+                .GetAsyncEnumerator(default)
             ;
 
             try
@@ -134,7 +134,7 @@ namespace async_enumerable_dotnet_test
                         AsyncEnumerable.Range(6, 5)
                             .DoOnNext(async v => { await ttr.CreateCompleteTask(500); })
                     )
-                    .GetAsyncEnumerator()
+                    .GetAsyncEnumerator(default)
                 ;
 
             try

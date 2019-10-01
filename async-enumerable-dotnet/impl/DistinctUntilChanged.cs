@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet.impl
@@ -23,9 +24,9 @@ namespace async_enumerable_dotnet.impl
             _keyComparer = keyComparer;
         }
 
-        public IAsyncEnumerator<TSource> GetAsyncEnumerator()
+        public IAsyncEnumerator<TSource> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            return new DistinctUntilChangedEnumerator(_source.GetAsyncEnumerator(), _keySelector, _keyComparer);
+            return new DistinctUntilChangedEnumerator(_source.GetAsyncEnumerator(cancellationToken), _keySelector, _keyComparer);
         }
 
         private sealed class DistinctUntilChangedEnumerator : IAsyncEnumerator<TSource>

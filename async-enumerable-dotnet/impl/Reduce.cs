@@ -5,6 +5,7 @@
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace async_enumerable_dotnet.impl
 {
@@ -20,9 +21,9 @@ namespace async_enumerable_dotnet.impl
             _reducer = reducer;
         }
 
-        public IAsyncEnumerator<T> GetAsyncEnumerator()
+        public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            return new ReduceEnumerator(_source.GetAsyncEnumerator(), _reducer);
+            return new ReduceEnumerator(_source.GetAsyncEnumerator(cancellationToken), _reducer);
         }
 
         private sealed class ReduceEnumerator : IAsyncEnumerator<T>
@@ -96,7 +97,7 @@ namespace async_enumerable_dotnet.impl
             _reducer = reducer;
         }
 
-        public IAsyncEnumerator<TResult> GetAsyncEnumerator()
+        public IAsyncEnumerator<TResult> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
             TResult initial;
             try
@@ -107,7 +108,7 @@ namespace async_enumerable_dotnet.impl
             {
                 return new Error<TResult>.ErrorEnumerator(ex);
             }
-            return new ReduceEnumerator(_source.GetAsyncEnumerator(), initial, _reducer);
+            return new ReduceEnumerator(_source.GetAsyncEnumerator(cancellationToken), initial, _reducer);
         }
 
         private sealed class ReduceEnumerator : IAsyncEnumerator<TResult>

@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace async_enumerable_dotnet.impl
 {
@@ -19,7 +20,7 @@ namespace async_enumerable_dotnet.impl
             _func = func;
         }
 
-        public IAsyncEnumerator<TResult> GetAsyncEnumerator()
+        public IAsyncEnumerator<TResult> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
             var subject = new MulticastAsyncEnumerable<TSource>();
             IAsyncEnumerable<TResult> result;
@@ -31,7 +32,8 @@ namespace async_enumerable_dotnet.impl
             {
                 return new Error<TResult>.ErrorEnumerator(ex);
             }
-            var en = new MulticastEnumerator<TSource, TResult>(_source.GetAsyncEnumerator(), subject, result.GetAsyncEnumerator());
+            var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            var en = new MulticastEnumerator<TSource, TResult>(_source.GetAsyncEnumerator(cts.Token), subject, result.GetAsyncEnumerator(cancellationToken), cts);
             return en;
         }
     }

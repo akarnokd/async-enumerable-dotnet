@@ -5,6 +5,7 @@
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace async_enumerable_dotnet.impl
 {
@@ -23,14 +24,16 @@ namespace async_enumerable_dotnet.impl
             _condition = condition;
         }
 
-        public IAsyncEnumerator<T> GetAsyncEnumerator()
+        public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            return new RetryEnumerator(_source, _source.GetAsyncEnumerator(), _n, _condition);
+            return new RetryEnumerator(_source, _source.GetAsyncEnumerator(cancellationToken), _n, _condition, cancellationToken);
         }
 
         private sealed class RetryEnumerator : IAsyncEnumerator<T>
         {
             private readonly IAsyncEnumerable<T> _source;
+
+            private readonly CancellationToken _ct;
 
             private IAsyncEnumerator<T> _current;
 
@@ -42,12 +45,14 @@ namespace async_enumerable_dotnet.impl
 
             private long _index;
 
-            public RetryEnumerator(IAsyncEnumerable<T> source, IAsyncEnumerator<T> current, long remaining, Func<long, Exception, bool> condition)
+            public RetryEnumerator(IAsyncEnumerable<T> source, IAsyncEnumerator<T> current, long remaining, 
+                Func<long, Exception, bool> condition, CancellationToken ct)
             {
                 _source = source;
                 _current = current;
                 _remaining = remaining;
                 _condition = condition;
+                _ct = ct;
             }
 
             public ValueTask DisposeAsync()
@@ -77,7 +82,7 @@ namespace async_enumerable_dotnet.impl
 
                             await _current.DisposeAsync();
 
-                            _current = _source.GetAsyncEnumerator();
+                            _current = _source.GetAsyncEnumerator(_ct);
                         }
                         else
                         {
@@ -101,14 +106,16 @@ namespace async_enumerable_dotnet.impl
             _condition = condition;
         }
 
-        public IAsyncEnumerator<T> GetAsyncEnumerator()
+        public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            return new RetryTaskEnumerator(_source, _source.GetAsyncEnumerator(), _condition);
+            return new RetryTaskEnumerator(_source, _source.GetAsyncEnumerator(cancellationToken), _condition, cancellationToken);
         }
 
         private sealed class RetryTaskEnumerator : IAsyncEnumerator<T>
         {
             private readonly IAsyncEnumerable<T> _source;
+
+            private readonly CancellationToken _ct;
 
             private IAsyncEnumerator<T> _current;
 
@@ -118,11 +125,13 @@ namespace async_enumerable_dotnet.impl
 
             private long _index;
 
-            public RetryTaskEnumerator(IAsyncEnumerable<T> source, IAsyncEnumerator<T> current, Func<long, Exception, Task<bool>> condition)
+            public RetryTaskEnumerator(IAsyncEnumerable<T> source, IAsyncEnumerator<T> current, 
+                Func<long, Exception, Task<bool>> condition, CancellationToken ct)
             {
                 _source = source;
                 _current = current;
                 _condition = condition;
+                _ct = ct;
             }
 
             public ValueTask DisposeAsync()
@@ -144,7 +153,7 @@ namespace async_enumerable_dotnet.impl
                         {
                             await _current.DisposeAsync();
 
-                            _current = _source.GetAsyncEnumerator();
+                            _current = _source.GetAsyncEnumerator(_ct);
                         }
                         else
                         {

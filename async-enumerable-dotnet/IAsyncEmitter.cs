@@ -3,6 +3,7 @@
 // See LICENSE file in the project root for full license information.
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet
@@ -24,6 +25,11 @@ namespace async_enumerable_dotnet
         /// Returns true if the consumer requested stopping a sequence.
         /// </summary>
         bool DisposeAsyncRequested { get; }
+
+        /// <summary>
+        /// Returns the CancellationToken instance supplied by the downstream.
+        /// </summary>
+        CancellationToken Token { get; }
     }
 
     /// <summary>

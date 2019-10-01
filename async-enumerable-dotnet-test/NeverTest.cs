@@ -22,9 +22,9 @@ namespace async_enumerable_dotnet_test
         [Fact]
         public void Normal()
         {
-            var en = AsyncEnumerable.Never<int>().GetAsyncEnumerator();
+            var en = AsyncEnumerable.Never<int>().GetAsyncEnumerator(default);
 
-            Assert.Equal(0, AsyncEnumerable.Never<int>().GetAsyncEnumerator().Current);
+            Assert.Equal(0, AsyncEnumerable.Never<int>().GetAsyncEnumerator(default).Current);
 
             // no await as the test would never end otherwise
 

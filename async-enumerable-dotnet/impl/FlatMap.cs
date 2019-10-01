@@ -28,9 +28,9 @@ namespace async_enumerable_dotnet.impl
             _prefetch = prefetch;
         }
 
-        public IAsyncEnumerator<TResult> GetAsyncEnumerator()
+        public IAsyncEnumerator<TResult> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            var en = new FlatMapEnumerator(_source.GetAsyncEnumerator(), _mapper, _maxConcurrency, _prefetch);
+            var en = new FlatMapEnumerator(_source.GetAsyncEnumerator(cancellationToken), _mapper, _maxConcurrency, _prefetch, cancellationToken);
             en.MoveNext();
             return en;
         }
@@ -44,6 +44,8 @@ namespace async_enumerable_dotnet.impl
             private readonly int _prefetch;
 
             private readonly ConcurrentQueue<Item> _queue;
+
+            private readonly CancellationToken _ct;
 
             private TaskCompletionSource<bool> _resume;
 
@@ -67,7 +69,9 @@ namespace async_enumerable_dotnet.impl
 
             private int _sourceDisposeWip;
 
-            public FlatMapEnumerator(IAsyncEnumerator<TSource> source, Func<TSource, IAsyncEnumerable<TResult>> mapper, int maxConcurrency, int prefetch)
+            public FlatMapEnumerator(IAsyncEnumerator<TSource> source, Func<TSource, IAsyncEnumerable<TResult>> mapper, 
+                int maxConcurrency, int prefetch,
+                CancellationToken ct)
             {
                 _source = source;
                 _mapper = mapper;
@@ -75,6 +79,7 @@ namespace async_enumerable_dotnet.impl
                 _prefetch = prefetch;
                 _allDisposeWip = 1; // the main source is one
                 _allDisposeTask = new TaskCompletionSource<bool>();
+                _ct = ct;
                 Volatile.Write(ref _outstanding, maxConcurrency);
                 Volatile.Write(ref _inners, Empty);
             }
@@ -114,7 +119,16 @@ namespace async_enumerable_dotnet.impl
 
             private void Handle(Task<bool> task)
             {
-                if (task.IsFaulted)
+                if (task.IsCanceled)
+                {
+                    AddException(new OperationCanceledException());
+                    _done = true;
+                    if (TryDispose())
+                    {
+                        Signal();
+                    }
+                }
+                else if (task.IsFaulted)
                 {
                     AddException(task.Exception);
                     _done = true;
@@ -131,11 +145,12 @@ namespace async_enumerable_dotnet.impl
 
                         if (TryDispose())
                         {
+                            var cts = CancellationTokenSource.CreateLinkedTokenSource(_ct);
                             IAsyncEnumerator<TResult> innerSource;
                             try
                             {
                                 innerSource = _mapper(v)
-                                    .GetAsyncEnumerator();
+                                    .GetAsyncEnumerator(cts.Token);
                             }
                             catch (Exception ex)
                             {
@@ -147,7 +162,7 @@ namespace async_enumerable_dotnet.impl
                                 return;
                             }
 
-                            var handler = new InnerHandler(this, innerSource, _prefetch);
+                            var handler = new InnerHandler(this, innerSource, _prefetch, cts);
                             Interlocked.Increment(ref _allDisposeWip);
                             if (Add(handler))
                             {
@@ -344,6 +359,8 @@ namespace async_enumerable_dotnet.impl
 
             private readonly int _prefetch;
 
+            private readonly CancellationTokenSource _cts;
+
             private int _dispose;
 
             private int _wip;
@@ -352,11 +369,13 @@ namespace async_enumerable_dotnet.impl
 
             private int _consumed;
 
-            public InnerHandler(FlatMapEnumerator parent, IAsyncEnumerator<TResult> source, int prefetch)
+            public InnerHandler(FlatMapEnumerator parent, IAsyncEnumerator<TResult> source, int prefetch,
+                CancellationTokenSource cts)
             {
                 _parent = parent;
                 _source = source;
                 _prefetch = prefetch;
+                _cts = cts;
                 Volatile.Write(ref _outstanding, prefetch);
             }
 
@@ -380,6 +399,7 @@ namespace async_enumerable_dotnet.impl
 
             internal void Dispose()
             {
+                _cts.Cancel();
                 if (Interlocked.Increment(ref _dispose) == 1)
                 {
                     _parent.Dispose(_source);
@@ -406,7 +426,14 @@ namespace async_enumerable_dotnet.impl
 
             private void Handle(Task<bool> task)
             {
-                if (task.IsFaulted)
+                if (task.IsCanceled)
+                {
+                    if (TryDispose())
+                    {
+                        _parent.InnerError(this, new OperationCanceledException());
+                    }
+                }
+                else if (task.IsFaulted)
                 {
                     if (TryDispose())
                     {

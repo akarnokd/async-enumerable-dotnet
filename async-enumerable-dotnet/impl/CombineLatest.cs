@@ -22,9 +22,9 @@ namespace async_enumerable_dotnet.impl
             _combiner = combiner;
         }
 
-        public IAsyncEnumerator<TResult> GetAsyncEnumerator()
+        public IAsyncEnumerator<TResult> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            return new CombineLatestEnumerator(_sources, _combiner);
+            return new CombineLatestEnumerator(_sources, _combiner, cancellationToken);
         }
 
         private sealed class CombineLatestEnumerator : IAsyncEnumerator<TResult>
@@ -51,13 +51,15 @@ namespace async_enumerable_dotnet.impl
             private readonly ConcurrentQueue<Entry> _queue;
 
             // ReSharper disable once SuggestBaseTypeForParameter
-            public CombineLatestEnumerator(IAsyncEnumerable<TSource>[] sources, Func<TSource[], TResult> combiner)
+            public CombineLatestEnumerator(IAsyncEnumerable<TSource>[] sources, Func<TSource[], TResult> combiner,
+                CancellationToken cancellationToken)
             {
                 var n = sources.Length;
                 _sources = new InnerHandler[n];
                 for (var i = 0; i < n; i++)
                 {
-                    _sources[i] = new InnerHandler(sources[i].GetAsyncEnumerator(), this, i);
+                    var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                    _sources[i] = new InnerHandler(sources[i].GetAsyncEnumerator(cts.Token), this, i, cts);
                 }
                 _combiner = combiner;
                 _disposeTask = new TaskCompletionSource<bool>();
@@ -217,6 +219,8 @@ namespace async_enumerable_dotnet.impl
 
                 private readonly CombineLatestEnumerator _parent;
 
+                private readonly CancellationTokenSource _cts;
+
                 private readonly int _index;
 
                 private int _disposeWip;
@@ -225,11 +229,13 @@ namespace async_enumerable_dotnet.impl
 
                 internal bool HasLatest;
 
-                public InnerHandler(IAsyncEnumerator<TSource> source, CombineLatestEnumerator parent, int index)
+                public InnerHandler(IAsyncEnumerator<TSource> source, CombineLatestEnumerator parent, int index,
+                    CancellationTokenSource cts)
                 {
                     _source = source;
                     _parent = parent;
                     _index = index;
+                    _cts = cts;
                 }
 
                 internal void MoveNext()
@@ -251,7 +257,11 @@ namespace async_enumerable_dotnet.impl
 
                 private void NextHandler(Task<bool> t)
                 {
-                    if (t.IsFaulted)
+                    if (t.IsCanceled)
+                    {
+                        // FIXME ignore???
+                    }
+                    else if (t.IsFaulted)
                     {
                         if (TryDispose())
                         {
@@ -277,6 +287,7 @@ namespace async_enumerable_dotnet.impl
 
                 internal void Dispose()
                 {
+                    _cts.Cancel();
                     if (Interlocked.Increment(ref _disposeWip) == 1)
                     {
                         _parent.Dispose(_source);

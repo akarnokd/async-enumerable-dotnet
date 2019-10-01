@@ -21,9 +21,11 @@ namespace async_enumerable_dotnet.impl
             _other = other;
         }
 
-        public IAsyncEnumerator<TSource> GetAsyncEnumerator()
+        public IAsyncEnumerator<TSource> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            var en = new SkipUntilEnumerator(_source.GetAsyncEnumerator(), _other.GetAsyncEnumerator());
+            var cancelMain = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            var cancelOther = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            var en = new SkipUntilEnumerator(_source.GetAsyncEnumerator(cancelMain.Token), _other.GetAsyncEnumerator(cancelOther.Token), cancelMain, cancelOther);
             en.MoveNextOther();
             en.MoveNextMain();
             return en;
@@ -34,6 +36,10 @@ namespace async_enumerable_dotnet.impl
             private readonly IAsyncEnumerator<TSource> _source;
 
             private readonly IAsyncEnumerator<TOther> _other;
+
+            private readonly CancellationTokenSource _cancelMain;
+
+            private readonly CancellationTokenSource _cancelOther;
 
             private int _disposeMain;
 
@@ -55,11 +61,14 @@ namespace async_enumerable_dotnet.impl
 
             private int _wipMain;
 
-            public SkipUntilEnumerator(IAsyncEnumerator<TSource> source, IAsyncEnumerator<TOther> other)
+            public SkipUntilEnumerator(IAsyncEnumerator<TSource> source, IAsyncEnumerator<TOther> other,
+                CancellationTokenSource cancelMain, CancellationTokenSource cancelOther)
             {
                 _source = source;
                 _other = other;
                 _disposeTask = new TaskCompletionSource<bool>();
+                _cancelMain = cancelMain;
+                _cancelOther = cancelOther;
                 Volatile.Write(ref _disposed, 2);
             }
 
@@ -85,7 +94,7 @@ namespace async_enumerable_dotnet.impl
                 for (; ;)
                 {
                     var ex = Volatile.Read(ref _error);
-                    if (ex != null)
+                    if (ex != null && ex != ExceptionHelper.Terminated)
                     {
                         throw ex;
                     }
@@ -140,9 +149,19 @@ namespace async_enumerable_dotnet.impl
             }
             private void HandleMain(Task<bool> t)
             {
-                if (t.IsFaulted)
+                if (t.IsCanceled)
+                {
+                    Interlocked.CompareExchange(ref _error, new OperationCanceledException(), null);
+                    _cancelOther.Cancel();
+                    if (TryDispose())
+                    {
+                        Signal();
+                    }
+                }
+                else if (t.IsFaulted)
                 {
                     Interlocked.CompareExchange(ref _error, ExceptionHelper.Extract(t.Exception), null);
+                    _cancelOther.Cancel();
                     if (TryDispose())
                     {
                         Signal();
@@ -156,7 +175,9 @@ namespace async_enumerable_dotnet.impl
                     }
                     else
                     {
+                        Interlocked.CompareExchange(ref _error, ExceptionHelper.Terminated, null);
                         Volatile.Write(ref _done, true);
+                        _cancelOther.Cancel();
                     }
 
                     if (TryDispose())
@@ -185,9 +206,16 @@ namespace async_enumerable_dotnet.impl
                 }
                 else
                 {
-                    if (t.IsFaulted)
+                    if (t.IsCanceled)
+                    {
+                        Interlocked.CompareExchange(ref _error, new OperationCanceledException(), null);
+                        _cancelMain.Cancel();
+                        Signal();
+                    }
+                    else if (t.IsFaulted)
                     {
                         Interlocked.CompareExchange(ref _error, ExceptionHelper.Extract(t.Exception), null);
+                        _cancelMain.Cancel();
                         Signal();
                     }
                     else

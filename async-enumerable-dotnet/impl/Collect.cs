@@ -5,6 +5,7 @@
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace async_enumerable_dotnet.impl
 {
@@ -23,7 +24,7 @@ namespace async_enumerable_dotnet.impl
             _collector = collector;
         }
 
-        public IAsyncEnumerator<TCollection> GetAsyncEnumerator()
+        public IAsyncEnumerator<TCollection> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
             TCollection initial;
             try
@@ -34,7 +35,7 @@ namespace async_enumerable_dotnet.impl
             {
                 return new Error<TCollection>.ErrorEnumerator(ex);
             }
-            return new CollectEnumerator(_source.GetAsyncEnumerator(), initial, _collector);
+            return new CollectEnumerator(_source.GetAsyncEnumerator(cancellationToken), initial, _collector);
         }
 
         private sealed class CollectEnumerator : IAsyncEnumerator<TCollection>

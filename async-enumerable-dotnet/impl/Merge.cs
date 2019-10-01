@@ -19,9 +19,9 @@ namespace async_enumerable_dotnet.impl
             _sources = sources;
         }
 
-        public IAsyncEnumerator<TSource> GetAsyncEnumerator()
+        public IAsyncEnumerator<TSource> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            return new MergeEnumerator(_sources);
+            return new MergeEnumerator(_sources, cancellationToken);
         }
 
         private sealed class MergeEnumerator : IAsyncEnumerator<TSource>
@@ -43,13 +43,14 @@ namespace async_enumerable_dotnet.impl
             private bool _once;
 
             // ReSharper disable once SuggestBaseTypeForParameter
-            public MergeEnumerator(IAsyncEnumerable<TSource>[] sources)
+            public MergeEnumerator(IAsyncEnumerable<TSource>[] sources, CancellationToken ct)
             {
                 var n = sources.Length;
                 _sources = new InnerHandler[n];
                 for (var i = 0; i < sources.Length; i++)
                 {
-                    _sources[i] = new InnerHandler(sources[i].GetAsyncEnumerator(), this);
+                    var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                    _sources[i] = new InnerHandler(sources[i].GetAsyncEnumerator(cts.Token), this, cts);
                 }
                 _queue = new ConcurrentQueue<Entry>();
                 _disposeTask = new TaskCompletionSource<bool>();
@@ -154,18 +155,22 @@ namespace async_enumerable_dotnet.impl
 
                 private readonly MergeEnumerator _parent;
 
+                private readonly CancellationTokenSource _cts;
+
                 private int _disposeWip;
 
                 private int _wip;
 
-                public InnerHandler(IAsyncEnumerator<TSource> source, MergeEnumerator parent)
+                public InnerHandler(IAsyncEnumerator<TSource> source, MergeEnumerator parent, CancellationTokenSource cts)
                 {
                     _source = source;
                     _parent = parent;
+                    _cts = cts;
                 }
 
                 internal void Dispose()
                 {
+                    _cts.Cancel();
                     if (Interlocked.Increment(ref _disposeWip) == 1)
                     {
                         _parent.Dispose(_source);
@@ -191,7 +196,14 @@ namespace async_enumerable_dotnet.impl
 
                 private void Next(Task<bool> t)
                 {
-                    if (t.IsFaulted)
+                    if (t.IsCanceled)
+                    {
+                        if (TryDispose())
+                        {
+                            _parent.InnerError(new OperationCanceledException());
+                        }
+                    }
+                    else if (t.IsFaulted)
                     {
                         if (TryDispose())
                         {

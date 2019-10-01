@@ -4,6 +4,7 @@
 
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace async_enumerable_dotnet.impl
 {
@@ -16,9 +17,9 @@ namespace async_enumerable_dotnet.impl
             _source = source;
         }
 
-        public IAsyncEnumerator<bool> GetAsyncEnumerator()
+        public IAsyncEnumerator<bool> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            return new IsEmptyEnumerator(_source.GetAsyncEnumerator());
+            return new IsEmptyEnumerator(_source.GetAsyncEnumerator(cancellationToken));
         }
 
         private sealed class IsEmptyEnumerator : IAsyncEnumerator<bool>

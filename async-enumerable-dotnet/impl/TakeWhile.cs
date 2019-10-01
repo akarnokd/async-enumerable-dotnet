@@ -5,6 +5,7 @@
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace async_enumerable_dotnet.impl
 {
@@ -20,9 +21,9 @@ namespace async_enumerable_dotnet.impl
             _predicate = predicate;
         }
 
-        public IAsyncEnumerator<T> GetAsyncEnumerator()
+        public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            return new TakeWhileEnumerator(_source.GetAsyncEnumerator(), _predicate);
+            return new TakeWhileEnumerator(_source.GetAsyncEnumerator(cancellationToken), _predicate);
         }
 
         private sealed class TakeWhileEnumerator : IAsyncEnumerator<T>

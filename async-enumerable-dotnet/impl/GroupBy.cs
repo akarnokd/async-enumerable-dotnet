@@ -28,9 +28,9 @@ namespace async_enumerable_dotnet.impl
             _keyComparer = keyComparer;
         }
 
-        public IAsyncEnumerator<IAsyncGroupedEnumerable<TKey, TValue>> GetAsyncEnumerator()
+        public IAsyncEnumerator<IAsyncGroupedEnumerable<TKey, TValue>> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            return new GroupByEnumerator(_source.GetAsyncEnumerator(), _keySelector, _valueSelector, _keyComparer);
+            return new GroupByEnumerator(_source.GetAsyncEnumerator(cancellationToken), _keySelector, _valueSelector, _keyComparer);
         }
 
         private sealed class GroupByEnumerator : IAsyncEnumerator<IAsyncGroupedEnumerable<TKey, TValue>>
@@ -224,7 +224,7 @@ namespace async_enumerable_dotnet.impl
                 }
 
 
-                public IAsyncEnumerator<TValue> GetAsyncEnumerator()
+                public IAsyncEnumerator<TValue> GetAsyncEnumerator(CancellationToken cancellationToken)
                 {
                     if (Interlocked.CompareExchange(ref _once, 1, 0) == 0)
                     {

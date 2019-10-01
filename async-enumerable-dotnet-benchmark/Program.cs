@@ -30,7 +30,7 @@ namespace async_enumerable_dotnet_benchmark
                 var list = TimeSequence(0, 200, 400, 600)
                         .ConcatMapEager(v => AsyncEnumerable.Timer(TimeSpan.FromMilliseconds(100)))
                         .Take(1)
-                .GetAsyncEnumerator();
+                .GetAsyncEnumerator(default);
 
                 try
                 {

@@ -81,11 +81,13 @@ namespace async_enumerable_dotnet
         /// Returns an <see cref="IAsyncEnumerator{T}"/> representing an active asynchronous sequence.
         /// </summary>
         /// <returns>The active asynchronous sequence to be consumed.</returns>
-        public IAsyncEnumerator<T> GetAsyncEnumerator()
+        public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
             var en = new MulticastEnumerator(this);
             if (Add(en))
             {
+                // FIXME what about the registration???
+                cancellationToken.Register(v => (v as MulticastEnumerator).RemoveFromParent(), en);
                 return en;
             }
             if (_error != null)
@@ -184,10 +186,15 @@ namespace async_enumerable_dotnet
                 ResumeHelper.Resume(ref _valueReady);
             }
 
+            internal void RemoveFromParent()
+            {
+                _parent.Remove(this);
+            }
+
             public ValueTask DisposeAsync()
             {
                 Current = default;
-                _parent.Remove(this);
+                RemoveFromParent();
                 // unblock any Next/Error/Complete waiting for consumption
                 ResumeHelper.Resume(ref _consumed);
                 return new ValueTask();

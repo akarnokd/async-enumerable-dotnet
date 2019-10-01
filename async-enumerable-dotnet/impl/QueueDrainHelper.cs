@@ -41,7 +41,11 @@ namespace async_enumerable_dotnet.impl
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void DisposeHandler(Task t, ref int allDisposeWip, ref Exception allDisposeError, TaskCompletionSource<bool> allDisposeTask)
         {
-            if (t.IsFaulted)
+            if (t.IsCanceled)
+            {
+                ExceptionHelper.AddException(ref allDisposeError, new OperationCanceledException());
+            }
+            else if (t.IsFaulted)
             {
                 ExceptionHelper.AddException(ref allDisposeError, ExceptionHelper.Extract(t.Exception));
             }

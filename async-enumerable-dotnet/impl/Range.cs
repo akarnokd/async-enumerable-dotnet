@@ -4,6 +4,7 @@
 
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace async_enumerable_dotnet.impl
 {
@@ -19,7 +20,7 @@ namespace async_enumerable_dotnet.impl
             _end = end;
         }
 
-        public IAsyncEnumerator<int> GetAsyncEnumerator()
+        public IAsyncEnumerator<int> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
             return new RangeEnumerator(_start, _end);
         }

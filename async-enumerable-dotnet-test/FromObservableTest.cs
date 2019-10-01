@@ -35,7 +35,7 @@ namespace async_enumerable_dotnet_test
             var result = new ObservableRange(1, n).ToAsyncEnumerable();
 
             var expected = 1;
-            var en = result.GetAsyncEnumerator();
+            var en = result.GetAsyncEnumerator(default);
             try
             {
                 while (await en.MoveNextAsync())

@@ -5,6 +5,7 @@
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace async_enumerable_dotnet.impl
 {
@@ -20,9 +21,9 @@ namespace async_enumerable_dotnet.impl
             _predicate = predicate;
         }
 
-        public IAsyncEnumerator<bool> GetAsyncEnumerator()
+        public IAsyncEnumerator<bool> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            return new AllEnumerator(_source.GetAsyncEnumerator(), _predicate);
+            return new AllEnumerator(_source.GetAsyncEnumerator(cancellationToken), _predicate);
         }
 
         private sealed class AllEnumerator : IAsyncEnumerator<bool>
@@ -82,9 +83,9 @@ namespace async_enumerable_dotnet.impl
             _predicate = predicate;
         }
 
-        public IAsyncEnumerator<bool> GetAsyncEnumerator()
+        public IAsyncEnumerator<bool> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            return new AllTaskEnumerator(_source.GetAsyncEnumerator(), _predicate);
+            return new AllTaskEnumerator(_source.GetAsyncEnumerator(cancellationToken), _predicate);
         }
 
         private sealed class AllTaskEnumerator : IAsyncEnumerator<bool>

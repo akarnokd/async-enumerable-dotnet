@@ -6,6 +6,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace async_enumerable_dotnet.impl
 {
@@ -18,11 +19,12 @@ namespace async_enumerable_dotnet.impl
             _source = source;
         }
 
-        public IAsyncEnumerator<T> GetAsyncEnumerator()
+        public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
             var consumer = new FromObservableEnumerator();
             var d = _source.Subscribe(consumer);
             consumer.Upstream = d;
+            consumer.CtReg = cancellationToken.Register(disposable => (disposable as IDisposable)?.Dispose(), d);
             return consumer;
         }
 
@@ -34,6 +36,8 @@ namespace async_enumerable_dotnet.impl
             private Exception _error;
 
             internal IDisposable Upstream;
+
+            internal CancellationTokenRegistration CtReg;
 
             public T Current { get; private set; }
 
@@ -48,6 +52,7 @@ namespace async_enumerable_dotnet.impl
             {
                 Current = default;
                 Upstream.Dispose();
+                CtReg.Dispose();
                 return new ValueTask();
             }
 

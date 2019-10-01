@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace async_enumerable_dotnet.impl
 {
@@ -16,12 +17,12 @@ namespace async_enumerable_dotnet.impl
             _func = func;
         }
 
-        public IAsyncEnumerator<T> GetAsyncEnumerator()
+        public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
             IAsyncEnumerator<T> en;
             try
             {
-                en = _func().GetAsyncEnumerator();
+                en = _func().GetAsyncEnumerator(cancellationToken);
             }
             catch (Exception ex)
             {

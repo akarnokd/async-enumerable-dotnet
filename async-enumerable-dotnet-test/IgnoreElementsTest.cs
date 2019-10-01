@@ -29,7 +29,7 @@ namespace async_enumerable_dotnet_test
         public void Current()
         {
             Assert.Equal(0, AsyncEnumerable.Range(1, 5)
-                .IgnoreElements().GetAsyncEnumerator().Current);
+                .IgnoreElements().GetAsyncEnumerator(default).Current);
         }
     }
 }

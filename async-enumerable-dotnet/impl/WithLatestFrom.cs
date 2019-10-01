@@ -24,9 +24,11 @@ namespace async_enumerable_dotnet.impl
             _func = func;
         }
 
-        public IAsyncEnumerator<TResult> GetAsyncEnumerator()
+        public IAsyncEnumerator<TResult> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            var en = new WithLatestFromEnumerator(_source.GetAsyncEnumerator(), _other.GetAsyncEnumerator(), _func);
+            var cancelMain = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            var cancelOther = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            var en = new WithLatestFromEnumerator(_source.GetAsyncEnumerator(cancelMain.Token), _other.GetAsyncEnumerator(cancelOther.Token), _func, cancelMain, cancelOther);
             en.MoveNextOther();
             en.MoveNextMain();
             return en;
@@ -39,6 +41,10 @@ namespace async_enumerable_dotnet.impl
             private readonly IAsyncEnumerator<TOther> _other;
 
             private readonly Func<TSource, TOther, TResult> _func;
+
+            private readonly CancellationTokenSource _cancelMain;
+
+            private readonly CancellationTokenSource _cancelOther;
 
             public TResult Current { get; private set; }
 
@@ -63,13 +69,17 @@ namespace async_enumerable_dotnet.impl
             private Exception _disposeError;
             private readonly TaskCompletionSource<bool> _disposeTask;
 
-            public WithLatestFromEnumerator(IAsyncEnumerator<TSource> source, IAsyncEnumerator<TOther> other, Func<TSource, TOther, TResult> func)
+            public WithLatestFromEnumerator(IAsyncEnumerator<TSource> source, IAsyncEnumerator<TOther> other, 
+                Func<TSource, TOther, TResult> func,
+                CancellationTokenSource cancelMain, CancellationTokenSource cancelOther)
             {
                 _source = source;
                 _other = other;
                 _func = func;
                 _disposeWip = 2;
                 _disposeTask = new TaskCompletionSource<bool>();
+                _cancelMain = cancelMain;
+                _cancelOther = cancelOther;
                 Volatile.Write(ref _otherValue, EmptyHelper.EmptyIndicator);
             }
 
@@ -160,10 +170,21 @@ namespace async_enumerable_dotnet.impl
             
             private void MainHandler(Task<bool> t)
             {
-                if (t.IsFaulted)
+                if (t.IsCanceled)
+                {
+                    _sourceError = new OperationCanceledException();
+                    _sourceDone = true;
+                    _cancelOther.Cancel();
+                    if (TryDisposeMain())
+                    {
+                        ResumeHelper.Resume(ref _resume);
+                    }
+                }
+                else if (t.IsFaulted)
                 {
                     _sourceError = ExceptionHelper.Extract(t.Exception);
                     _sourceDone = true;
+                    _cancelOther.Cancel();
                     if (TryDisposeMain())
                     {
                         ResumeHelper.Resume(ref _resume);
@@ -181,6 +202,7 @@ namespace async_enumerable_dotnet.impl
                 else
                 {
                     _sourceDone = true;
+                    _cancelOther.Cancel();
                     if (TryDisposeMain())
                     {
                         ResumeHelper.Resume(ref _resume);
@@ -207,10 +229,21 @@ namespace async_enumerable_dotnet.impl
 
             private void OtherHandler(Task<bool> t)
             {
+                if (t.IsCanceled)
+                {
+                    _otherError = new OperationCanceledException();
+                    _otherDone = true;
+                    _cancelMain.Cancel();
+                    if (TryDisposeOther())
+                    {
+                        ResumeHelper.Resume(ref _resume);
+                    }
+                }
                 if (t.IsFaulted)
                 {
                     _otherError = ExceptionHelper.Extract(t.Exception);
                     _otherDone = true;
+                    _cancelMain.Cancel();
                     if (TryDisposeOther())
                     {
                         ResumeHelper.Resume(ref _resume);

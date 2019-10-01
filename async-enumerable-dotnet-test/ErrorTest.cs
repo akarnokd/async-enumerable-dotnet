@@ -13,7 +13,7 @@ namespace async_enumerable_dotnet_test
         [Fact]
         public async void Calls()
         {
-            var en = AsyncEnumerable.Error<int>(new InvalidOperationException()).GetAsyncEnumerator();
+            var en = AsyncEnumerable.Error<int>(new InvalidOperationException()).GetAsyncEnumerator(default);
 
             try
             {

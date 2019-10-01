@@ -5,6 +5,7 @@
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace async_enumerable_dotnet.impl
 {
@@ -20,21 +21,25 @@ namespace async_enumerable_dotnet.impl
             _handler = handler;
         }
 
-        public IAsyncEnumerator<T> GetAsyncEnumerator()
+        public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            return new OnErrorResumeNextEnumerator(_source.GetAsyncEnumerator(), _handler);
+            return new OnErrorResumeNextEnumerator(_source.GetAsyncEnumerator(cancellationToken), _handler, cancellationToken);
         }
 
         private sealed class OnErrorResumeNextEnumerator : IAsyncEnumerator<T>
         {
+            private readonly CancellationToken _ct;
+
             private IAsyncEnumerator<T> _source;
 
             private Func<Exception, IAsyncEnumerable<T>> _handler;
 
-            public OnErrorResumeNextEnumerator(IAsyncEnumerator<T> source, Func<Exception, IAsyncEnumerable<T>> handler)
+            public OnErrorResumeNextEnumerator(IAsyncEnumerator<T> source, Func<Exception, IAsyncEnumerable<T>> handler,
+                CancellationToken ct)
             {
                 _source = source;
                 _handler = handler;
+                _ct = ct;
             }
 
             public T Current => _source.Current;
@@ -61,7 +66,7 @@ namespace async_enumerable_dotnet.impl
 
                     try
                     {
-                        en = _handler(ex).GetAsyncEnumerator();
+                        en = _handler(ex).GetAsyncEnumerator(_ct);
                     }
                     catch (Exception exc)
                     {

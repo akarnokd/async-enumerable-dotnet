@@ -24,9 +24,9 @@ namespace async_enumerable_dotnet.impl
             _emitLast = emitLast;
         }
 
-        public IAsyncEnumerator<T> GetAsyncEnumerator()
+        public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            var en = new SampleEnumerator(_source.GetAsyncEnumerator(), _period, _emitLast);
+            var en = new SampleEnumerator(_source.GetAsyncEnumerator(cancellationToken), _period, _emitLast, cancellationToken);
             en.StartTimer();
             en.MoveNext();
             return en;
@@ -58,13 +58,13 @@ namespace async_enumerable_dotnet.impl
 
             public T Current { get; private set; }
 
-            public SampleEnumerator(IAsyncEnumerator<T> source, TimeSpan period, bool emitLast)
+            public SampleEnumerator(IAsyncEnumerator<T> source, TimeSpan period, bool emitLast, CancellationToken ct)
             {
                 _source = source;
                 _period = period;
                 _emitLast = emitLast;
                 _disposeTask = new TaskCompletionSource<bool>();
-                _cts = new CancellationTokenSource();
+                _cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
                 Volatile.Write(ref _latest, EmptyHelper.EmptyIndicator);
                 Volatile.Write(ref _timerLatest, EmptyHelper.EmptyIndicator);
             }

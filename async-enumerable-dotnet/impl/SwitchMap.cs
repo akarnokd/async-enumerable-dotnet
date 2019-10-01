@@ -21,9 +21,9 @@ namespace async_enumerable_dotnet.impl
             _mapper = mapper;
         }
 
-        public IAsyncEnumerator<TResult> GetAsyncEnumerator()
+        public IAsyncEnumerator<TResult> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            var en = new SwitchMapEnumerator(_source.GetAsyncEnumerator(), _mapper);
+            var en = new SwitchMapEnumerator(_source.GetAsyncEnumerator(cancellationToken), _mapper, cancellationToken);
             en.MoveNext();
             return en;
         }
@@ -33,6 +33,8 @@ namespace async_enumerable_dotnet.impl
             private readonly IAsyncEnumerator<TSource> _source;
 
             private readonly Func<TSource, IAsyncEnumerable<TResult>> _mapper;
+
+            private readonly CancellationToken _ct;
 
             private InnerHandler _current;
 
@@ -50,13 +52,14 @@ namespace async_enumerable_dotnet.impl
             private Exception _allDisposeError;
             private readonly TaskCompletionSource<bool> _disposeTask;
 
-            private static readonly InnerHandler DisposedInnerHandler = new InnerHandler(null, null);
+            private static readonly InnerHandler DisposedInnerHandler = new InnerHandler(null, null, null);
 
-            public SwitchMapEnumerator(IAsyncEnumerator<TSource> source, Func<TSource, IAsyncEnumerable<TResult>> mapper)
+            public SwitchMapEnumerator(IAsyncEnumerator<TSource> source, Func<TSource, IAsyncEnumerable<TResult>> mapper, CancellationToken ct)
             {
                 _source = source;
                 _mapper = mapper;
                 _disposeTask = new TaskCompletionSource<bool>();
+                _ct = ct;
                 Volatile.Write(ref _allDisposeWip, 1);
             }
 
@@ -138,7 +141,16 @@ namespace async_enumerable_dotnet.impl
 
             private void NextHandler(Task<bool> t)
             {
-                if (t.IsFaulted)
+                if (t.IsCanceled)
+                {
+                    ExceptionHelper.AddException(ref _error, new OperationCanceledException());
+                    _done = true;
+                    if (TryDispose())
+                    {
+                        Signal();
+                    }
+                }
+                else if (t.IsFaulted)
                 {
                     ExceptionHelper.AddException(ref _error, ExceptionHelper.Extract(t.Exception));
                     _done = true;
@@ -149,10 +161,11 @@ namespace async_enumerable_dotnet.impl
                 }
                 else if (t.Result)
                 {
+                    var cts = CancellationTokenSource.CreateLinkedTokenSource(_ct);
                     IAsyncEnumerator<TResult> src;
                     try
                     {
-                        src = _mapper(_source.Current).GetAsyncEnumerator();
+                        src = _mapper(_source.Current).GetAsyncEnumerator(cts.Token);
                     }
                     catch (Exception ex)
                     {
@@ -166,7 +179,7 @@ namespace async_enumerable_dotnet.impl
                     if (TryDispose())
                     {
                         Interlocked.Increment(ref _allDisposeWip);
-                        var inner = new InnerHandler(src, this);
+                        var inner = new InnerHandler(src, this, cts);
 
                         for (; ; )
                         {
@@ -228,6 +241,8 @@ namespace async_enumerable_dotnet.impl
 
                 private readonly SwitchMapEnumerator _parent;
 
+                private readonly CancellationTokenSource _cts;
+
                 private int _disposeWip;
 
                 private int _sourceWip;
@@ -236,10 +251,11 @@ namespace async_enumerable_dotnet.impl
                 internal volatile bool HasValue;
                 internal volatile bool Done;
 
-                public InnerHandler(IAsyncEnumerator<TResult> source, SwitchMapEnumerator parent)
+                public InnerHandler(IAsyncEnumerator<TResult> source, SwitchMapEnumerator parent, CancellationTokenSource cts)
                 {
                     _source = source;
                     _parent = parent;
+                    _cts = cts;
                 }
 
                 internal void MoveNext()
@@ -251,6 +267,7 @@ namespace async_enumerable_dotnet.impl
 
                 internal void Dispose()
                 {
+                    _cts.Cancel();
                     if (Interlocked.Increment(ref _disposeWip) == 1)
                     {
                         _parent.Dispose(_source);
@@ -269,7 +286,14 @@ namespace async_enumerable_dotnet.impl
 
                 private void Next(Task<bool> t)
                 {
-                    if (t.IsFaulted)
+                    if (t.IsCanceled)
+                    {
+                        if (TryDispose())
+                        {
+                            _parent.InnerError(this, new OperationCanceledException());
+                        }
+                    }
+                    else if (t.IsFaulted)
                     {
                         if (TryDispose())
                         {

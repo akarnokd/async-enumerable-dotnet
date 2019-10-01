@@ -18,7 +18,7 @@ namespace async_enumerable_dotnet_test
     {
         public static ValueTask AssertResult<T>(this async_enumerable_dotnet.IAsyncEnumerable<T> source, params T[] values)
         {
-            return AssertResult(source.GetAsyncEnumerator(), values);
+            return AssertResult(source.GetAsyncEnumerator(default), values);
         }
 
         // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Global
@@ -82,7 +82,7 @@ namespace async_enumerable_dotnet_test
         public static async ValueTask AssertResultSet<T>(this async_enumerable_dotnet.IAsyncEnumerable<T> source, IEqualityComparer<T> comparer, params T[] values)
         {
             var set = new HashSet<T>(values, comparer);
-            var en = source.GetAsyncEnumerator();
+            var en = source.GetAsyncEnumerator(default);
             try
             {
                 while (await en.MoveNextAsync())
@@ -123,7 +123,7 @@ namespace async_enumerable_dotnet_test
 
         public static ValueTask AssertFailure<T>(this async_enumerable_dotnet.IAsyncEnumerable<T> source, Type exception, params T[] values)
         {
-            return AssertFailure(source.GetAsyncEnumerator(), exception, values);
+            return AssertFailure(source.GetAsyncEnumerator(default), exception, values);
         }
 
         // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Global

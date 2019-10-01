@@ -3,6 +3,7 @@
 // See LICENSE file in the project root for full license information.
 
 using System.Collections.Generic;
+using System.Threading;
 
 namespace async_enumerable_dotnet
 {
@@ -16,6 +17,6 @@ namespace async_enumerable_dotnet
         /// Returns an <see cref="IAsyncEnumerator{T}"/> representing an active asynchronous sequence.
         /// </summary>
         /// <returns>The active asynchronous sequence to be consumed.</returns>
-        IAsyncEnumerator<T> GetAsyncEnumerator();
+        IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken);
     }
 }

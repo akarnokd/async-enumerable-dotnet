@@ -21,7 +21,7 @@ namespace async_enumerable_dotnet_test
 #pragma warning disable 4014
             AsyncEnumerable.Timer(TimeSpan.FromSeconds(200), cts.Token)
                 .DoOnNext(v => value = 1)
-                .GetAsyncEnumerator()
+                .GetAsyncEnumerator(default)
                 .MoveNextAsync();
 #pragma warning restore 4014
 

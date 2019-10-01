@@ -4,28 +4,44 @@
 
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace async_enumerable_dotnet.impl
 {
-    internal sealed class Never<T> : IAsyncEnumerable<T>, IAsyncEnumerator<T>
+    internal sealed class Never<T> : IAsyncEnumerable<T>
     {
         internal static readonly Never<T> Instance = new Never<T>();
 
-        public T Current => default;
-
-        public ValueTask DisposeAsync()
+        public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            return new ValueTask();
+            return new NeverEnumerator(cancellationToken);
         }
 
-        public IAsyncEnumerator<T> GetAsyncEnumerator()
+        private sealed class NeverEnumerator : IAsyncEnumerator<T>
         {
-            return this;
-        }
+            private readonly CancellationToken _ct;
 
-        public ValueTask<bool> MoveNextAsync()
-        {
-            return new ValueTask<bool>(new TaskCompletionSource<bool>().Task);
+            public T Current => default;
+
+            internal NeverEnumerator(CancellationToken ct)
+            {
+                _ct = ct;
+            }
+
+            public ValueTask DisposeAsync()
+            {
+                return new ValueTask();
+            }
+
+            public async ValueTask<bool> MoveNextAsync()
+            {
+                var tcs = new TaskCompletionSource<T>();
+                using var reg = _ct.Register(t => (t as TaskCompletionSource<T>).TrySetCanceled(), tcs);
+                
+                await tcs.Task;
+
+                return false;
+            }
         }
     }
 }

@@ -30,9 +30,12 @@ namespace async_enumerable_dotnet.impl
             _maxSize = maxSize;
         }
 
-        public IAsyncEnumerator<TCollection> GetAsyncEnumerator()
+        public IAsyncEnumerator<TCollection> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            var en = new BufferBoundaryExactEnumerator(_source.GetAsyncEnumerator(), _boundary.GetAsyncEnumerator(), _collectionSupplier, _maxSize);
+            var mainCancel = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            var otherCancel = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            var en = new BufferBoundaryExactEnumerator(_source.GetAsyncEnumerator(mainCancel.Token), 
+                _boundary.GetAsyncEnumerator(otherCancel.Token), _collectionSupplier, _maxSize, mainCancel, otherCancel);
 
             en.MoveNextOther();
             en.MoveNextSource();
@@ -49,6 +52,10 @@ namespace async_enumerable_dotnet.impl
             private readonly Func<TCollection> _collectionSupplier;
 
             private readonly int _maxSize;
+
+            private readonly CancellationTokenSource _mainCancel;
+
+            private readonly CancellationTokenSource _otherCancel;
 
             private int _sourceWip;
             private int _sourceDisposeWip;
@@ -71,7 +78,9 @@ namespace async_enumerable_dotnet.impl
 
             public TCollection Current { get; private set; }
 
-            public BufferBoundaryExactEnumerator(IAsyncEnumerator<TSource> source, IAsyncEnumerator<TOther> other, Func<TCollection> collectionSupplier, int maxSize)
+            public BufferBoundaryExactEnumerator(IAsyncEnumerator<TSource> source, 
+                IAsyncEnumerator<TOther> other, Func<TCollection> collectionSupplier, int maxSize,
+                CancellationTokenSource mainCancel, CancellationTokenSource otherCancel)
             {
                 _source = source;
                 _other = other;
@@ -79,6 +88,8 @@ namespace async_enumerable_dotnet.impl
                 _maxSize = maxSize;
                 _queue = new ConcurrentQueue<Entry>();
                 _disposeTask = new TaskCompletionSource<bool>();
+                _mainCancel = mainCancel;
+                _otherCancel = otherCancel;
                 Volatile.Write(ref _disposeWip, 2);
             }
 
@@ -194,13 +205,18 @@ namespace async_enumerable_dotnet.impl
 
             private void HandleNextSource(Task<bool> t)
             {
-                if (t.IsFaulted)
+                if (t.IsCanceled)
+                {
+                    // FIXME ignore???
+                }
+                else if (t.IsFaulted)
                 {
                     ExceptionHelper.AddException(ref _error, ExceptionHelper.Extract(t.Exception));
                     _queue.Enqueue(new Entry
                     {
                         Done = true
                     });
+                    _otherCancel.Cancel();
                 }
                 else if (t.Result)
                 {
@@ -215,6 +231,7 @@ namespace async_enumerable_dotnet.impl
                     {
                         Done = true
                     });
+                    _otherCancel.Cancel();
                 }
                 if (TryDisposeSource())
                 {
@@ -241,13 +258,18 @@ namespace async_enumerable_dotnet.impl
 
             private void HandleNextOther(Task<bool> t)
             {
-                if (t.IsFaulted)
+                if (t.IsCanceled)
+                {
+                    // FIXME ignore???
+                }
+                else if (t.IsFaulted)
                 {
                     ExceptionHelper.AddException(ref _error, ExceptionHelper.Extract(t.Exception));
                     _queue.Enqueue(new Entry
                     {
                         Done = true
                     });
+                    _mainCancel.Cancel();
                 }
                 else if (t.Result)
                 {
@@ -262,6 +284,7 @@ namespace async_enumerable_dotnet.impl
                     {
                         Done = true
                     });
+                    _mainCancel.Cancel();
                 }
                 if (TryDisposeOther())
                 {

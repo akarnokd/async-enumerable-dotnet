@@ -14,7 +14,7 @@ namespace async_enumerable_dotnet_test
         [Fact]
         public async void Skip_All()
         {
-            var en = AsyncEnumerable.Range(1, 5).Latest().GetAsyncEnumerator();
+            var en = AsyncEnumerable.Range(1, 5).Latest().GetAsyncEnumerator(default);
 
             try
             {
@@ -36,7 +36,7 @@ namespace async_enumerable_dotnet_test
         public async void Normal()
         {
             var push = new MulticastAsyncEnumerable<int>();
-            var en = push.Latest().GetAsyncEnumerator();
+            var en = push.Latest().GetAsyncEnumerator(default);
 
             try
             {

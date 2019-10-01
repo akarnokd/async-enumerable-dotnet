@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet.impl
@@ -23,9 +24,9 @@ namespace async_enumerable_dotnet.impl
             _bufferSupplier = bufferSupplier;
         }
 
-        public IAsyncEnumerator<TCollection> GetAsyncEnumerator()
+        public IAsyncEnumerator<TCollection> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            return new BufferExactEnumerator(_source.GetAsyncEnumerator(), _n, _bufferSupplier);
+            return new BufferExactEnumerator(_source.GetAsyncEnumerator(cancellationToken), _n, _bufferSupplier);
         }
 
         private sealed class BufferExactEnumerator : IAsyncEnumerator<TCollection>
@@ -107,9 +108,9 @@ namespace async_enumerable_dotnet.impl
             _bufferSupplier = bufferSupplier;
         }
 
-        public IAsyncEnumerator<TCollection> GetAsyncEnumerator()
+        public IAsyncEnumerator<TCollection> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            return new BufferSkipEnumerator(_source.GetAsyncEnumerator(), _size, _skip, _bufferSupplier);
+            return new BufferSkipEnumerator(_source.GetAsyncEnumerator(cancellationToken), _size, _skip, _bufferSupplier);
         }
 
         private sealed class BufferSkipEnumerator : IAsyncEnumerator<TCollection>
@@ -201,9 +202,9 @@ namespace async_enumerable_dotnet.impl
             _bufferSupplier = bufferSupplier;
         }
 
-        public IAsyncEnumerator<TCollection> GetAsyncEnumerator()
+        public IAsyncEnumerator<TCollection> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            return new BufferOverlapEnumerator(_source.GetAsyncEnumerator(), _size, _skip, _bufferSupplier);
+            return new BufferOverlapEnumerator(_source.GetAsyncEnumerator(cancellationToken), _size, _skip, _bufferSupplier);
         }
 
         private sealed class BufferOverlapEnumerator : IAsyncEnumerator<TCollection>

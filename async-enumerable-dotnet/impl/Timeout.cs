@@ -21,9 +21,9 @@ namespace async_enumerable_dotnet.impl
             _timeout = timeout;
         }
 
-        public IAsyncEnumerator<T> GetAsyncEnumerator()
+        public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            return new TimeoutEnumerator(_source.GetAsyncEnumerator(), _timeout);
+            return new TimeoutEnumerator(_source.GetAsyncEnumerator(cancellationToken), _timeout, cancellationToken);
         }
 
         private sealed class TimeoutEnumerator : IAsyncEnumerator<T>
@@ -31,6 +31,8 @@ namespace async_enumerable_dotnet.impl
             private readonly IAsyncEnumerator<T> _source;
 
             private readonly TimeSpan _timeout;
+
+            private readonly CancellationToken _ct;
 
             private TaskCompletionSource<bool> _disposeTask;
 
@@ -42,10 +44,11 @@ namespace async_enumerable_dotnet.impl
 
             private int _disposeWip;
 
-            public TimeoutEnumerator(IAsyncEnumerator<T> source, TimeSpan timeout)
+            public TimeoutEnumerator(IAsyncEnumerator<T> source, TimeSpan timeout, CancellationToken ct)
             {
                 _source = source;
                 _timeout = timeout;
+                _ct = ct;
             }
 
             public ValueTask DisposeAsync()
@@ -63,7 +66,7 @@ namespace async_enumerable_dotnet.impl
 
                 var result = new TaskCompletionSource<bool>();
 
-                _token = new CancellationTokenSource();
+                _token = CancellationTokenSource.CreateLinkedTokenSource(_ct);
 
                 Interlocked.Increment(ref _disposeWip);
 
@@ -93,7 +96,11 @@ namespace async_enumerable_dotnet.impl
                 if (Interlocked.CompareExchange(ref _index, idx + 1, idx) == idx)
                 {
                     _token?.Cancel();
-                    if (task.IsFaulted)
+                    if (task.IsCanceled)
+                    {
+                        result.TrySetCanceled();
+                    }
+                    else if (task.IsFaulted)
                     {
                         result.TrySetException(ExceptionHelper.Extract(task.Exception));
                     }

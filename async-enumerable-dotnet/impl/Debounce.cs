@@ -24,9 +24,9 @@ namespace async_enumerable_dotnet.impl
             _emitLast = emitLast;
         }
 
-        public IAsyncEnumerator<T> GetAsyncEnumerator()
+        public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            var en = new DebounceEnumerator(_source.GetAsyncEnumerator(), _delay, _emitLast);
+            var en = new DebounceEnumerator(_source.GetAsyncEnumerator(cancellationToken), _delay, _emitLast, cancellationToken);
             en.MoveNext();
             return en;
         }
@@ -38,6 +38,8 @@ namespace async_enumerable_dotnet.impl
             private readonly TimeSpan _delay;
 
             private readonly bool _emitLast;
+
+            private readonly CancellationToken _ct;
 
             public T Current { get; private set; }
 
@@ -60,11 +62,12 @@ namespace async_enumerable_dotnet.impl
 
             private CancellationTokenSource _cts;
 
-            public DebounceEnumerator(IAsyncEnumerator<T> source, TimeSpan delay, bool emitLast)
+            public DebounceEnumerator(IAsyncEnumerator<T> source, TimeSpan delay, bool emitLast, CancellationToken ct)
             {
                 _source = source;
                 _delay = delay;
                 _emitLast = emitLast;
+                _ct = ct;
             }
 
             public ValueTask DisposeAsync()
@@ -132,7 +135,16 @@ namespace async_enumerable_dotnet.impl
 
             private void HandleMain(Task<bool> t)
             {
-                if (t.IsFaulted)
+                if (t.IsCanceled)
+                {
+                    _error = new OperationCanceledException();
+                    _done = true;
+                    if (TryDispose())
+                    {
+                        ResumeHelper.Resume(ref _resume);
+                    }
+                }
+                else if (t.IsFaulted)
                 {
                     CancellationHelper.Cancel(ref _cts);
                     if (_emitLast)
@@ -163,7 +175,7 @@ namespace async_enumerable_dotnet.impl
                             _emitLastItem = v;
                         }
                         var idx = ++_sourceIndex;
-                        var newCts = new CancellationTokenSource();
+                        var newCts = CancellationTokenSource.CreateLinkedTokenSource(_ct);
                         if (CancellationHelper.Replace(ref _cts, newCts))
                         {
                             Task.Delay(_delay, newCts.Token)

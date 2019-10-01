@@ -4,6 +4,7 @@
 
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace async_enumerable_dotnet.impl
 {
@@ -19,9 +20,9 @@ namespace async_enumerable_dotnet.impl
             _n = n;
         }
 
-        public IAsyncEnumerator<T> GetAsyncEnumerator()
+        public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            return new SkipEnumerator(_source.GetAsyncEnumerator(), _n);
+            return new SkipEnumerator(_source.GetAsyncEnumerator(cancellationToken), _n);
         }
 
         private sealed class SkipEnumerator : IAsyncEnumerator<T>

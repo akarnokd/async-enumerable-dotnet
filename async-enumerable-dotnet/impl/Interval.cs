@@ -27,9 +27,9 @@ namespace async_enumerable_dotnet.impl
             _period = period;
         }
 
-        public IAsyncEnumerator<long> GetAsyncEnumerator()
+        public IAsyncEnumerator<long> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            var en = new IntervalEnumerator(_period, _start, _end);
+            var en = new IntervalEnumerator(_period, _start, _end, cancellationToken);
             en.StartFirst(_initialDelay);
             return en;
         }
@@ -50,13 +50,13 @@ namespace async_enumerable_dotnet.impl
 
             public long Current { get; private set; }
 
-            public IntervalEnumerator(TimeSpan period, long start, long end)
+            public IntervalEnumerator(TimeSpan period, long start, long end, CancellationToken ct)
             {
                 _period = period;
                 _end = end;
                 _available = start;
                 _index = start;
-                _cts = new CancellationTokenSource();
+                _cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
                 Volatile.Write(ref _available, start);
             }
 
@@ -70,6 +70,7 @@ namespace async_enumerable_dotnet.impl
             {
                 for (; ;)
                 {
+                    _cts.Token.ThrowIfCancellationRequested();
                     var a = Volatile.Read(ref _available);
                     var b = _index;
 
@@ -92,7 +93,7 @@ namespace async_enumerable_dotnet.impl
             internal void StartFirst(TimeSpan initialDelay)
             {
                 Task.Delay(initialDelay, _cts.Token)
-                    .ContinueWith(NextAction, this, _cts.Token);
+                    .ContinueWith(NextAction, this);
             }
 
             private static readonly Action<Task, object> NextAction = (t, state) =>
@@ -102,6 +103,7 @@ namespace async_enumerable_dotnet.impl
             {
                 if (t.IsCanceled || _cts.IsCancellationRequested)
                 {
+                    ResumeHelper.Resume(ref _resume);
                     return;
                 }
                 var value = Interlocked.Increment(ref _available);
@@ -111,7 +113,7 @@ namespace async_enumerable_dotnet.impl
                 {
                     // FIXME compensate for drifts
                     Task.Delay(_period, _cts.Token)
-                        .ContinueWith(NextAction, this, _cts.Token);
+                        .ContinueWith(NextAction, this);
                 }
             }
 

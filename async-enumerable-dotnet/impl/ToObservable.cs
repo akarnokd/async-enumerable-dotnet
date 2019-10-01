@@ -20,8 +20,9 @@ namespace async_enumerable_dotnet.impl
 
         public IDisposable Subscribe(IObserver<T> observer)
         {
-            var en = _source.GetAsyncEnumerator();
-            var handler = new ToObservableHandler(observer, en);
+            var cts = new CancellationTokenSource();
+            var en = _source.GetAsyncEnumerator(cts.Token);
+            var handler = new ToObservableHandler(observer, en, cts);
             handler.MoveNext();
             return handler;
         }
@@ -32,14 +33,17 @@ namespace async_enumerable_dotnet.impl
 
             private readonly IAsyncEnumerator<T> _source;
 
+            private readonly CancellationTokenSource _cts;
+
             private int _wip;
 
             private int _dispose;
 
-            public ToObservableHandler(IObserver<T> downstream, IAsyncEnumerator<T> source)
+            public ToObservableHandler(IObserver<T> downstream, IAsyncEnumerator<T> source, CancellationTokenSource cts)
             {
                 _downstream = downstream;
                 _source = source;
+                _cts = cts;
             }
 
             internal void MoveNext()
@@ -63,7 +67,14 @@ namespace async_enumerable_dotnet.impl
             
             private void HandleMain(Task<bool> task)
             {
-                if (task.IsFaulted)
+                if (task.IsCanceled)
+                {
+                    if (TryDispose())
+                    {
+                        _downstream.OnError(new OperationCanceledException());
+                    }
+                }
+                else if (task.IsFaulted)
                 {
                     if (TryDispose())
                     {
@@ -94,6 +105,7 @@ namespace async_enumerable_dotnet.impl
 
             public void Dispose()
             {
+                _cts.Cancel();
                 if (Interlocked.Increment(ref _dispose) == 1)
                 {
                     _source.DisposeAsync();

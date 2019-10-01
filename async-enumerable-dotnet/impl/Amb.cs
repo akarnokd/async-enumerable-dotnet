@@ -18,9 +18,9 @@ namespace async_enumerable_dotnet.impl
             _sources = sources;
         }
 
-        public IAsyncEnumerator<T> GetAsyncEnumerator()
+        public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            return new AmbEnumerator(_sources);
+            return new AmbEnumerator(_sources, cancellationToken);
         }
 
         private sealed class AmbEnumerator : IAsyncEnumerator<T>
@@ -42,12 +42,13 @@ namespace async_enumerable_dotnet.impl
             public T Current => _winner.Source.Current;
 
             // ReSharper disable once SuggestBaseTypeForParameter
-            public AmbEnumerator(IAsyncEnumerable<T>[] sources)
+            public AmbEnumerator(IAsyncEnumerable<T>[] sources, CancellationToken cancellationToken)
             {
                 var handlers = new InnerHandler[sources.Length];
                 for (var i = 0; i < sources.Length; i++)
                 {
-                    handlers[i] = new InnerHandler(sources[i].GetAsyncEnumerator(), this);
+                    var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                    handlers[i] = new InnerHandler(sources[i].GetAsyncEnumerator(cts.Token), this, cts);
                 }
                 _sources = handlers;
                 _disposeWip = sources.Length;
@@ -86,6 +87,7 @@ namespace async_enumerable_dotnet.impl
                 {
                     if (h != _winner)
                     {
+
                         h.Dispose();
                     }
                 }
@@ -103,7 +105,11 @@ namespace async_enumerable_dotnet.impl
                 {
                     if (Volatile.Read(ref _winner) == null && Interlocked.CompareExchange(ref _winner, sender, null) == null)
                     {
-                        if (task.IsFaulted)
+                        if (task.IsCanceled)
+                        {
+                            _winTask.TrySetCanceled();
+                        }
+                        else if (task.IsFaulted)
                         {
                             _winTask.TrySetException(ExceptionHelper.Extract(task.Exception));
                         }
@@ -137,16 +143,20 @@ namespace async_enumerable_dotnet.impl
 
             private readonly AmbEnumerator _parent;
 
+            private readonly CancellationTokenSource _cts;
+
             private int _disposeWip;
 
-            public InnerHandler(IAsyncEnumerator<T> source, AmbEnumerator parent)
+            public InnerHandler(IAsyncEnumerator<T> source, AmbEnumerator parent, CancellationTokenSource cts)
             {
                 Source = source;
                 _parent = parent;
+                _cts = cts;
             }
 
             internal void Dispose()
             {
+                _cts.Cancel();
                 if (Interlocked.Increment(ref _disposeWip) == 1)
                 {
                     _parent.Dispose(Source);

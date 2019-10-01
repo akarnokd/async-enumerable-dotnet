@@ -5,6 +5,7 @@
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace async_enumerable_dotnet.impl
 {
@@ -23,9 +24,9 @@ namespace async_enumerable_dotnet.impl
             _hasDefault = hasDefault;
         }
 
-        public IAsyncEnumerator<T> GetAsyncEnumerator()
+        public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            return new FirstEnumerator(_source.GetAsyncEnumerator(), _defaultItem, _hasDefault);
+            return new FirstEnumerator(_source.GetAsyncEnumerator(cancellationToken), _defaultItem, _hasDefault);
         }
 
         private sealed class FirstEnumerator : IAsyncEnumerator<T>
@@ -91,9 +92,9 @@ namespace async_enumerable_dotnet.impl
             _hasDefault = hasDefault;
         }
 
-        public IAsyncEnumerator<T> GetAsyncEnumerator()
+        public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            return new LastEnumerator(_source.GetAsyncEnumerator(), _defaultItem, _hasDefault);
+            return new LastEnumerator(_source.GetAsyncEnumerator(cancellationToken), _defaultItem, _hasDefault);
         }
 
         private sealed class LastEnumerator : IAsyncEnumerator<T>
@@ -166,9 +167,9 @@ namespace async_enumerable_dotnet.impl
             _hasDefault = hasDefault;
         }
 
-        public IAsyncEnumerator<T> GetAsyncEnumerator()
+        public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            return new SingleEnumerator(_source.GetAsyncEnumerator(), _defaultItem, _hasDefault);
+            return new SingleEnumerator(_source.GetAsyncEnumerator(cancellationToken), _defaultItem, _hasDefault);
         }
 
         private sealed class SingleEnumerator : IAsyncEnumerator<T>

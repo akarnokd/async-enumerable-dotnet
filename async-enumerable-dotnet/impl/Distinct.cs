@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet.impl
@@ -23,7 +24,7 @@ namespace async_enumerable_dotnet.impl
             _collectionSupplier = collectionSupplier;
         }
 
-        public IAsyncEnumerator<TSource> GetAsyncEnumerator()
+        public IAsyncEnumerator<TSource> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
             ISet<TKey> collection;
 
@@ -35,7 +36,7 @@ namespace async_enumerable_dotnet.impl
             {
                 return new Error<TSource>.ErrorEnumerator(ex);
             }
-            return new DistinctEnumerator(_source.GetAsyncEnumerator(), _keySelector, collection);
+            return new DistinctEnumerator(_source.GetAsyncEnumerator(cancellationToken), _keySelector, collection);
         }
 
         private sealed class DistinctEnumerator : IAsyncEnumerator<TSource>

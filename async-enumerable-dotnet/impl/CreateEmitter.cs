@@ -5,6 +5,7 @@
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace async_enumerable_dotnet.impl
 {
@@ -17,9 +18,9 @@ namespace async_enumerable_dotnet.impl
             _handler = handler;
         }
 
-        public IAsyncEnumerator<T> GetAsyncEnumerator()
+        public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            var en = new CreateEmitterEnumerator();
+            var en = new CreateEmitterEnumerator(cancellationToken);
             en.SetTask(_handler(en));
             return en;
         }
@@ -41,6 +42,13 @@ namespace async_enumerable_dotnet.impl
 
             private TaskCompletionSource<bool> _consumed;
 
+            internal CreateEmitterEnumerator(CancellationToken ct)
+            {
+                Token = ct;
+            }
+
+            public CancellationToken Token { get; }
+
             internal void SetTask(Task task)
             {
                 _task = task.ContinueWith(async t =>
@@ -59,7 +67,7 @@ namespace async_enumerable_dotnet.impl
                     _error = ExceptionHelper.Extract(t.Exception);
 
                     ResumeHelper.Resume(ref _valueReady);
-                });
+                }, Token);
             }
 
             public ValueTask DisposeAsync()

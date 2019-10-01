@@ -17,6 +17,8 @@ namespace async_enumerable_dotnet.impl
 
         private readonly IAsyncEnumerator<TResult> _result;
 
+        private readonly CancellationTokenSource _cancelSource;
+
         public TResult Current => _result.Current;
 
         private int _sourceDisposeWip;
@@ -29,12 +31,14 @@ namespace async_enumerable_dotnet.impl
 
         private bool _once;
 
-        internal MulticastEnumerator(IAsyncEnumerator<TSource> source, IAsyncConsumer<TSource> subject, IAsyncEnumerator<TResult> result)
+        internal MulticastEnumerator(IAsyncEnumerator<TSource> source, IAsyncConsumer<TSource> subject, 
+            IAsyncEnumerator<TResult> result, CancellationTokenSource cancelSource)
         {
             _source = source;
             _subject = subject;
             _result = result;
             _disposeTask = new TaskCompletionSource<bool>();
+            _cancelSource = cancelSource;
             Volatile.Write(ref _disposeWip, 2);
         }
 
@@ -50,7 +54,7 @@ namespace async_enumerable_dotnet.impl
             return new ValueTask(_disposeTask.Task);
         }
 
-        public ValueTask<bool> MoveNextAsync()
+        public async ValueTask<bool> MoveNextAsync()
         {
             var t = _result.MoveNextAsync();
 
@@ -61,7 +65,13 @@ namespace async_enumerable_dotnet.impl
                 // So that the func has time to subscribe
                 MoveNextSource();
             }
-            return t;
+            
+            if (await t)
+            {
+                return true;
+            }
+            _cancelSource.Cancel();
+            return false;
         }
 
         private void MoveNextSource()
@@ -90,7 +100,14 @@ namespace async_enumerable_dotnet.impl
 
         private async Task HandleSource(Task<bool> t)
         {
-            if (t.IsFaulted)
+            if (t.IsCanceled)
+            {
+                if (TryDisposeSource())
+                {
+                    await _subject.Error(new OperationCanceledException());
+                }
+            }
+            else if (t.IsFaulted)
             {
                 if (TryDisposeSource())
                 {

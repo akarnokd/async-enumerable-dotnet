@@ -18,20 +18,23 @@ namespace async_enumerable_dotnet.impl
             _delay = delay;
         }
 
-        public IAsyncEnumerator<long> GetAsyncEnumerator()
+        public IAsyncEnumerator<long> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            return new TimerEnumerator(_delay);
+            return new TimerEnumerator(_delay, cancellationToken);
         }
 
-        private sealed class TimerEnumerator : IAsyncEnumerator<long>
+        internal sealed class TimerEnumerator : IAsyncEnumerator<long>
         {
             private readonly TimeSpan _delay;
 
+            private readonly CancellationToken _ct;
+
             private bool _once;
 
-            public TimerEnumerator(TimeSpan delay)
+            public TimerEnumerator(TimeSpan delay, CancellationToken ct)
             {
                 _delay = delay;
+                _ct = ct;
             }
 
             public long Current => 0;
@@ -49,7 +52,7 @@ namespace async_enumerable_dotnet.impl
                 }
                 _once = true;
 
-                await Task.Delay(_delay).ConfigureAwait(false);
+                await Task.Delay(_delay, _ct).ConfigureAwait(false);
                 return true;
             }
         }
@@ -67,43 +70,9 @@ namespace async_enumerable_dotnet.impl
             _token = token;
         }
 
-        public IAsyncEnumerator<long> GetAsyncEnumerator()
+        public IAsyncEnumerator<long> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            return new TimerEnumerator(_delay, _token);
-        }
-
-        private sealed class TimerEnumerator : IAsyncEnumerator<long>
-        {
-            private readonly TimeSpan _delay;
-
-            private readonly CancellationToken _token;
-
-            private bool _once;
-
-            public TimerEnumerator(TimeSpan delay, CancellationToken token)
-            {
-                _delay = delay;
-                _token = token;
-            }
-
-            public long Current => 0;
-
-            public ValueTask DisposeAsync()
-            {
-                return new ValueTask();
-            }
-
-            public async ValueTask<bool> MoveNextAsync()
-            {
-                if (_once)
-                {
-                    return false;
-                }
-                _once = true;
-
-                await Task.Delay(_delay, _token).ConfigureAwait(false);
-                return true;
-            }
+            return new Timer.TimerEnumerator(_delay, CancellationTokenSource.CreateLinkedTokenSource(_token, cancellationToken).Token);
         }
     }
 }

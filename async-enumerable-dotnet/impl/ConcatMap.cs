@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet.impl
@@ -20,9 +21,9 @@ namespace async_enumerable_dotnet.impl
             _mapper = mapper;
         }
 
-        public IAsyncEnumerator<TResult> GetAsyncEnumerator()
+        public IAsyncEnumerator<TResult> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            return new ConcatMapEnumerator(_source.GetAsyncEnumerator(), _mapper);
+            return new ConcatMapEnumerator(_source.GetAsyncEnumerator(cancellationToken), _mapper, cancellationToken);
         }
 
         private sealed class ConcatMapEnumerator : IAsyncEnumerator<TResult>
@@ -31,14 +32,18 @@ namespace async_enumerable_dotnet.impl
 
             private readonly Func<TSource, IAsyncEnumerable<TResult>> _mapper;
 
+            private readonly CancellationToken _ct;
+
             public TResult Current { get; private set; }
 
             private IAsyncEnumerator<TResult> _inner;
 
-            public ConcatMapEnumerator(IAsyncEnumerator<TSource> source, Func<TSource, IAsyncEnumerable<TResult>> mapper)
+            public ConcatMapEnumerator(IAsyncEnumerator<TSource> source, Func<TSource, IAsyncEnumerable<TResult>> mapper,
+                CancellationToken ct)
             {
                 _source = source;
                 _mapper = mapper;
+                _ct = ct;
             }
 
             public async ValueTask DisposeAsync()
@@ -59,7 +64,7 @@ namespace async_enumerable_dotnet.impl
                     {
                         if (await _source.MoveNextAsync())
                         {
-                            _inner = _mapper(_source.Current).GetAsyncEnumerator();
+                            _inner = _mapper(_source.Current).GetAsyncEnumerator(_ct);
                         }
                         else
                         {
@@ -92,9 +97,9 @@ namespace async_enumerable_dotnet.impl
             _mapper = mapper;
         }
 
-        public IAsyncEnumerator<TResult> GetAsyncEnumerator()
+        public IAsyncEnumerator<TResult> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            return new ConcatMapEnumerator(_source.GetAsyncEnumerator(), _mapper);
+            return new ConcatMapEnumerator(_source.GetAsyncEnumerator(cancellationToken), _mapper, cancellationToken);
         }
 
         private sealed class ConcatMapEnumerator : IAsyncEnumerator<TResult>
@@ -103,14 +108,18 @@ namespace async_enumerable_dotnet.impl
 
             private readonly Func<TSource, IEnumerable<TResult>> _mapper;
 
+            private readonly CancellationToken _ct;
+
             public TResult Current { get; private set; }
 
             private IEnumerator<TResult> _inner;
 
-            public ConcatMapEnumerator(IAsyncEnumerator<TSource> source, Func<TSource, IEnumerable<TResult>> mapper)
+            public ConcatMapEnumerator(IAsyncEnumerator<TSource> source, Func<TSource, IEnumerable<TResult>> mapper,
+                CancellationToken ct)
             {
                 _source = source;
                 _mapper = mapper;
+                _ct = ct;
             }
 
             public async ValueTask DisposeAsync()
@@ -142,7 +151,7 @@ namespace async_enumerable_dotnet.impl
                         }
                     }
 
-                    if (_inner.MoveNext())
+                    if (!_ct.IsCancellationRequested && _inner.MoveNext())
                     {
                         Current = _inner.Current;
                         return true;

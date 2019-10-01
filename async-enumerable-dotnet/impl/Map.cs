@@ -5,6 +5,7 @@
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace async_enumerable_dotnet.impl
 {
@@ -20,9 +21,9 @@ namespace async_enumerable_dotnet.impl
             _mapper = mapper;
         }
 
-        public IAsyncEnumerator<TResult> GetAsyncEnumerator()
+        public IAsyncEnumerator<TResult> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            return new MapEnumerator(_source.GetAsyncEnumerator(), _mapper);
+            return new MapEnumerator(_source.GetAsyncEnumerator(cancellationToken), _mapper);
         }
 
         private sealed class MapEnumerator : IAsyncEnumerator<TResult>
@@ -69,9 +70,9 @@ namespace async_enumerable_dotnet.impl
             _mapper = mapper;
         }
 
-        public IAsyncEnumerator<TResult> GetAsyncEnumerator()
+        public IAsyncEnumerator<TResult> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            return new MapAsyncEnumerator(_source.GetAsyncEnumerator(), _mapper);
+            return new MapAsyncEnumerator(_source.GetAsyncEnumerator(cancellationToken), _mapper);
         }
 
         private sealed class MapAsyncEnumerator : IAsyncEnumerator<TResult>

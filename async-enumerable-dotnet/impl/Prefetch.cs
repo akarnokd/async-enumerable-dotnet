@@ -25,9 +25,9 @@ namespace async_enumerable_dotnet.impl
             _limit = limit;
         }
 
-        public IAsyncEnumerator<T> GetAsyncEnumerator()
+        public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            var en = new PrefetchEnumerator(_source.GetAsyncEnumerator(), _prefetch, _limit);
+            var en = new PrefetchEnumerator(_source.GetAsyncEnumerator(cancellationToken), _prefetch, _limit);
             en.MoveNext();
             return en;
         }

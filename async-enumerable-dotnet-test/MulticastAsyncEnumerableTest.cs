@@ -44,7 +44,7 @@ namespace async_enumerable_dotnet_test
         {
             var push = new MulticastAsyncEnumerable<int>();
 
-            var en1 = push.GetAsyncEnumerator();
+            var en1 = push.GetAsyncEnumerator(default);
 
             var task = Task.Run(async () =>
             {
@@ -65,7 +65,7 @@ namespace async_enumerable_dotnet_test
         {
             var push = new MulticastAsyncEnumerable<int>();
 
-            var en1 = push.GetAsyncEnumerator();
+            var en1 = push.GetAsyncEnumerator(default);
 
             var task = Task.Run(async () =>
             {
@@ -86,14 +86,14 @@ namespace async_enumerable_dotnet_test
         {
             var push = new MulticastAsyncEnumerable<int>();
 
-            var en1 = push.GetAsyncEnumerator();
+            var en1 = push.GetAsyncEnumerator(default);
 
             var task1 = Task.Run(async () =>
             {
                 await en1.AssertResult(1, 2, 3, 4, 5);
             });
 
-            var en2 = push.GetAsyncEnumerator();
+            var en2 = push.GetAsyncEnumerator(default);
             var task2 = Task.Run(async () =>
             {
                 await en2.AssertResult(1, 2, 3, 4, 5);
@@ -114,10 +114,10 @@ namespace async_enumerable_dotnet_test
         {
             var push = new MulticastAsyncEnumerable<int>();
 
-            var en1 = push.GetAsyncEnumerator();
+            var en1 = push.GetAsyncEnumerator(default);
 
 
-            var en2 = push.GetAsyncEnumerator();
+            var en2 = push.GetAsyncEnumerator(default);
 
             var task1 = Task.Run(async () =>
             {
@@ -143,14 +143,14 @@ namespace async_enumerable_dotnet_test
         {
             var push = new MulticastAsyncEnumerable<int>();
 
-            var en1 = push.Take(3).GetAsyncEnumerator();
+            var en1 = push.Take(3).GetAsyncEnumerator(default);
 
             var task1 = Task.Run(async () =>
             {
                 await en1.AssertResult(1, 2, 3);
             });
 
-            var en2 = push.GetAsyncEnumerator();
+            var en2 = push.GetAsyncEnumerator(default);
             var task2 = Task.Run(async () =>
             {
                 await en2.AssertResult(1, 2, 3, 4, 5);
@@ -173,7 +173,7 @@ namespace async_enumerable_dotnet_test
 
             Assert.False(push.HasConsumers);
 
-            var en = push.GetAsyncEnumerator();
+            var en = push.GetAsyncEnumerator(default);
 
             Assert.True(push.HasConsumers);
 
@@ -189,7 +189,7 @@ namespace async_enumerable_dotnet_test
 
             Assert.False(push.HasConsumers);
 
-            var en = push.GetAsyncEnumerator();
+            var en = push.GetAsyncEnumerator(default);
 
             Assert.True(push.HasConsumers);
 
