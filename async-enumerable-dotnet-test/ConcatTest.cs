@@ -28,7 +28,7 @@ namespace async_enumerable_dotnet_test
         [Fact]
         public async void Enumerable_Normal()
         {
-            await AsyncEnumerable.Concat((IEnumerable<async_enumerable_dotnet.IAsyncEnumerable<int>>)new[] {
+            await AsyncEnumerable.Concat((IEnumerable<IAsyncEnumerable<int>>)new[] {
                         AsyncEnumerable.Range(1, 3),
                         AsyncEnumerable.Empty<int>(),
                         AsyncEnumerable.FromArray(4, 5, 6, 7),

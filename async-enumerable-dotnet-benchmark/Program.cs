@@ -4,6 +4,7 @@
 
 using async_enumerable_dotnet;
 using System;
+using System.Collections.Generic;
 
 namespace async_enumerable_dotnet_benchmark
 {
