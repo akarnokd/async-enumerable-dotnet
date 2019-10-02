@@ -46,7 +46,12 @@ namespace async_enumerable_dotnet.impl
 
             public ValueTask DisposeAsync()
             {
-                return _source.DisposeAsync();
+                var src = _source;
+                if (src != null)
+                {
+                    return src.DisposeAsync();
+                }
+                return new ValueTask();
             }
 
             public async ValueTask<bool> MoveNextAsync()
@@ -62,10 +67,18 @@ namespace async_enumerable_dotnet.impl
                 }
                 catch (Exception ex)
                 {
+                    var old = _source;
+                    _source = null;
+                    if (old != null)
+                    {
+                        await old.DisposeAsync();
+                    }
+
                     IAsyncEnumerator<T> en;
 
                     try
                     {
+
                         en = _handler(ex).GetAsyncEnumerator(_ct);
                     }
                     catch (Exception exc)

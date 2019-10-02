@@ -33,5 +33,16 @@ namespace async_enumerable_dotnet_test
                 .OnErrorResumeNext(e => throw e)
                 .AssertFailure(typeof(AggregateException));
         }
+
+        [Fact]
+        public async void Error_DisposeSource()
+        {
+            var disposed = false;
+            await AsyncEnumerable.Error<int>(new Exception())
+                .DoOnDispose(() => disposed = true)
+                .OnErrorResumeNext(e => AsyncEnumerable.Empty<int>())
+                .AssertResult();
+            Assert.True(disposed);
+        }
     }
 }
