@@ -44,6 +44,7 @@ namespace async_enumerable_dotnet.impl
 
         public ValueTask DisposeAsync()
         {
+            _cancelSource.Cancel();
             if (Interlocked.Increment(ref _sourceDisposeWip) == 1)
             {
                 Dispose(_source);

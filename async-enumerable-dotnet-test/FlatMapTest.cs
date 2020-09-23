@@ -185,5 +185,34 @@ namespace async_enumerable_dotnet_test
                 .FlatMap<int, int>(v => throw new InvalidOperationException())
                 .AssertFailure(typeof(InvalidOperationException));
         }
+
+        [Fact]
+        public async void NoCancelDelay()
+        {
+            var start = DateTime.Now;
+            try
+            {
+                await foreach (var item in async_enumerable_dotnet.AsyncEnumerable.Interval(TimeSpan.Zero, TimeSpan.FromSeconds(10))
+                .Map(x => async_enumerable_dotnet.AsyncEnumerable.Just(x))
+                .Merge())
+                {
+                    Console.WriteLine(item);
+
+                    throw new Exception("expected");
+                }
+
+                throw new Exception("unexpected");
+            }
+            catch (Exception e) when (e.Message == "expected")
+            {
+                // expected
+            }
+            var end = DateTime.Now;
+
+            if (end - start > TimeSpan.FromSeconds(5))
+            {
+                Assert.True(false, "Test took too much time");
+            }
+        }
     }
 }

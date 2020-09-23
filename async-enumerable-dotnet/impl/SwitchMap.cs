@@ -23,7 +23,8 @@ namespace async_enumerable_dotnet.impl
 
         public IAsyncEnumerator<TResult> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            var en = new SwitchMapEnumerator(_source.GetAsyncEnumerator(cancellationToken), _mapper, cancellationToken);
+            var sourceCTS = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            var en = new SwitchMapEnumerator(_source.GetAsyncEnumerator(sourceCTS.Token), _mapper, sourceCTS);
             en.MoveNext();
             return en;
         }
@@ -34,7 +35,7 @@ namespace async_enumerable_dotnet.impl
 
             private readonly Func<TSource, IAsyncEnumerable<TResult>> _mapper;
 
-            private readonly CancellationToken _ct;
+            private readonly CancellationTokenSource _sourceCTS;
 
             private InnerHandler _current;
 
@@ -54,17 +55,19 @@ namespace async_enumerable_dotnet.impl
 
             private static readonly InnerHandler DisposedInnerHandler = new InnerHandler(null, null, null);
 
-            public SwitchMapEnumerator(IAsyncEnumerator<TSource> source, Func<TSource, IAsyncEnumerable<TResult>> mapper, CancellationToken ct)
+            public SwitchMapEnumerator(IAsyncEnumerator<TSource> source, Func<TSource, IAsyncEnumerable<TResult>> mapper, CancellationTokenSource cts)
             {
                 _source = source;
                 _mapper = mapper;
                 _disposeTask = new TaskCompletionSource<bool>();
-                _ct = ct;
+                _sourceCTS = cts;
                 Volatile.Write(ref _allDisposeWip, 1);
             }
 
             public ValueTask DisposeAsync()
             {
+                _sourceCTS.Cancel();
+
                 if (Interlocked.Increment(ref _sourceDisposeWip) == 1)
                 {
                     Dispose(_source);
@@ -161,7 +164,7 @@ namespace async_enumerable_dotnet.impl
                 }
                 else if (t.Result)
                 {
-                    var cts = CancellationTokenSource.CreateLinkedTokenSource(_ct);
+                    var cts = CancellationTokenSource.CreateLinkedTokenSource(_sourceCTS.Token);
                     IAsyncEnumerator<TResult> src;
                     try
                     {

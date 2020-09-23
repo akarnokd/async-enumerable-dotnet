@@ -23,7 +23,8 @@ namespace async_enumerable_dotnet.impl
 
         public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            return new TimeoutEnumerator(_source.GetAsyncEnumerator(cancellationToken), _timeout, cancellationToken);
+            var sourceCTS = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            return new TimeoutEnumerator(_source.GetAsyncEnumerator(sourceCTS.Token), _timeout, sourceCTS);
         }
 
         private sealed class TimeoutEnumerator : IAsyncEnumerator<T>
@@ -32,7 +33,7 @@ namespace async_enumerable_dotnet.impl
 
             private readonly TimeSpan _timeout;
 
-            private readonly CancellationToken _ct;
+            private readonly CancellationTokenSource _sourceCTS;
 
             private TaskCompletionSource<bool> _disposeTask;
 
@@ -44,11 +45,11 @@ namespace async_enumerable_dotnet.impl
 
             private int _disposeWip;
 
-            public TimeoutEnumerator(IAsyncEnumerator<T> source, TimeSpan timeout, CancellationToken ct)
+            public TimeoutEnumerator(IAsyncEnumerator<T> source, TimeSpan timeout, CancellationTokenSource cts)
             {
                 _source = source;
                 _timeout = timeout;
-                _ct = ct;
+                _sourceCTS = cts;
             }
 
             public ValueTask DisposeAsync()
@@ -66,7 +67,7 @@ namespace async_enumerable_dotnet.impl
 
                 var result = new TaskCompletionSource<bool>();
 
-                _token = CancellationTokenSource.CreateLinkedTokenSource(_ct);
+                _token = CancellationTokenSource.CreateLinkedTokenSource(_sourceCTS.Token);
 
                 Interlocked.Increment(ref _disposeWip);
 

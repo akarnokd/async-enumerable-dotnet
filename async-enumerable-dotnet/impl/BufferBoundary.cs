@@ -76,6 +76,8 @@ namespace async_enumerable_dotnet.impl
             private TCollection _buffer;
             private int _size;
 
+            private bool _suppressCancel;
+
             public TCollection Current { get; private set; }
 
             public BufferBoundaryExactEnumerator(IAsyncEnumerator<TSource> source, 
@@ -172,6 +174,8 @@ namespace async_enumerable_dotnet.impl
 
             public async ValueTask DisposeAsync()
             {
+                _mainCancel.Cancel();
+                _otherCancel.Cancel();
                 if (Interlocked.Increment(ref _sourceDisposeWip) == 1)
                 {
                     Dispose(_source);
@@ -207,7 +211,16 @@ namespace async_enumerable_dotnet.impl
             {
                 if (t.IsCanceled)
                 {
-                    // FIXME ignore???
+                    if (!Volatile.Read(ref _suppressCancel))
+                    {
+                        ExceptionHelper.AddException(ref _error, new OperationCanceledException());
+                        _queue.Enqueue(new Entry
+                        {
+                            Done = true
+                        });
+                        Volatile.Write(ref _suppressCancel, true);
+                        _otherCancel.Cancel();
+                    }
                 }
                 else if (t.IsFaulted)
                 {
@@ -216,6 +229,7 @@ namespace async_enumerable_dotnet.impl
                     {
                         Done = true
                     });
+                    Volatile.Write(ref _suppressCancel, true);
                     _otherCancel.Cancel();
                 }
                 else if (t.Result)
@@ -231,6 +245,7 @@ namespace async_enumerable_dotnet.impl
                     {
                         Done = true
                     });
+                    Volatile.Write(ref _suppressCancel, true);
                     _otherCancel.Cancel();
                 }
                 if (TryDisposeSource())
@@ -260,7 +275,16 @@ namespace async_enumerable_dotnet.impl
             {
                 if (t.IsCanceled)
                 {
-                    // FIXME ignore???
+                    if (!Volatile.Read(ref _suppressCancel))
+                    {
+                        ExceptionHelper.AddException(ref _error, new OperationCanceledException());
+                        _queue.Enqueue(new Entry
+                        {
+                            Done = true
+                        });
+                        Volatile.Write(ref _suppressCancel, true);
+                        _mainCancel.Cancel();
+                    }
                 }
                 else if (t.IsFaulted)
                 {
@@ -269,6 +293,7 @@ namespace async_enumerable_dotnet.impl
                     {
                         Done = true
                     });
+                    Volatile.Write(ref _suppressCancel, true);
                     _mainCancel.Cancel();
                 }
                 else if (t.Result)
@@ -284,6 +309,7 @@ namespace async_enumerable_dotnet.impl
                     {
                         Done = true
                     });
+                    Volatile.Write(ref _suppressCancel, true);
                     _mainCancel.Cancel();
                 }
                 if (TryDisposeOther())

@@ -26,7 +26,8 @@ namespace async_enumerable_dotnet.impl
 
         public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            var en = new SampleEnumerator(_source.GetAsyncEnumerator(cancellationToken), _period, _emitLast, cancellationToken);
+            var sourceCTS = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            var en = new SampleEnumerator(_source.GetAsyncEnumerator(sourceCTS.Token), _period, _emitLast, sourceCTS);
             en.StartTimer();
             en.MoveNext();
             return en;
@@ -38,7 +39,7 @@ namespace async_enumerable_dotnet.impl
 
             private readonly TimeSpan _period;
 
-            private readonly CancellationTokenSource _cts;
+            private readonly CancellationTokenSource _sourceCTS;
 
             private readonly bool _emitLast;
 
@@ -58,20 +59,20 @@ namespace async_enumerable_dotnet.impl
 
             public T Current { get; private set; }
 
-            public SampleEnumerator(IAsyncEnumerator<T> source, TimeSpan period, bool emitLast, CancellationToken ct)
+            public SampleEnumerator(IAsyncEnumerator<T> source, TimeSpan period, bool emitLast, CancellationTokenSource cts)
             {
                 _source = source;
                 _period = period;
                 _emitLast = emitLast;
                 _disposeTask = new TaskCompletionSource<bool>();
-                _cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                _sourceCTS = cts;
                 Volatile.Write(ref _latest, EmptyHelper.EmptyIndicator);
                 Volatile.Write(ref _timerLatest, EmptyHelper.EmptyIndicator);
             }
 
             public ValueTask DisposeAsync()
             {
-                _cts.Cancel();
+                _sourceCTS.Cancel();
                 if (Interlocked.Increment(ref _disposeWip) == 1)
                 {
                     Interlocked.Exchange(ref _timerLatest, EmptyHelper.EmptyIndicator);
@@ -110,8 +111,8 @@ namespace async_enumerable_dotnet.impl
             // FIXME timer drift
             internal void StartTimer()
             {
-                Task.Delay(_period, _cts.Token)
-                    .ContinueWith(HandleTimerAction, this, _cts.Token);
+                Task.Delay(_period, _sourceCTS.Token)
+                    .ContinueWith(HandleTimerAction, this, _sourceCTS.Token);
             }
 
             private static readonly Action<Task, object> HandleTimerAction =
@@ -153,9 +154,21 @@ namespace async_enumerable_dotnet.impl
 
             private void Handler(Task<bool> t)
             {
-                if (t.IsFaulted)
+                if (t.IsCanceled)
                 {
-                    _cts.Cancel();
+                    if (_emitLast)
+                    {
+                        Interlocked.Exchange(ref _latest, Interlocked.Exchange(ref _timerLatest, EmptyHelper.EmptyIndicator));
+                    }
+                    _error = new OperationCanceledException();
+                    _done = true;
+                    if (TryDispose())
+                    {
+                        Signal();
+                    }
+                } else if (t.IsFaulted)
+                {
+                    _sourceCTS.Cancel();
                     if (_emitLast)
                     {
                         Interlocked.Exchange(ref _latest, Interlocked.Exchange(ref _timerLatest, EmptyHelper.EmptyIndicator));
@@ -178,7 +191,7 @@ namespace async_enumerable_dotnet.impl
                 }
                 else
                 {
-                    _cts.Cancel();
+                    _sourceCTS.Cancel();
                     if (_emitLast)
                     {
                         Interlocked.Exchange(ref _latest, Interlocked.Exchange(ref _timerLatest, EmptyHelper.EmptyIndicator));

@@ -259,7 +259,10 @@ namespace async_enumerable_dotnet.impl
                 {
                     if (t.IsCanceled)
                     {
-                        // FIXME ignore???
+                        if (TryDispose())
+                        {
+                            _parent.InnerError(_index, new OperationCanceledException());
+                        }
                     }
                     else if (t.IsFaulted)
                     {

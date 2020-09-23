@@ -5,6 +5,9 @@
 using Xunit;
 using async_enumerable_dotnet;
 using System;
+using System.Threading.Tasks;
+using System.Threading;
+using System.Data;
 
 namespace async_enumerable_dotnet_test
 {
@@ -86,6 +89,34 @@ namespace async_enumerable_dotnet_test
             await AsyncEnumerable.Just(AsyncEnumerable.Range(2, 5))
                 .Switch()
                 .AssertResult(2, 3, 4, 5, 6);
+        }
+
+        [Fact]
+        public async void NoCancelDelay()
+        {
+            var start = DateTime.Now;
+            try
+            {
+                await foreach (var item in async_enumerable_dotnet.AsyncEnumerable.Interval(TimeSpan.Zero, TimeSpan.FromSeconds(10))
+                .Map(x => async_enumerable_dotnet.AsyncEnumerable.Just(x))
+                .Switch())
+                {
+                    Console.WriteLine(item);
+
+                    throw new Exception("expected");
+                }
+
+                throw new Exception("unexpected");
+            } catch (Exception e) when (e.Message == "expected")
+            {
+                // expected
+            }
+            var end = DateTime.Now;
+
+            if (end - start > TimeSpan.FromSeconds(5))
+            {
+                Assert.True(false, "Test took too much time");
+            }
         }
     }
 }

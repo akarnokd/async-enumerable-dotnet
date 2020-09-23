@@ -30,8 +30,9 @@ namespace async_enumerable_dotnet.impl
 
         public IAsyncEnumerator<TResult> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            var en = new ConcatMapEagerEnumerator(_source.GetAsyncEnumerator(cancellationToken), _mapper, _maxConcurrency, _prefetch,
-                cancellationToken);
+            var sourceCTS = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            var en = new ConcatMapEagerEnumerator(_source.GetAsyncEnumerator(sourceCTS.Token), _mapper, _maxConcurrency, _prefetch,
+                sourceCTS);
             en.MoveNextSource();
             return en;
         }
@@ -44,7 +45,7 @@ namespace async_enumerable_dotnet.impl
 
             private readonly int _prefetch;
 
-            private readonly CancellationToken _ct;
+            private readonly CancellationTokenSource _sourceCTS;
 
             private int _sourceOutstanding;
 
@@ -69,7 +70,7 @@ namespace async_enumerable_dotnet.impl
 
             public ConcatMapEagerEnumerator(IAsyncEnumerator<TSource> source, 
                 Func<TSource, IAsyncEnumerable<TResult>> mapper, int maxConcurrency, int prefetch,
-                CancellationToken ct)
+                CancellationTokenSource cts)
             {
                 _source = source;
                 _mapper = mapper;
@@ -78,11 +79,12 @@ namespace async_enumerable_dotnet.impl
                 _disposeWip = 1;
                 _inners = new ConcurrentQueue<InnerHandler>();
                 _disposeTask = new TaskCompletionSource<bool>();
-                _ct = ct;
+                _sourceCTS = cts;
             }
 
             public ValueTask DisposeAsync()
             {
+                _sourceCTS.Cancel();
                 _disposeRequested = true;
                 if (Interlocked.Increment(ref _sourceDisposeWip) == 1)
                 {
@@ -175,6 +177,15 @@ namespace async_enumerable_dotnet.impl
 
             private void NextHandler(Task<bool> t)
             {
+                if (t.IsCanceled)
+                {
+                    ExceptionHelper.AddException(ref _error, new OperationCanceledException());
+                    _sourceDone = true;
+                    if (TryDispose())
+                    {
+                        ResumeHelper.Resume(ref _resume);
+                    }
+                } else
                 if (t.IsFaulted)
                 {
                     ExceptionHelper.AddException(ref _error, ExceptionHelper.Extract(t.Exception));
@@ -186,7 +197,7 @@ namespace async_enumerable_dotnet.impl
                 }
                 else if (t.Result)
                 {
-                    var cts = CancellationTokenSource.CreateLinkedTokenSource(_ct);
+                    var cts = CancellationTokenSource.CreateLinkedTokenSource(_sourceCTS.Token);
                     IAsyncEnumerator<TResult> src;
                     try
                     {
@@ -312,7 +323,15 @@ namespace async_enumerable_dotnet.impl
 
                 private void InnerNextHandler(Task<bool> t)
                 {
-                    if (t.IsFaulted)
+                    if (t.IsCanceled)
+                    {
+                        ExceptionHelper.AddException(ref _parent._error, new OperationCanceledException());
+                        Done = true;
+                        if (TryDispose())
+                        {
+                            ResumeHelper.Resume(ref _parent._resume);
+                        }
+                    } else if (t.IsFaulted)
                     {
                         ExceptionHelper.AddException(ref _parent._error, ExceptionHelper.Extract(t.Exception));
                         Done = true;
