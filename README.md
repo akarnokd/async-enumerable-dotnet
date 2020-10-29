@@ -2,7 +2,7 @@
 
 Experimental operators for C# 8 [`IAsyncEnumerable`s](https://docs.microsoft.com/en-us/dotnet/api/system.collections.generic.iasyncenumerable-1?view=dotnet-plat-ext-3.0).
 
-Travis-CI: <a href='https://travis-ci.org/akarnokd/async-enumerable-dotnet/builds'><img src='https://travis-ci.org/akarnokd/async-enumerable-dotnet.svg?branch=master' alt="async-enumerable-dotnet"></a>
+Travis-CI: <a href='https://travis-ci.com/akarnokd/async-enumerable-dotnet/builds'><img src='https://travis-ci.com/akarnokd/async-enumerable-dotnet.svg?branch=master' alt="async-enumerable-dotnet"></a>
 NuGet: <a href='https://www.nuget.org/packages/akarnokd.async-enumerable-dotnet'><img src='https://img.shields.io/nuget/v/akarnokd.async-enumerable-dotnet.svg' alt="async-enumerable-dotnet"/></a>
 
 # Getting started
