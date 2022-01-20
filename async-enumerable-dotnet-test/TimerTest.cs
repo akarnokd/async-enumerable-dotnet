@@ -13,7 +13,7 @@ namespace async_enumerable_dotnet_test
     public class TimerTest
     {
         [Fact]
-        public async void Token()
+        public async Task Token()
         {
             var value = 0;
             
@@ -37,7 +37,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Normal()
+        public async Task Normal()
         {
             var cts = new CancellationTokenSource();
             await AsyncEnumerable.Timer(TimeSpan.FromMilliseconds(100), cts.Token)

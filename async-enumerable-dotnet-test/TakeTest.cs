@@ -4,13 +4,14 @@
 
 using Xunit;
 using async_enumerable_dotnet;
+using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet_test
 {
     public class TakeTest
     {
         [Fact]
-        public async void Normal()
+        public async Task Normal()
         {
             var result = AsyncEnumerable.FromArray(1, 2, 3, 4, 5)
                 .Take(3)
@@ -20,7 +21,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void More()
+        public async Task More()
         {
             var result = AsyncEnumerable.FromArray(1, 2, 3, 4, 5)
                 .Take(6)

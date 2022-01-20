@@ -5,13 +5,14 @@
 using System;
 using Xunit;
 using async_enumerable_dotnet;
+using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet_test
 {
     public class SkipUntilTest
     {
         [Fact]
-        public async void Skip_All()
+        public async Task Skip_All()
         {
             await AsyncEnumerable.Range(1, 5)
                 .SkipUntil(AsyncEnumerable.Timer(TimeSpan.FromMilliseconds(250)))
@@ -19,7 +20,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Skip_None()
+        public async Task Skip_None()
         {
             await AsyncEnumerable.Range(1, 5)
                 .ConcatMap(v => AsyncEnumerable.Timer(TimeSpan.FromMilliseconds(100)).Map(w => v))
@@ -28,7 +29,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Skip_Some()
+        public async Task Skip_Some()
         {
             var scale = 200;
             if (Environment.GetEnvironmentVariable("CI") != null)
@@ -43,7 +44,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Error_Main()
+        public async Task Error_Main()
         {
             await AsyncEnumerable.Error<int>(new InvalidOperationException())
                 .SkipUntil(AsyncEnumerable.Timer(TimeSpan.FromMilliseconds(200)))
@@ -51,7 +52,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Error_Other()
+        public async Task Error_Other()
         {
             await AsyncEnumerable.Timer(TimeSpan.FromMilliseconds(200))
                 .SkipUntil(AsyncEnumerable.Error<int>(new InvalidOperationException()))

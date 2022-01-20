@@ -5,13 +5,14 @@
 using System;
 using Xunit;
 using async_enumerable_dotnet;
+using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet_test
 {
     public class OnErrorResumeNextTest
     {
         [Fact]
-        public async void Normal()
+        public async Task Normal()
         {
             await AsyncEnumerable.Range(1, 5)
                 .OnErrorResumeNext(e => AsyncEnumerable.Range(6, 5))
@@ -19,7 +20,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Error_Switch()
+        public async Task Error_Switch()
         {
             await AsyncEnumerable.Error<int>(new Exception())
                 .OnErrorResumeNext(e => AsyncEnumerable.Range(6, 5))
@@ -27,7 +28,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Handler_Crash()
+        public async Task Handler_Crash()
         {
             await AsyncEnumerable.Error<int>(new InvalidOperationException())
                 .OnErrorResumeNext(e => throw e)
@@ -35,7 +36,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Error_DisposeSource()
+        public async Task Error_DisposeSource()
         {
             var disposed = false;
             await AsyncEnumerable.Error<int>(new Exception())

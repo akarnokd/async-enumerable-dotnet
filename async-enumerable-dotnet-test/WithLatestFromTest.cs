@@ -12,7 +12,7 @@ namespace async_enumerable_dotnet_test
     public class WithLatestFromTest
     {
         [Fact]
-        public async void Simple()
+        public async Task Simple()
         {
             var t = 200;
             if (Environment.GetEnvironmentVariable("CI") != null)
@@ -34,7 +34,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Empty_Main()
+        public async Task Empty_Main()
         {
             await AsyncEnumerable.Empty<int>()
                 .WithLatestFrom(AsyncEnumerable.Just(10), (a, b) => a + b)
@@ -43,7 +43,7 @@ namespace async_enumerable_dotnet_test
 
 
         [Fact]
-        public async void Error_Main()
+        public async Task Error_Main()
         {
             await AsyncEnumerable.Error<int>(new InvalidOperationException())
                 .WithLatestFrom(AsyncEnumerable.Just(10), (a, b) => a + b)
@@ -51,7 +51,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Empty_Other()
+        public async Task Empty_Other()
         {
             await AsyncEnumerable.Range(1, 5)
                 .WithLatestFrom(AsyncEnumerable.Empty<int>(), (a, b) => a + b)
@@ -59,7 +59,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Error_Other()
+        public async Task Error_Other()
         {
             var t = 200;
             if (Environment.GetEnvironmentVariable("CI") != null)

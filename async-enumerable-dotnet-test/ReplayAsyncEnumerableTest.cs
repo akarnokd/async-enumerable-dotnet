@@ -12,7 +12,7 @@ namespace async_enumerable_dotnet_test
     public class ReplayAsyncEnumerableTest
     {
         [Fact]
-        public async void Unbounded_No_Consumers()
+        public async Task Unbounded_No_Consumers()
         {
             var push = new ReplayAsyncEnumerable<int>();
 
@@ -28,7 +28,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Unbounded_No_Consumers_Error()
+        public async Task Unbounded_No_Consumers_Error()
         {
             var push = new ReplayAsyncEnumerable<int>();
 
@@ -44,7 +44,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Unbounded_One_Consumer()
+        public async Task Unbounded_One_Consumer()
         {
             var push = new ReplayAsyncEnumerable<int>();
 
@@ -65,7 +65,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Unbounded_One_Consumer_Error()
+        public async Task Unbounded_One_Consumer_Error()
         {
             var push = new ReplayAsyncEnumerable<int>();
 
@@ -86,7 +86,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Unbounded_2_Consumers()
+        public async Task Unbounded_2_Consumers()
         {
             var push = new ReplayAsyncEnumerable<int>();
 
@@ -113,7 +113,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Unbounded_2_Consumers_Error()
+        public async Task Unbounded_2_Consumers_Error()
         {
             var push = new ReplayAsyncEnumerable<int>();
 
@@ -140,7 +140,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Unbounded_1_Normal()
+        public async Task Unbounded_1_Normal()
         {
             var push = new ReplayAsyncEnumerable<int>();
 
@@ -164,7 +164,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Sized_No_Consumers()
+        public async Task Sized_No_Consumers()
         {
             var push = new ReplayAsyncEnumerable<int>(10);
 
@@ -180,7 +180,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Sized_No_Consumers_Error()
+        public async Task Sized_No_Consumers_Error()
         {
             var push = new ReplayAsyncEnumerable<int>(10);
 
@@ -196,7 +196,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Sized_One_Consumer()
+        public async Task Sized_One_Consumer()
         {
             var push = new ReplayAsyncEnumerable<int>(10);
 
@@ -217,7 +217,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Sized_One_Consumer_Error()
+        public async Task Sized_One_Consumer_Error()
         {
             var push = new ReplayAsyncEnumerable<int>(10);
 
@@ -238,7 +238,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Sized_2_Consumers()
+        public async Task Sized_2_Consumers()
         {
             var push = new ReplayAsyncEnumerable<int>(10);
 
@@ -265,7 +265,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Sized_2_Consumers_Error()
+        public async Task Sized_2_Consumers_Error()
         {
             var push = new ReplayAsyncEnumerable<int>(10);
 
@@ -292,7 +292,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Sized_Bounded_1_Normal()
+        public async Task Sized_Bounded_1_Normal()
         {
             var push = new ReplayAsyncEnumerable<int>(1);
 
@@ -316,7 +316,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Sized_Bounded_2_Normal()
+        public async Task Sized_Bounded_2_Normal()
         {
             var push = new ReplayAsyncEnumerable<int>(2);
 
@@ -340,7 +340,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void TimedSized_No_Consumers()
+        public async Task TimedSized_No_Consumers()
         {
             var push = new ReplayAsyncEnumerable<int>(10, TimeSpan.FromHours(1));
 
@@ -356,7 +356,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void TimedSized_No_Consumers_Error()
+        public async Task TimedSized_No_Consumers_Error()
         {
             var push = new ReplayAsyncEnumerable<int>(10, TimeSpan.FromHours(1));
 
@@ -372,7 +372,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void TimedSized_One_Consumer()
+        public async Task TimedSized_One_Consumer()
         {
             var push = new ReplayAsyncEnumerable<int>(10, TimeSpan.FromHours(1));
 
@@ -393,7 +393,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void TimedSized_One_Consumer_Error()
+        public async Task TimedSized_One_Consumer_Error()
         {
             var push = new ReplayAsyncEnumerable<int>(10, TimeSpan.FromHours(1));
 
@@ -414,7 +414,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void TimedSized_2_Consumers()
+        public async Task TimedSized_2_Consumers()
         {
             var push = new ReplayAsyncEnumerable<int>(10, TimeSpan.FromHours(1));
 
@@ -441,7 +441,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void TimedSized_2_Consumers_Error()
+        public async Task TimedSized_2_Consumers_Error()
         {
             var push = new ReplayAsyncEnumerable<int>(10, TimeSpan.FromHours(1));
 
@@ -468,7 +468,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void TimedSized_Bounded_1_Normal()
+        public async Task TimedSized_Bounded_1_Normal()
         {
             var push = new ReplayAsyncEnumerable<int>(1, TimeSpan.FromHours(1));
 
@@ -492,7 +492,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Timed_Bounded_1_Normal()
+        public async Task Timed_Bounded_1_Normal()
         {
             var timeNow = new [] { 0L };
 
@@ -530,7 +530,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Unbounded_Long()
+        public async Task Unbounded_Long()
         {
             const long n = 1_000_000;
             var push = new ReplayAsyncEnumerable<long>();
@@ -549,7 +549,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Unbounded_Long_Halfway()
+        public async Task Unbounded_Long_Halfway()
         {
             const long n = 1_000_000;
             var push = new ReplayAsyncEnumerable<long>();
@@ -573,7 +573,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Sized_Long()
+        public async Task Sized_Long()
         {
             const long n = 1_000_000;
             var push = new ReplayAsyncEnumerable<long>(10);
@@ -592,7 +592,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Timed_Long()
+        public async Task Timed_Long()
         {
             const long n = 1_000_000;
             var push = new ReplayAsyncEnumerable<long>(TimeSpan.FromHours(1));
@@ -611,7 +611,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void SizedTimed_Long()
+        public async Task SizedTimed_Long()
         {
             const long n = 1_000_000;
             var push = new ReplayAsyncEnumerable<long>(10, TimeSpan.FromHours(1));
@@ -630,7 +630,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Sized_Long_Halfway()
+        public async Task Sized_Long_Halfway()
         {
             const long n = 1_000_000;
             var push = new ReplayAsyncEnumerable<long>((int)n);
@@ -654,7 +654,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void TimedSized_Long_Halfway()
+        public async Task TimedSized_Long_Halfway()
         {
             const long n = 1_000_000;
             var push = new ReplayAsyncEnumerable<long>((int)n, TimeSpan.FromHours(1));
@@ -678,7 +678,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void HasConsumers()
+        public async Task HasConsumers()
         {
             var push = new ReplayAsyncEnumerable<int>();
 
@@ -694,7 +694,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Complete()
+        public async Task Complete()
         {
             var push = new ReplayAsyncEnumerable<int>();
 
@@ -714,7 +714,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Unbounded_Take()
+        public async Task Unbounded_Take()
         {
             var push = new ReplayAsyncEnumerable<int>();
 

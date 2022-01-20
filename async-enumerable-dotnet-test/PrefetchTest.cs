@@ -13,7 +13,7 @@ namespace async_enumerable_dotnet_test
     public class PrefetchTest
     {
         [Fact]
-        public async void Normal()
+        public async Task Normal()
         {
             await AsyncEnumerable.Range(1, 10)
                 .Prefetch(2)
@@ -21,7 +21,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Normal_1()
+        public async Task Normal_1()
         {
             await AsyncEnumerable.Range(1, 10)
                 .Prefetch(1)
@@ -29,7 +29,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Error()
+        public async Task Error()
         {
             await AsyncEnumerable.Range(1, 10)
                 .WithError(new InvalidOperationException())
@@ -38,7 +38,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Fetch_More_Than_The_Length()
+        public async Task Fetch_More_Than_The_Length()
         {
             await AsyncEnumerable.Range(1, 10)
                 .Prefetch(20)
@@ -46,7 +46,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Long_Fetch_1000()
+        public async Task Long_Fetch_1000()
         {
             await AsyncEnumerable.Range(1, 1_000_000)
                 .Prefetch(1000)
@@ -55,7 +55,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Long_Fetch_1000_Limit_500()
+        public async Task Long_Fetch_1000_Limit_500()
         {
             await AsyncEnumerable.Range(1, 1_000_000)
                 .Prefetch(1000, 500)
@@ -64,7 +64,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Take()
+        public async Task Take()
         {
             await AsyncEnumerable.Interval(1, 5, TimeSpan.FromMilliseconds(200))
                 .Prefetch(128)
@@ -73,7 +73,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Cancel()
+        public async Task Cancel()
         {
             await AsyncEnumerable.FromTask(Task.FromCanceled<int>(new CancellationToken(true)))
                 .Prefetch(1)

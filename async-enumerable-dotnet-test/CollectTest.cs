@@ -6,13 +6,14 @@ using System;
 using Xunit;
 using async_enumerable_dotnet;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet_test
 {
     public class CollectTest
     {
         [Fact]
-        public async void Normal()
+        public async Task Normal()
         {
             await AsyncEnumerable.Range(1, 5)
                 .Collect(() => new List<int>(), (a, b) => a.Add(b))
@@ -20,7 +21,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Empty()
+        public async Task Empty()
         {
             await AsyncEnumerable.Empty<int>()
                 .Collect(() => new List<int>(), (a, b) => a.Add(b))
@@ -28,7 +29,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Initial_Crash()
+        public async Task Initial_Crash()
         {
             await AsyncEnumerable.Empty<int>()
                 .Collect<int, IList<int>>(() => throw new InvalidOperationException(), (a, b) => a.Add(b))

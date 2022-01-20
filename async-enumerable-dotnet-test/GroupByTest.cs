@@ -6,13 +6,14 @@ using System;
 using Xunit;
 using async_enumerable_dotnet;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet_test
 {
     public class GroupByTest
     {
         [Fact]
-        public async void Normal_Same_Group()
+        public async Task Normal_Same_Group()
         {
             await AsyncEnumerable.Range(1, 10)
                 .GroupBy(k => 1)
@@ -23,7 +24,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Normal_Same_Group_ValueSelector()
+        public async Task Normal_Same_Group_ValueSelector()
         {
             await AsyncEnumerable.Range(1, 10)
                 .GroupBy(k => 1, k => k * 2)
@@ -34,7 +35,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Normal_Same_Group_KeyComparer()
+        public async Task Normal_Same_Group_KeyComparer()
         {
             await AsyncEnumerable.Range(1, 10)
                 .GroupBy(k => 1, EqualityComparer<int>.Default)
@@ -45,7 +46,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Normal_Distinct_Group()
+        public async Task Normal_Distinct_Group()
         {
             await AsyncEnumerable.Range(1, 10)
                 .GroupBy(k => k)
@@ -66,7 +67,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Normal_Mixed()
+        public async Task Normal_Mixed()
         {
             var disposed = 0;
 
@@ -84,7 +85,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Normal_Ordered()
+        public async Task Normal_Ordered()
         {
             await AsyncEnumerable.Range(1, 10)
                 .GroupBy(k => k < 6)
@@ -97,7 +98,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Take_2_Groups()
+        public async Task Take_2_Groups()
         {
             await AsyncEnumerable.Range(1, 10)
                 .GroupBy(k => k % 3)
@@ -111,7 +112,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Take_1_Of_Each_Group()
+        public async Task Take_1_Of_Each_Group()
         {
             await AsyncEnumerable.Range(1, 10)
                 .GroupBy(k => k)
@@ -122,7 +123,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Take_1_Of_Each_Group_Two_Groups_Total()
+        public async Task Take_1_Of_Each_Group_Two_Groups_Total()
         {
             var disposed = 0;
 
@@ -144,7 +145,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Key_Value_Equality()
+        public async Task Key_Value_Equality()
         {
             await AsyncEnumerable.Range(1, 10)
                 .GroupBy(k => 1, v => 1, EqualityComparer<int>.Default)
@@ -160,7 +161,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Error()
+        public async Task Error()
         {
             await AsyncEnumerable.Range(1, 5).WithError(new InvalidOperationException())
                 .GroupBy(v => 1)
@@ -169,7 +170,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void KeySelector_Crash()
+        public async Task KeySelector_Crash()
         {
             await AsyncEnumerable.Range(1, 5)
                 .GroupBy<int, int>(v => throw new InvalidOperationException())
@@ -177,7 +178,7 @@ namespace async_enumerable_dotnet_test
         }
         
         [Fact]
-        public async void KeySelector_Crash_After_Take()
+        public async Task KeySelector_Crash_After_Take()
         {
             await AsyncEnumerable.Range(1, 5)
                 .GroupBy(v =>

@@ -5,13 +5,14 @@
 using System;
 using Xunit;
 using async_enumerable_dotnet;
+using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet_test
 {
     public class UsingTest
     {
         [Fact]
-        public async void Normal()
+        public async Task Normal()
         {
             var cleanup = 0;
 
@@ -25,7 +26,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void ResourceSupplier_Crash()
+        public async Task ResourceSupplier_Crash()
         {
             await AsyncEnumerable.Using<int, int>(() => throw new InvalidOperationException(),
                     v => AsyncEnumerable.Range(v, 5), v => { })
@@ -33,7 +34,7 @@ namespace async_enumerable_dotnet_test
         }
         
         [Fact]
-        public async void SourceSupplier_Crash()
+        public async Task SourceSupplier_Crash()
         {
             await AsyncEnumerable.Using<int, int>(() => 1,
                     v => throw new InvalidOperationException(), v => { })
@@ -41,7 +42,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void SourceSupplier_And_Cleanup_Crash()
+        public async Task SourceSupplier_And_Cleanup_Crash()
         {
             await AsyncEnumerable.Using<int, int>(() => 1,
                     v => throw new InvalidOperationException(), v => throw new IndexOutOfRangeException())
@@ -49,7 +50,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Cleanup_Crash()
+        public async Task Cleanup_Crash()
         {
             try
             {
@@ -65,7 +66,7 @@ namespace async_enumerable_dotnet_test
         }
         
         [Fact]
-        public async void Upstream_Dispose_Crash()
+        public async Task Upstream_Dispose_Crash()
         {
             try
             {

@@ -13,7 +13,7 @@ namespace async_enumerable_dotnet_test
     public class FromObservableTest
     {
         [Fact]
-        public async void Normal()
+        public async Task Normal()
         {
             var result = new ObservableRange(1, 6).ToAsyncEnumerable();
 
@@ -21,7 +21,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Normal_From()
+        public async Task Normal_From()
         {
             var result = AsyncEnumerable.FromObservable(new ObservableRange(1, 6));
 
@@ -29,7 +29,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Long()
+        public async Task Long()
         {
             const int n = 1_000_000;
             var result = new ObservableRange(1, n).ToAsyncEnumerable();
@@ -54,7 +54,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Error()
+        public async Task Error()
         {
             await new ObservableError()
                 .ToAsyncEnumerable()

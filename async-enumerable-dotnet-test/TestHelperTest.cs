@@ -5,20 +5,21 @@
 using Xunit;
 using async_enumerable_dotnet;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet_test
 {
     public class TestHelperTest
     {
         [Fact]
-        public async void AssertResultSet()
+        public async Task AssertResultSet()
         {
             await AsyncEnumerable.Range(1, 3)
                 .AssertResultSet(1, 2, 3);
         }
 
         [Fact]
-        public async void AssertResultSet_List()
+        public async Task AssertResultSet_List()
         {
             await AsyncEnumerable.FromArray(new List<int>(new [] { 1, 2, 3 }))
                 .AssertResultSet(

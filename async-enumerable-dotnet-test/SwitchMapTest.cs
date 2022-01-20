@@ -6,15 +6,13 @@ using Xunit;
 using async_enumerable_dotnet;
 using System;
 using System.Threading.Tasks;
-using System.Threading;
-using System.Data;
 
 namespace async_enumerable_dotnet_test
 {
     public class SwitchMapTest
     {
         [Fact]
-        public async void Empty()
+        public async Task Empty()
         {
             await AsyncEnumerable.Empty<int>()
                 .SwitchMap(v => AsyncEnumerable.Range(1, 5))
@@ -22,7 +20,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Single()
+        public async Task Single()
         {
             await AsyncEnumerable.Just(2)
                 .SwitchMap(v => AsyncEnumerable.Range(v, 5))
@@ -30,7 +28,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Many_Switched()
+        public async Task Many_Switched()
         {
             await AsyncEnumerable.Range(1, 5)
                 .SwitchMap(v => AsyncEnumerable.Range(v * 10, 5))
@@ -40,7 +38,7 @@ namespace async_enumerable_dotnet_test
 
 
         [Fact]
-        public async void Many_Switched_Lots()
+        public async Task Many_Switched_Lots()
         {
             await AsyncEnumerable.Range(1, 1000)
                 .SwitchMap(v => AsyncEnumerable.Range(v * 1000, 100))
@@ -49,7 +47,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Many_Switched_Lots_2()
+        public async Task Many_Switched_Lots_2()
         {
             await AsyncEnumerable.Range(1, 100_000)
                 .SwitchMap(v => AsyncEnumerable.Range(v, 2))
@@ -58,7 +56,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Error_Outer()
+        public async Task Error_Outer()
         {
             await AsyncEnumerable.Just(2).WithError(new InvalidOperationException())
                 .SwitchMap(v => AsyncEnumerable.Range(v, 5))
@@ -66,7 +64,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Error_Inner()
+        public async Task Error_Inner()
         {
             await AsyncEnumerable.Just(2)
                 .SwitchMap(v => AsyncEnumerable.Range(v, 5)
@@ -76,7 +74,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Mapper_Crash()
+        public async Task Mapper_Crash()
         {
             await AsyncEnumerable.Just(2)
                 .SwitchMap<int, int>(v => throw new InvalidOperationException())
@@ -84,7 +82,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Nested()
+        public async Task Nested()
         {
             await AsyncEnumerable.Just(AsyncEnumerable.Range(2, 5))
                 .Switch()
@@ -92,7 +90,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void NoCancelDelay()
+        public async Task NoCancelDelay()
         {
             var start = DateTime.Now;
             try

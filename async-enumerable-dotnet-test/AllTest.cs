@@ -12,7 +12,7 @@ namespace async_enumerable_dotnet_test
     public class AllTest
     {
         [Fact]
-        public async void Sync_None()
+        public async Task Sync_None()
         {
             await AsyncEnumerable.Range(1, 5)
                 .All(v => v > 6)
@@ -20,7 +20,7 @@ namespace async_enumerable_dotnet_test
         }
         
         [Fact]
-        public async void Sync_Empty()
+        public async Task Sync_Empty()
         {
             await AsyncEnumerable.Empty<int>()
                 .All(v => v > 6)
@@ -28,7 +28,7 @@ namespace async_enumerable_dotnet_test
         }
         
         [Fact]
-        public async void Sync_Match()
+        public async Task Sync_Match()
         {
             await AsyncEnumerable.Range(1, 5)
                 .All(v => v > 0)
@@ -36,7 +36,7 @@ namespace async_enumerable_dotnet_test
         }
         
         [Fact]
-        public async void Sync_Error()
+        public async Task Sync_Error()
         {
             await AsyncEnumerable.Error<int>(new InvalidOperationException())
                 .All(v => v > 6)
@@ -44,7 +44,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Sync_Crash()
+        public async Task Sync_Crash()
         {
             await AsyncEnumerable.Range(1, 5)
                 .All((Func<int, bool>)(v => throw new InvalidOperationException()))
@@ -52,7 +52,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Async_None()
+        public async Task Async_None()
         {
             await AsyncEnumerable.Range(1, 5)
                 .All(async v =>
@@ -64,7 +64,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Async_Empty()
+        public async Task Async_Empty()
         {
             await AsyncEnumerable.Empty<int>()
                 .All(async v =>
@@ -76,7 +76,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Async_Match()
+        public async Task Async_Match()
         {
             await AsyncEnumerable.Range(1, 5)
                 .All(async v =>
@@ -88,7 +88,7 @@ namespace async_enumerable_dotnet_test
         }
         
         [Fact]
-        public async void Async_Error()
+        public async Task Async_Error()
         {
             await AsyncEnumerable.Error<int>(new InvalidOperationException())
                 .All(async v =>
@@ -100,7 +100,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Async_Crash()
+        public async Task Async_Crash()
         {
             await AsyncEnumerable.Range(1, 5)
                 .All(async v =>

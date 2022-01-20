@@ -13,7 +13,7 @@ namespace async_enumerable_dotnet_test
     public class MergeTest
     {
         [Fact]
-        public async void Empty()
+        public async Task Empty()
         {
             await AsyncEnumerable.Merge<int>(
                 )
@@ -21,7 +21,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Solo()
+        public async Task Solo()
         {
             await AsyncEnumerable.Merge(
                     AsyncEnumerable.Range(1, 5)
@@ -30,7 +30,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Normal()
+        public async Task Normal()
         {
             await AsyncEnumerable.Merge(
                     AsyncEnumerable.Range(1, 5),
@@ -40,7 +40,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Normal_Uneven_1()
+        public async Task Normal_Uneven_1()
         {
             await AsyncEnumerable.Merge(
                     AsyncEnumerable.Range(1, 5),
@@ -50,7 +50,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Normal_Uneven_2()
+        public async Task Normal_Uneven_2()
         {
             await AsyncEnumerable.Merge(
                     AsyncEnumerable.Range(1, 4),
@@ -60,7 +60,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Error()
+        public async Task Error()
         {
             await AsyncEnumerable.Merge(
                     AsyncEnumerable.Range(1, 5),
@@ -70,7 +70,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Push()
+        public async Task Push()
         {
             for (var i = 0; i < 10; i++)
             {
@@ -102,7 +102,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Multicast_Merge()
+        public async Task Multicast_Merge()
         {
             for (var i = 0; i < 100000; i++)
             {
@@ -114,7 +114,7 @@ namespace async_enumerable_dotnet_test
 
 
         [Fact]
-        public async void Async_Normal()
+        public async Task Async_Normal()
         {
             await
                 AsyncEnumerable.FromArray(
@@ -131,7 +131,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Take()
+        public async Task Take()
         {
             await AsyncEnumerable.Merge(
                     AsyncEnumerable.Timer(TimeSpan.FromMilliseconds(100)),

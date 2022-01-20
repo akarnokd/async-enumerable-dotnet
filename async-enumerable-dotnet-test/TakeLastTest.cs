@@ -4,13 +4,14 @@
 
 using Xunit;
 using async_enumerable_dotnet;
+using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet_test
 {
     public class TakeLastTest
     {
         [Fact]
-        public async void More()
+        public async Task More()
         {
             await AsyncEnumerable.Range(1, 5)
                 .TakeLast(10)
@@ -18,7 +19,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void All()
+        public async Task All()
         {
             await AsyncEnumerable.Range(1, 5)
                 .TakeLast(5)
@@ -26,7 +27,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Some()
+        public async Task Some()
         {
             await AsyncEnumerable.Range(1, 5)
                 .TakeLast(2)
@@ -34,7 +35,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void None()
+        public async Task None()
         {
             await AsyncEnumerable.Range(1, 5)
                 .TakeLast(0)

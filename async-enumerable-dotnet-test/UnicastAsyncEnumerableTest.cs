@@ -5,13 +5,14 @@
 using Xunit;
 using async_enumerable_dotnet;
 using System;
+using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet_test
 {
     public class UnicastAsyncEnumerableTest
     {
         [Fact]
-        public async void Offline()
+        public async Task Offline()
         {
             var push = new UnicastAsyncEnumerable<int>();
 
@@ -31,7 +32,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Offline_Error()
+        public async Task Offline_Error()
         {
             var push = new UnicastAsyncEnumerable<int>();
 
@@ -45,7 +46,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Online()
+        public async Task Online()
         {
             var push = new UnicastAsyncEnumerable<int>();
 
@@ -71,7 +72,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Online_Error()
+        public async Task Online_Error()
         {
             var push = new UnicastAsyncEnumerable<int>();
 
@@ -87,7 +88,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void One_Consumer_Only()
+        public async Task One_Consumer_Only()
         {
             var push = new UnicastAsyncEnumerable<int>();
 
@@ -103,7 +104,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Call_After_Done()
+        public async Task Call_After_Done()
         {
             var push = new UnicastAsyncEnumerable<int>();
             await push.Complete();
@@ -116,7 +117,7 @@ namespace async_enumerable_dotnet_test
 
 
         [Fact]
-        public async void Call_After_Done_2()
+        public async Task Call_After_Done_2()
         {
             var push = new UnicastAsyncEnumerable<int>();
             await push.Error(new InvalidOperationException());
@@ -128,7 +129,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Next_After_Dispose()
+        public async Task Next_After_Dispose()
         {
             var push = new UnicastAsyncEnumerable<int>();
 
@@ -148,7 +149,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Error_After_Dispose()
+        public async Task Error_After_Dispose()
         {
             var push = new UnicastAsyncEnumerable<int>();
 
@@ -162,7 +163,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Complete_After_Dispose()
+        public async Task Complete_After_Dispose()
         {
             var push = new UnicastAsyncEnumerable<int>();
 
