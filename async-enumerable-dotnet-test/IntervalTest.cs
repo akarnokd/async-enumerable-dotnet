@@ -5,13 +5,14 @@
 using System;
 using Xunit;
 using async_enumerable_dotnet;
+using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet_test
 {
     public class IntervalTest
     {
         [Fact]
-        public async void Normal()
+        public async Task Normal()
         {
             await AsyncEnumerable.Interval(TimeSpan.FromMilliseconds(100))
                 .Take(5)
@@ -19,7 +20,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Normal_initial()
+        public async Task Normal_initial()
         {
             await AsyncEnumerable.Interval(TimeSpan.FromMilliseconds(50), TimeSpan.FromMilliseconds(100))
                 .Take(5)
@@ -27,7 +28,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Range()
+        public async Task Range()
         {
             await AsyncEnumerable.Interval(1, 5, TimeSpan.FromMilliseconds(200), TimeSpan.FromMilliseconds(100))
                 .AssertResult(1, 2, 3, 4, 5);

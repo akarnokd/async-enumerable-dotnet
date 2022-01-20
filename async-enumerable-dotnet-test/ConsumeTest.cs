@@ -13,7 +13,7 @@ namespace async_enumerable_dotnet_test
     public class ConsumeTest
     {
         [Fact]
-        public async void Normal()
+        public async Task Normal()
         {
             var push = new MulticastAsyncEnumerable<int>();
 
@@ -28,7 +28,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Error()
+        public async Task Error()
         {
             var push = new MulticastAsyncEnumerable<int>();
 
@@ -43,7 +43,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Cancel()
+        public async Task Cancel()
         {
             var cts = new CancellationTokenSource();
 

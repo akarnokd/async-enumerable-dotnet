@@ -12,7 +12,7 @@ namespace async_enumerable_dotnet_test
     public class DoOnNextTest
     {
         [Fact]
-        public async void Sync_Normal()
+        public async Task Sync_Normal()
         {
             var list = new List<int>();
             await AsyncEnumerable.Range(1, 5)
@@ -23,7 +23,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Async_Normal()
+        public async Task Async_Normal()
         {
             var list = new List<int>();
             await AsyncEnumerable.Range(1, 5)

@@ -12,7 +12,7 @@ namespace async_enumerable_dotnet_test
     public class MulticastAsyncEnumerableTest
     {
         [Fact]
-        public async void Normal_No_Consumers()
+        public async Task Normal_No_Consumers()
         {
             var push = new MulticastAsyncEnumerable<int>();
 
@@ -26,7 +26,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Error_No_Consumers()
+        public async Task Error_No_Consumers()
         {
             var push = new MulticastAsyncEnumerable<int>();
 
@@ -40,7 +40,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Normal_One_Consumer()
+        public async Task Normal_One_Consumer()
         {
             var push = new MulticastAsyncEnumerable<int>();
 
@@ -61,7 +61,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Error_One_Consumer()
+        public async Task Error_One_Consumer()
         {
             var push = new MulticastAsyncEnumerable<int>();
 
@@ -82,7 +82,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Normal_2_Consumers()
+        public async Task Normal_2_Consumers()
         {
             var push = new MulticastAsyncEnumerable<int>();
 
@@ -110,7 +110,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Error_2_Consumers()
+        public async Task Error_2_Consumers()
         {
             var push = new MulticastAsyncEnumerable<int>();
 
@@ -139,7 +139,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Normal_2_Consumers_One_Take()
+        public async Task Normal_2_Consumers_One_Take()
         {
             var push = new MulticastAsyncEnumerable<int>();
 
@@ -167,7 +167,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void HasConsumers()
+        public async Task HasConsumers()
         {
             var push = new MulticastAsyncEnumerable<int>();
 
@@ -183,7 +183,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Complete()
+        public async Task Complete()
         {
             var push = new MulticastAsyncEnumerable<int>();
 

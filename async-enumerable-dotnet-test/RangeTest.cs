@@ -4,13 +4,14 @@
 
 using Xunit;
 using async_enumerable_dotnet;
+using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet_test
 {
     public class RangeTest
     {
         [Fact]
-        public async void Normal()
+        public async Task Normal()
         {
             var result = AsyncEnumerable.Range(1, 5);
 
@@ -18,7 +19,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Empty()
+        public async Task Empty()
         {
             var result = AsyncEnumerable.Range(1, 0);
 

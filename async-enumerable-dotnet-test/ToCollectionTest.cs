@@ -7,13 +7,14 @@ using System.Collections.Generic;
 using async_enumerable_dotnet;
 
 using Xunit;
+using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet_test
 {
     public class ToCollectionTest
     {
         [Fact]
-        public async void ToListAllowsEmptySource()
+        public async Task ToListAllowsEmptySource()
         {
             var result = await AsyncEnumerable.FromArray(new int[0]).ToListAsync();
             Assert.NotNull(result);
@@ -21,7 +22,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void ToListAlwaysReturnsNewInstance()
+        public async Task ToListAlwaysReturnsNewInstance()
         {
             var source = AsyncEnumerable.FromArray(new int[0]);
             var result1 = await source.ToListAsync();
@@ -30,7 +31,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void ToListReturnsAllItems()
+        public async Task ToListReturnsAllItems()
         {
             var result = await AsyncEnumerable.Range(0, 10).ToListAsync();
             var usedNumbers = new HashSet<int>(result);
@@ -42,7 +43,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void ToArrayAllowsEmptySource()
+        public async Task ToArrayAllowsEmptySource()
         {
             var result = await AsyncEnumerable.FromArray(new int[0]).ToArrayAsync();
             Assert.NotNull(result);
@@ -50,7 +51,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void ToArrayAlwaysReturnsNewInstanceForEmptySource()
+        public async Task ToArrayAlwaysReturnsNewInstanceForEmptySource()
         {
             var source = AsyncEnumerable.FromArray(new int[0]);
             var result1 = await source.ToArrayAsync();
@@ -59,7 +60,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void ToArrayReturnsAllItems()
+        public async Task ToArrayReturnsAllItems()
         {
             var result = await AsyncEnumerable.Range(0, 10).ToArrayAsync();
             var usedNumbers = new HashSet<int>(result);

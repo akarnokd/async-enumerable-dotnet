@@ -51,7 +51,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Async_Cancelled()
+        public async Task Async_Cancelled()
         {
             var source = new TaskCompletionSource<bool>();
 
@@ -72,7 +72,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Async_Error()
+        public async Task Async_Error()
         {
             var source = new TaskCompletionSource<bool>();
 
@@ -95,7 +95,7 @@ namespace async_enumerable_dotnet_test
 
         
         [Fact]
-        public async void Async_Success()
+        public async Task Async_Success()
         {
             var source = new TaskCompletionSource<bool>();
 

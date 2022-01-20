@@ -280,7 +280,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void RightTaskQueued()
+        public async Task RightTaskQueued()
         {
             for (var i = 0; i < 1000; i++)
             {
@@ -302,7 +302,7 @@ namespace async_enumerable_dotnet_test
         }
         
         [Fact]
-        public async void RightTaskQueued_Absolute()
+        public async Task RightTaskQueued_Absolute()
         {
             for (var i = 0; i < 1000; i++)
             {
@@ -324,7 +324,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Time_Moves_Forward()
+        public async Task Time_Moves_Forward()
         {
             var ttr = new TestTaskRunner(1000);
 

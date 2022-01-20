@@ -12,7 +12,7 @@ namespace async_enumerable_dotnet_test
     public class DoOnDisposeTest
     {
         [Fact]
-        public async void Sync_Normal()
+        public async Task Sync_Normal()
         {
             var count = 0;
             await AsyncEnumerable.Range(1, 5)
@@ -23,7 +23,7 @@ namespace async_enumerable_dotnet_test
         }
         
         [Fact]
-        public async void Async_Normal()
+        public async Task Async_Normal()
         {
             var count = 0;
             await AsyncEnumerable.Range(1, 5)
@@ -38,7 +38,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Sync_Handler_Crash()
+        public async Task Sync_Handler_Crash()
         {
             try
             {
@@ -55,7 +55,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Sync_Handler_Crash_Double_Crash()
+        public async Task Sync_Handler_Crash_Double_Crash()
         {
             try
             {
@@ -74,7 +74,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Async_Handler_Crash()
+        public async Task Async_Handler_Crash()
         {
             try
             {
@@ -95,7 +95,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Async_Handler_Crash_Double_Crash()
+        public async Task Async_Handler_Crash_Double_Crash()
         {
             try
             {

@@ -6,20 +6,21 @@ using Xunit;
 using async_enumerable_dotnet;
 using System.Linq;
 using System;
+using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet_test
 {
     public class CombineLatestTest
     {
         [Fact]
-        public async void Empty()
+        public async Task Empty()
         {
             await AsyncEnumerable.CombineLatest<int, int>(v => v.Sum())
                 .AssertResult();
         }
 
         [Fact]
-        public async void Single()
+        public async Task Single()
         {
             await AsyncEnumerable.CombineLatest(v => v.Sum() + 1,
                 AsyncEnumerable.Just(1))
@@ -27,28 +28,28 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void One_Item_Each()
+        public async Task One_Item_Each()
         {
             await AsyncEnumerable.CombineLatest(v => v.Sum(), AsyncEnumerable.Just(1), AsyncEnumerable.Just(2))
                 .AssertResult(3);
         }
 
         [Fact]
-        public async void One_Is_Empty()
+        public async Task One_Is_Empty()
         {
             await AsyncEnumerable.CombineLatest(v => v.Sum(), AsyncEnumerable.Empty<int>(), AsyncEnumerable.Just(2))
                 .AssertResult();
         }
 
         [Fact]
-        public async void Two_Is_Empty()
+        public async Task Two_Is_Empty()
         {
             await AsyncEnumerable.CombineLatest(v => v.Sum(), AsyncEnumerable.Just(1), AsyncEnumerable.Empty<int>())
                 .AssertResult();
         }
 
         [Fact]
-        public async void ZigZag()
+        public async Task ZigZag()
         {
             var t = 200;
             if (Environment.GetEnvironmentVariable("CI") != null)
@@ -63,7 +64,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Second_Many()
+        public async Task Second_Many()
         {
             var t = 200;
             if (Environment.GetEnvironmentVariable("CI") != null)
@@ -78,7 +79,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Error()
+        public async Task Error()
         {
             await AsyncEnumerable.CombineLatest(v => v.Sum(),
                     AsyncEnumerable.Just(1), 

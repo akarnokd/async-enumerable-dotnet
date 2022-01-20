@@ -5,13 +5,14 @@
 using System;
 using Xunit;
 using async_enumerable_dotnet;
+using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet_test
 {
     public class ElementAtTest
     {
         [Fact]
-        public async void Normal()
+        public async Task Normal()
         {
             await AsyncEnumerable.Range(1, 5)
                 .ElementAt(2)
@@ -19,7 +20,7 @@ namespace async_enumerable_dotnet_test
         }
         
         [Fact]
-        public async void Normal_Default()
+        public async Task Normal_Default()
         {
             await AsyncEnumerable.Range(1, 5)
                 .ElementAt(2, 100)
@@ -27,7 +28,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Missing()
+        public async Task Missing()
         {
             await AsyncEnumerable.Range(1, 5)
                 .ElementAt(10)
@@ -35,7 +36,7 @@ namespace async_enumerable_dotnet_test
         }
         
         [Fact]
-        public async void Missing_Default()
+        public async Task Missing_Default()
         {
             await AsyncEnumerable.Range(1, 5)
                 .ElementAt(10, 100)

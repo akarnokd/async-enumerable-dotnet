@@ -12,7 +12,7 @@ namespace async_enumerable_dotnet_test
     public class LatestTest
     {
         [Fact]
-        public async void Skip_All()
+        public async Task Skip_All()
         {
             var en = AsyncEnumerable.Range(1, 5).Latest().GetAsyncEnumerator(default);
 
@@ -33,7 +33,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Normal()
+        public async Task Normal()
         {
             var push = new MulticastAsyncEnumerable<int>();
             var en = push.Latest().GetAsyncEnumerator(default);
@@ -70,7 +70,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Error()
+        public async Task Error()
         {
             await AsyncEnumerable.Error<int>(new InvalidOperationException())
                 .Latest()
@@ -78,7 +78,7 @@ namespace async_enumerable_dotnet_test
         }
         
         [Fact]
-        public async void Take()
+        public async Task Take()
         {
             await AsyncEnumerable.Interval(1, 5, TimeSpan.FromMilliseconds(200))
                 .Latest()

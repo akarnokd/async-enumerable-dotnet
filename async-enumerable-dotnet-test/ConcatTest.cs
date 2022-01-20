@@ -5,13 +5,14 @@
 using System.Collections.Generic;
 using Xunit;
 using async_enumerable_dotnet;
+using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet_test
 {
     public class ConcatTest
     {
         [Fact]
-        public async void Array_Normal()
+        public async Task Array_Normal()
         {
             await AsyncEnumerable.Concat(
                     AsyncEnumerable.Range(1, 3),
@@ -26,7 +27,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Enumerable_Normal()
+        public async Task Enumerable_Normal()
         {
             await AsyncEnumerable.Concat((IEnumerable<IAsyncEnumerable<int>>)new[] {
                         AsyncEnumerable.Range(1, 3),
@@ -42,7 +43,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void ConcatWith_Normal()
+        public async Task ConcatWith_Normal()
         {
             await AsyncEnumerable.Range(1, 3)
                 .ConcatWith(AsyncEnumerable.Range(4, 2))
@@ -50,7 +51,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void ConcatWith_Take()
+        public async Task ConcatWith_Take()
         {
             await AsyncEnumerable.Range(1, 5)
                 .Take(3)
@@ -59,7 +60,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Async_Normal()
+        public async Task Async_Normal()
         {
             await 
                 AsyncEnumerable.FromArray(

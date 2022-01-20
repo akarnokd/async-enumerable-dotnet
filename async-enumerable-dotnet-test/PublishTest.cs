@@ -5,13 +5,14 @@
 using Xunit;
 using async_enumerable_dotnet;
 using System;
+using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet_test
 {
     public class PublishTest
     {
         [Fact]
-        public async void Simple()
+        public async Task Simple()
         {
             await AsyncEnumerable.Range(1, 5)
                 .Publish(a => a.Map(v => v + 1))
@@ -19,7 +20,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Direct()
+        public async Task Direct()
         {
             await AsyncEnumerable.Range(1, 5)
                 .Publish(a => a)
@@ -27,7 +28,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Take()
+        public async Task Take()
         {
             await AsyncEnumerable.Range(1, 5)
                 .Publish(a => a.Map(v => v + 1))
@@ -36,7 +37,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Take_Inner()
+        public async Task Take_Inner()
         {
             await AsyncEnumerable.Range(1, 5)
                 .Publish(a => a.Take(3))
@@ -44,7 +45,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Take_Concat_Inner()
+        public async Task Take_Concat_Inner()
         {
             await AsyncEnumerable.Range(1, 5)
                 .Publish(a => a.Take(3).ConcatWith(AsyncEnumerable.Range(4, 2)))
@@ -52,7 +53,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Multicast_Merge()
+        public async Task Multicast_Merge()
         {
             await AsyncEnumerable.Range(1, 5)
                 .Publish(a => a.Take(3).MergeWith(a.Skip(3)))
@@ -60,7 +61,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Multicast_Concat()
+        public async Task Multicast_Concat()
         {
             await AsyncEnumerable.Range(1, 5)
                 .Publish(a => a.Take(3).ConcatWith(a))
@@ -72,7 +73,7 @@ namespace async_enumerable_dotnet_test
 
 
         [Fact]
-        public async void Unrelated()
+        public async Task Unrelated()
         {
             await AsyncEnumerable.Range(1, 5)
                 .Publish(a => AsyncEnumerable.Range(1, 5)
@@ -84,7 +85,7 @@ namespace async_enumerable_dotnet_test
 
 
         [Fact]
-        public async void Handler_Crash()
+        public async Task Handler_Crash()
         {
             await AsyncEnumerable.Range(1, 5)
                 .Publish<int, int>(v => throw new InvalidOperationException())
@@ -93,7 +94,7 @@ namespace async_enumerable_dotnet_test
 
 
         [Fact]
-        public async void Error()
+        public async Task Error()
         {
             await AsyncEnumerable.Error<int>(new InvalidOperationException())
                 .Publish(v => v.Map(w => w + 1))

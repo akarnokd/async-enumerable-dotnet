@@ -5,13 +5,14 @@
 using System;
 using Xunit;
 using async_enumerable_dotnet;
+using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet_test
 {
     public class IsEmptyTest
     {
         [Fact]
-        public async void NonEmpty()
+        public async Task NonEmpty()
         {
             await AsyncEnumerable.Range(1, 5)
                 .IsEmpty()
@@ -19,7 +20,7 @@ namespace async_enumerable_dotnet_test
         }
         
         [Fact]
-        public async void Empty()
+        public async Task Empty()
         {
             await AsyncEnumerable.Empty<int>()
                 .IsEmpty()
@@ -27,7 +28,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Error()
+        public async Task Error()
         {
             await AsyncEnumerable.Error<int>(new InvalidOperationException())
                 .IsEmpty()

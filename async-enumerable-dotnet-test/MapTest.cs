@@ -11,7 +11,7 @@ namespace async_enumerable_dotnet_test
     public class MapTest
     {
         [Fact]
-        public async void Sync_Normal()
+        public async Task Sync_Normal()
         {
             var result = AsyncEnumerable.Range(1, 5)
                 .Map(v => v * v);
@@ -20,7 +20,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Async_Normal()
+        public async Task Async_Normal()
         {
             var result = AsyncEnumerable.Range(1, 5)
                 .Map(async v => 

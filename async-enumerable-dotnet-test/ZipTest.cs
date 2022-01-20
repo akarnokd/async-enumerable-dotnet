@@ -6,13 +6,14 @@ using System;
 using System.Linq;
 using Xunit;
 using async_enumerable_dotnet;
+using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet_test
 {
     public class ZipTest
     {
         [Fact]
-        public async void SameLength()
+        public async Task SameLength()
         {
             var source = AsyncEnumerable.FromArray(1, 2, 3, 4);
 
@@ -22,7 +23,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void DifferentLengths()
+        public async Task DifferentLengths()
         {
             var source1 = AsyncEnumerable.FromArray(1, 2, 3, 4);
             var source2 = AsyncEnumerable.FromArray(1, 2, 3);
@@ -34,7 +35,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Error_One()
+        public async Task Error_One()
         {
             await AsyncEnumerable.Zip(v => v.Sum(), 
                     AsyncEnumerable.Error<int>(new InvalidOperationException()),
@@ -44,7 +45,7 @@ namespace async_enumerable_dotnet_test
         }
         
         [Fact]
-        public async void Error_Both()
+        public async Task Error_Both()
         {
             await AsyncEnumerable.Zip(v => v.Sum(), 
                     AsyncEnumerable.Error<int>(new InvalidOperationException()),

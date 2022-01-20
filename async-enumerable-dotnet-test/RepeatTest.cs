@@ -11,7 +11,7 @@ namespace async_enumerable_dotnet_test
     public class RepeatTest
     {
         [Fact]
-        public async void Unlimited()
+        public async Task Unlimited()
         {
             await AsyncEnumerable.Just(1)
                 .Repeat()
@@ -20,7 +20,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Limited()
+        public async Task Limited()
         {
             await AsyncEnumerable.Range(1, 2)
                 .Repeat(3)
@@ -28,7 +28,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Limited_Condition()
+        public async Task Limited_Condition()
         {
             await AsyncEnumerable.Range(1, 2)
                 .Repeat(n => n < 2)
@@ -36,7 +36,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Limited_Condition_Task()
+        public async Task Limited_Condition_Task()
         {
             await AsyncEnumerable.Range(1, 2)
                 .Repeat(async n => {

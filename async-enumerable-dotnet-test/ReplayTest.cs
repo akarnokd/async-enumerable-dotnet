@@ -5,13 +5,14 @@
 using Xunit;
 using async_enumerable_dotnet;
 using System;
+using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet_test
 {
     public class ReplayTest
     {
         [Fact]
-        public async void All_Direct()
+        public async Task All_Direct()
         {
             await AsyncEnumerable.Range(1, 5)
                 .Replay(v => v)
@@ -19,7 +20,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void All_Simple()
+        public async Task All_Simple()
         {
             await AsyncEnumerable.Range(1, 5)
                 .Replay(v => v.Map(w => w + 1))
@@ -27,7 +28,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void All_Take()
+        public async Task All_Take()
         {
             await AsyncEnumerable.Range(1, 5)
                 .Replay(v => v.Take(3))
@@ -35,7 +36,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void All_Recombine()
+        public async Task All_Recombine()
         {
             await AsyncEnumerable.Range(1, 5)
                 .Replay(v => v.Take(3).ConcatWith(v.Skip(3)))
@@ -43,7 +44,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void All_Twice()
+        public async Task All_Twice()
         {
             await AsyncEnumerable.Range(1, 5)
                 .Replay(v => v.ConcatWith(v))
@@ -51,7 +52,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void All_Handler_Crash()
+        public async Task All_Handler_Crash()
         {
             await AsyncEnumerable.Range(1, 5)
                 .Replay<int, int>(v => throw new InvalidOperationException())

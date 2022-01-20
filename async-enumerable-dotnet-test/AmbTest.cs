@@ -3,17 +3,17 @@
 // See LICENSE file in the project root for full license information.
 
 using System;
-using System.Runtime.CompilerServices;
 using Xunit;
 using async_enumerable_dotnet;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet_test
 {
     public class AmbTest
     {
         [Fact]
-        public async void First_Win()
+        public async Task First_Win()
         {
             await AsyncEnumerable.Amb(
                     AsyncEnumerable.Interval(1, 5, TimeSpan.FromMilliseconds(100)),
@@ -23,7 +23,7 @@ namespace async_enumerable_dotnet_test
         }
         
         [Fact]
-        public async void First_Win_Error()
+        public async Task First_Win_Error()
         {
             await AsyncEnumerable.Amb(
                     AsyncEnumerable.Error<long>(new InvalidOperationException()),
@@ -33,7 +33,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void First_Win_Empty()
+        public async Task First_Win_Empty()
         {
             await AsyncEnumerable.Amb(
                     AsyncEnumerable.Empty<long>(),
@@ -43,7 +43,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Second_Win()
+        public async Task Second_Win()
         {
             await AsyncEnumerable.Amb(
                     AsyncEnumerable.Interval(1, 5, TimeSpan.FromMilliseconds(200)),
@@ -53,7 +53,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Second_Win_Error()
+        public async Task Second_Win_Error()
         {
             await AsyncEnumerable.Amb(
                     AsyncEnumerable.Interval(1, 5, TimeSpan.FromMilliseconds(200)),
@@ -63,7 +63,7 @@ namespace async_enumerable_dotnet_test
         }
         
         [Fact]
-        public async void Second_Win_Empty()
+        public async Task Second_Win_Empty()
         {
             await AsyncEnumerable.Amb(
                     AsyncEnumerable.Interval(11, 5, TimeSpan.FromMilliseconds(100)),
@@ -73,7 +73,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Any_Win()
+        public async Task Any_Win()
         {
             var disposed = 0;
             await AsyncEnumerable.Amb(
@@ -86,7 +86,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void First_Win_Sync()
+        public async Task First_Win_Sync()
         {
             var ttr = new TestTaskRunner();
 
@@ -124,7 +124,7 @@ namespace async_enumerable_dotnet_test
         }
         
         [Fact]
-        public async void Second_Win_Sync()
+        public async Task Second_Win_Sync()
         {
             var ttr = new TestTaskRunner();
 

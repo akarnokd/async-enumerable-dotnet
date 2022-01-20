@@ -5,13 +5,14 @@
 using Xunit;
 using async_enumerable_dotnet;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet_test
 {
     public class ConcatMapTest
     {
         [Fact]
-        public async void Async_Normal()
+        public async Task Async_Normal()
         {
             await AsyncEnumerable.Range(1, 5)
                 .ConcatMap(v => AsyncEnumerable.Range(v * 10, 5))
@@ -25,7 +26,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Async_Filter()
+        public async Task Async_Filter()
         {
             await AsyncEnumerable.Range(1, 10)
                 .ConcatMap(v => v % 2 == 0 ? AsyncEnumerable.Just(v) : AsyncEnumerable.Empty<int>())
@@ -35,7 +36,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Async_Take()
+        public async Task Async_Take()
         {
             await AsyncEnumerable.Range(1, 5)
                 .ConcatMap(v => AsyncEnumerable.Range(v * 10, 5))
@@ -47,7 +48,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Enumerable_Normal()
+        public async Task Enumerable_Normal()
         {
             await AsyncEnumerable.Range(1, 5)
                 .ConcatMap(v => Enumerable.Range(v * 10, 5))
@@ -61,7 +62,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Enumerable_Filter()
+        public async Task Enumerable_Filter()
         {
             await AsyncEnumerable.Range(1, 10)
                 .ConcatMap(v => v % 2 == 0 ? new[] { v } : Enumerable.Empty<int>())
@@ -71,7 +72,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Enumerable_Take()
+        public async Task Enumerable_Take()
         {
             await AsyncEnumerable.Range(1, 5)
                 .ConcatMap(v => Enumerable.Range(v * 10, 5))

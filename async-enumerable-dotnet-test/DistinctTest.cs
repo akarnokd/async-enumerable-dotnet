@@ -6,13 +6,14 @@ using System;
 using Xunit;
 using async_enumerable_dotnet;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet_test
 {
     public class DistinctTest
     {
         [Fact]
-        public async void Empty()
+        public async Task Empty()
         {
             await AsyncEnumerable.Empty<int>()
                 .Distinct()
@@ -20,7 +21,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Normal()
+        public async Task Normal()
         {
             await AsyncEnumerable.Range(1, 5)
                 .Distinct()
@@ -28,7 +29,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Redundant()
+        public async Task Redundant()
         {
             await AsyncEnumerable.FromArray(1, 2, 3, 2, 1, 4, 5, 1, 5)
                 .Distinct()
@@ -36,7 +37,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void KeySelector()
+        public async Task KeySelector()
         {
             await AsyncEnumerable.Range(1, 5)
                 .Distinct(v => v % 3)
@@ -44,7 +45,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void EqualityComparer()
+        public async Task EqualityComparer()
         {
             await AsyncEnumerable.Range(1, 5)
                 .Distinct(EqualityComparer<int>.Default)
@@ -52,7 +53,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void KeySelector_EqualityComparer()
+        public async Task KeySelector_EqualityComparer()
         {
             await AsyncEnumerable.Range(1, 5)
                 .Distinct(v => v % 3, EqualityComparer<long>.Default)
@@ -60,7 +61,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Custom_Set()
+        public async Task Custom_Set()
         {
             await AsyncEnumerable.Range(1, 5)
                 .Distinct(v => v % 3, () => new HashSet<long>())
@@ -68,7 +69,7 @@ namespace async_enumerable_dotnet_test
         }
         
         [Fact]
-        public async void Custom_Crash()
+        public async Task Custom_Crash()
         {
             await AsyncEnumerable.Range(1, 5)
                 .Distinct(v => v % 3, () => throw new InvalidOperationException())
