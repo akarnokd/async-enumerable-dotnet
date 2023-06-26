@@ -5,13 +5,14 @@
 using Xunit;
 using async_enumerable_dotnet;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet_test
 {
     public class DistinctUntilChangedTest
     {
         [Fact]
-        public async void Empty()
+        public async Task Empty()
         {
             await AsyncEnumerable.Empty<int>()
                 .DistinctUntilChanged()
@@ -19,7 +20,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Just()
+        public async Task Just()
         {
             await AsyncEnumerable.Just(1)
                 .DistinctUntilChanged()
@@ -27,7 +28,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Range()
+        public async Task Range()
         {
             await AsyncEnumerable.Range(1, 5)
                 .DistinctUntilChanged()
@@ -35,7 +36,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Redundant()
+        public async Task Redundant()
         {
             await AsyncEnumerable.FromArray(1, 2, 3, 3, 2, 1, 1, 4, 5, 4, 4)
                 .DistinctUntilChanged()
@@ -43,7 +44,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Redundant_Comparer()
+        public async Task Redundant_Comparer()
         {
             await AsyncEnumerable.FromArray(1, 2, 3, 3, 2, 1, 1, 4, 5, 4, 4)
                 .DistinctUntilChanged(EqualityComparer<int>.Default)
@@ -51,7 +52,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void KeySelector()
+        public async Task KeySelector()
         {
             await AsyncEnumerable.Range(1, 10)
                 .DistinctUntilChanged(k => k / 3)
@@ -59,7 +60,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void KeySelector_KeyComparer()
+        public async Task KeySelector_KeyComparer()
         {
             await AsyncEnumerable.Range(1, 10)
                 .DistinctUntilChanged(k => k / 3, EqualityComparer<long>.Default)

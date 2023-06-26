@@ -6,13 +6,14 @@ using System;
 using Xunit;
 using async_enumerable_dotnet;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet_test
 {
     public class ToListTest
     {
         [Fact]
-        public async void Normal()
+        public async Task Normal()
         {
             await AsyncEnumerable.Range(1, 5)
                 .ToList()
@@ -20,7 +21,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Empty()
+        public async Task Empty()
         {
             await AsyncEnumerable.Empty<int>()
                 .ToList()
@@ -28,7 +29,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Error()
+        public async Task Error()
         {
             await AsyncEnumerable.Error<int>(new InvalidOperationException())
                 .ToList()

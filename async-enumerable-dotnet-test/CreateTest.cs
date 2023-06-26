@@ -12,7 +12,7 @@ namespace async_enumerable_dotnet_test
     public class CreateTest
     {
         [Fact]
-        public async void Empty()
+        public async Task Empty()
         {
             var result = AsyncEnumerable.Create<int>(async e =>
             {
@@ -23,7 +23,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Range()
+        public async Task Range()
         {
             var result = AsyncEnumerable.Create<int>(async e =>
             {
@@ -37,7 +37,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Range_Loop()
+        public async Task Range_Loop()
         {
             for (var j = 0; j < 1000; j++)
             {
@@ -54,7 +54,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Items_And_Error()
+        public async Task Items_And_Error()
         {
             var result = AsyncEnumerable.Create<int>(async e =>
             {
@@ -69,7 +69,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Take()
+        public async Task Take()
         {
             await AsyncEnumerable.Create<int>(async e =>
             {
@@ -83,7 +83,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Take_Loop()
+        public async Task Take_Loop()
         {
             for (var j = 0; j < 1000; j++)
             {

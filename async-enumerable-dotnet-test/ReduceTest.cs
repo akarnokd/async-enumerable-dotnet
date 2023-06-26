@@ -5,13 +5,14 @@
 using System;
 using Xunit;
 using async_enumerable_dotnet;
+using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet_test
 {
     public class ReduceTest
     {
         [Fact]
-        public async void NoSeed_Normal()
+        public async Task NoSeed_Normal()
         {
             await AsyncEnumerable.Range(1, 5)
                 .Reduce((a, b) => a + b)
@@ -19,7 +20,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void NoSeed_Empty()
+        public async Task NoSeed_Empty()
         {
             await AsyncEnumerable.Empty<int>()
                 .Reduce((a, b) => a + b)
@@ -27,7 +28,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void WithSeed_Normal()
+        public async Task WithSeed_Normal()
         {
             await AsyncEnumerable.Range(1, 5)
                 .Reduce(() => 10, (a, b) => a + b)
@@ -35,7 +36,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void WithSeed_Empty()
+        public async Task WithSeed_Empty()
         {
             await AsyncEnumerable.Empty<int>()
                 .Reduce(() => 10, (a, b) => a + b)
@@ -43,7 +44,7 @@ namespace async_enumerable_dotnet_test
         }
         
         [Fact]
-        public async void WithSeed_Crash()
+        public async Task WithSeed_Crash()
         {
             await AsyncEnumerable.Empty<int>()
                 .Reduce<int, int>(() => throw new InvalidOperationException(), (a, b) => a + b)

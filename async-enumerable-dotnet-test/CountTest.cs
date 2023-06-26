@@ -5,13 +5,14 @@
 using System;
 using Xunit;
 using async_enumerable_dotnet;
+using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet_test
 {
     public class CountTest
     {
         [Fact]
-        public async void Empty()
+        public async Task Empty()
         {
             await AsyncEnumerable.Empty<int>()
                 .Count()
@@ -19,7 +20,7 @@ namespace async_enumerable_dotnet_test
         }
         
         [Fact]
-        public async void Just()
+        public async Task Just()
         {
             await AsyncEnumerable.Just(1)
                 .Count()
@@ -27,7 +28,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Range()
+        public async Task Range()
         {
             await AsyncEnumerable.Range(1, 100)
                 .Count()
@@ -36,7 +37,7 @@ namespace async_enumerable_dotnet_test
 
         
         [Fact]
-        public async void Error()
+        public async Task Error()
         {
             await AsyncEnumerable.Range(1, 100).WithError(new InvalidOperationException())
                 .Count()

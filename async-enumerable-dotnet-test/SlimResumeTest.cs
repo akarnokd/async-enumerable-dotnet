@@ -13,7 +13,7 @@ namespace async_enumerable_dotnet_test
     public class SlimResumeTest
     {
         [Fact]
-        public async void ReadyUpfront()
+        public async Task ReadyUpfront()
         {
             var rsm = new SlimResume();
             rsm.Signal();
@@ -22,7 +22,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Completed()
+        public async Task Completed()
         {
             var rsm = SlimResume.Completed;
 
@@ -30,7 +30,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void SignalLater()
+        public async Task SignalLater()
         {
             var rsm = new SlimResume();
 
@@ -44,7 +44,7 @@ namespace async_enumerable_dotnet_test
 
 
         [Fact]
-        public async void Race()
+        public async Task Race()
         {
             for (var i = 0; i < 10_000; i++)
             {

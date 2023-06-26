@@ -4,13 +4,14 @@
 
 using Xunit;
 using async_enumerable_dotnet;
+using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet_test
 {
     public class TakeWhileTest
     {
         [Fact]
-        public async void All_Pass()
+        public async Task All_Pass()
         {
             await AsyncEnumerable.Range(1, 5)
                 .TakeWhile(v => true)
@@ -18,7 +19,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Some_Pass()
+        public async Task Some_Pass()
         {
             await AsyncEnumerable.Range(1, 5)
                 .TakeWhile(v => v < 4)
@@ -26,7 +27,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void None_Pass()
+        public async Task None_Pass()
         {
             await AsyncEnumerable.Range(1, 5)
                 .TakeWhile(v => false)

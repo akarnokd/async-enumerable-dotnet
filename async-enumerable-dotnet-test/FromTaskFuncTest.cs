@@ -11,7 +11,7 @@ namespace async_enumerable_dotnet_test
     public class FromTaskFuncTest
     {
         [Fact]
-        public async void Func_Normal()
+        public async Task Func_Normal()
         {
             var source = AsyncEnumerable.FromTask(async () =>
             {
@@ -23,7 +23,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Task_Normal()
+        public async Task Task_Normal()
         {
             var source = AsyncEnumerable.FromTask(Task.Delay(100).ContinueWith(t => 1));
 

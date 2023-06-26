@@ -5,13 +5,14 @@
 using System;
 using Xunit;
 using async_enumerable_dotnet;
+using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet_test
 {
     public class FirstLastSingleTest
     {
         [Fact]
-        public async void First_Empty()
+        public async Task First_Empty()
         {
             await AsyncEnumerable.Empty<int>()
                 .First()
@@ -19,7 +20,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void First_Empty_Default()
+        public async Task First_Empty_Default()
         {
             await AsyncEnumerable.Empty<int>()
                 .First(1)
@@ -27,7 +28,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void First()
+        public async Task First()
         {
             await AsyncEnumerable.Range(1, 5)
                 .First()
@@ -35,7 +36,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void First_Default()
+        public async Task First_Default()
         {
             await AsyncEnumerable.Range(1, 5)
                 .First(100)
@@ -43,7 +44,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Last_Empty()
+        public async Task Last_Empty()
         {
             await AsyncEnumerable.Empty<int>()
                 .Last()
@@ -51,7 +52,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Last_Empty_Default()
+        public async Task Last_Empty_Default()
         {
             await AsyncEnumerable.Empty<int>()
                 .Last(1)
@@ -59,7 +60,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Last()
+        public async Task Last()
         {
             await AsyncEnumerable.Range(1, 5)
                 .Last()
@@ -67,7 +68,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Last_Default()
+        public async Task Last_Default()
         {
             await AsyncEnumerable.Range(1, 5)
                 .Last(100)
@@ -75,7 +76,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Single_Empty()
+        public async Task Single_Empty()
         {
             await AsyncEnumerable.Empty<int>()
                 .Single()
@@ -83,7 +84,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Single_Empty_Default()
+        public async Task Single_Empty_Default()
         {
             await AsyncEnumerable.Empty<int>()
                 .Single(1)
@@ -91,7 +92,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Single()
+        public async Task Single()
         {
             await AsyncEnumerable.Just(1)
                 .Single()
@@ -99,7 +100,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Single_Default()
+        public async Task Single_Default()
         {
             await AsyncEnumerable.Just(1)
                 .Single(100)
@@ -107,7 +108,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Single_More()
+        public async Task Single_More()
         {
             await AsyncEnumerable.Range(1, 5)
                 .Single()
@@ -115,7 +116,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Single_More_Default()
+        public async Task Single_More_Default()
         {
             await AsyncEnumerable.Range(1, 5)
                 .Single(100)

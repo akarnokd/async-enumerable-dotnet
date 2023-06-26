@@ -5,13 +5,14 @@
 using System;
 using Xunit;
 using async_enumerable_dotnet;
+using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet_test
 {
     public class ErrorTest
     {
         [Fact]
-        public async void Calls()
+        public async Task Calls()
         {
             var en = AsyncEnumerable.Error<int>(new InvalidOperationException()).GetAsyncEnumerator(default);
 

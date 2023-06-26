@@ -12,7 +12,7 @@ namespace async_enumerable_dotnet_test
     public class RetryTest
     {
         [Fact]
-        public async void Retry_Unlimited()
+        public async Task Retry_Unlimited()
         {
             await AsyncEnumerable.Range(1, 2)
                 .WithError(new Exception())
@@ -22,7 +22,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Retry_Max()
+        public async Task Retry_Max()
         {
             await AsyncEnumerable.Range(1, 2)
                 .WithError(new InvalidOperationException())
@@ -31,7 +31,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Retry_Condition()
+        public async Task Retry_Condition()
         {
             await AsyncEnumerable.Range(1, 2)
                 .WithError(new InvalidOperationException())
@@ -40,7 +40,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Retry_Condition_False()
+        public async Task Retry_Condition_False()
         {
             await AsyncEnumerable.Range(1, 2)
                 .WithError(new InvalidOperationException())
@@ -49,7 +49,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Retry_Condition_Task()
+        public async Task Retry_Condition_Task()
         {
             await AsyncEnumerable.Range(1, 2)
                 .WithError(new InvalidOperationException())
@@ -61,7 +61,7 @@ namespace async_enumerable_dotnet_test
         }
         
         [Fact]
-        public async void Retry_Condition_Task_False()
+        public async Task Retry_Condition_Task_False()
         {
             await AsyncEnumerable.Range(1, 2)
                 .WithError(new InvalidOperationException())

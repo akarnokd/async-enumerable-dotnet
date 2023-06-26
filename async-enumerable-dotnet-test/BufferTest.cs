@@ -5,13 +5,14 @@
 using System.Collections.Generic;
 using Xunit;
 using async_enumerable_dotnet;
+using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet_test
 {
     public class BufferTest
     {
         [Fact]
-        public async void Exact_Remainder()
+        public async Task Exact_Remainder()
         {
             await AsyncEnumerable.Range(1, 5)
                 .Buffer(2)
@@ -23,7 +24,7 @@ namespace async_enumerable_dotnet_test
         }
         
         [Fact]
-        public async void Exact_Remainder_SizeSkip()
+        public async Task Exact_Remainder_SizeSkip()
         {
             await AsyncEnumerable.Range(1, 5)
                 .Buffer(2, 2)
@@ -35,7 +36,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Exact_Empty()
+        public async Task Exact_Empty()
         {
             await AsyncEnumerable.Empty<int>()
                 .Buffer(2)
@@ -43,7 +44,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Exact_Full()
+        public async Task Exact_Full()
         {
             await AsyncEnumerable.Range(1, 6)
                 .Buffer(2)
@@ -55,7 +56,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Skip_2_Size_1()
+        public async Task Skip_2_Size_1()
         {
             await AsyncEnumerable.Range(1, 5)
                 .Buffer(1, 2)
@@ -67,7 +68,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Skip_2_Size_1_Empty()
+        public async Task Skip_2_Size_1_Empty()
         {
             await AsyncEnumerable.Empty<int>()
                 .Buffer(1, 2)
@@ -75,7 +76,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Skip_3_Size_1_Empty()
+        public async Task Skip_3_Size_1_Empty()
         {
             await AsyncEnumerable.Empty<int>()
                 .Buffer(1, 3)
@@ -83,7 +84,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Skip_3_Size_1()
+        public async Task Skip_3_Size_1()
         {
             await AsyncEnumerable.Range(1, 5)
                 .Buffer(1, 3)
@@ -94,7 +95,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Skip_3_Size_2_Empty()
+        public async Task Skip_3_Size_2_Empty()
         {
             await AsyncEnumerable.Empty<int>()
                 .Buffer(2, 3)
@@ -102,7 +103,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Skip_3_Size_2()
+        public async Task Skip_3_Size_2()
         {
             await AsyncEnumerable.Range(1, 5)
                 .Buffer(2, 3)
@@ -113,7 +114,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Overlap_2_Skip_1()
+        public async Task Overlap_2_Skip_1()
         {
             await AsyncEnumerable.Range(1, 5)
                 .Buffer(2, 1)
@@ -127,7 +128,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Overlap_3_Skip_1()
+        public async Task Overlap_3_Skip_1()
         {
             await AsyncEnumerable.Range(1, 5)
                 .Buffer(3, 1)
@@ -141,7 +142,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Overlap_3_Skip_2()
+        public async Task Overlap_3_Skip_2()
         {
             await AsyncEnumerable.Range(1, 5)
                 .Buffer(3, 2)
@@ -153,7 +154,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Overlap_2_Skip_1_Empty()
+        public async Task Overlap_2_Skip_1_Empty()
         {
             await AsyncEnumerable.Empty<int>()
                 .Buffer(2, 1)
@@ -161,7 +162,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Overlap_3_Skip_1_Empty()
+        public async Task Overlap_3_Skip_1_Empty()
         {
             await AsyncEnumerable.Empty<int>()
                 .Buffer(3, 1)
@@ -169,7 +170,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Overlap_3_Skip_2_Empty()
+        public async Task Overlap_3_Skip_2_Empty()
         {
             await AsyncEnumerable.Empty<int>()
                 .Buffer(3, 2)
@@ -177,7 +178,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Overlap_Custom_Collection()
+        public async Task Overlap_Custom_Collection()
         {
             await AsyncEnumerable.Range(1, 5)
                 .Buffer(2, 1, () => new HashSet<int>())
@@ -191,7 +192,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Exact_Custom_Collection()
+        public async Task Exact_Custom_Collection()
         {
             await AsyncEnumerable.Range(1, 5)
                 .Buffer(2, () => new HashSet<int>())

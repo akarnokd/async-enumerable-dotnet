@@ -5,13 +5,14 @@
 using System;
 using Xunit;
 using async_enumerable_dotnet;
+using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet_test
 {
     public class DebounceTest
     {
         [Fact]
-        public async void Keep_All()
+        public async Task Keep_All()
         {
             var t = 100;
             if (Environment.GetEnvironmentVariable("CI") != null)
@@ -25,7 +26,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Skip_All()
+        public async Task Skip_All()
         {
             await AsyncEnumerable.Range(1, 5)
                 .Debounce(TimeSpan.FromMilliseconds(1000))
@@ -33,7 +34,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Keep_All_EmitLast()
+        public async Task Keep_All_EmitLast()
         {
             var t = 100;
             if (Environment.GetEnvironmentVariable("CI") != null)
@@ -47,7 +48,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Skip_All_EmitLast()
+        public async Task Skip_All_EmitLast()
         {
             await AsyncEnumerable.Range(1, 5)
                 .Debounce(TimeSpan.FromMilliseconds(1000), true)
@@ -55,7 +56,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Empty()
+        public async Task Empty()
         {
             await AsyncEnumerable.Empty<int>()
                 .Debounce(TimeSpan.FromMilliseconds(1000))
@@ -63,7 +64,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Error()
+        public async Task Error()
         {
             await AsyncEnumerable.Error<int>(new InvalidOperationException())
                 .Debounce(TimeSpan.FromMilliseconds(1000))
@@ -71,7 +72,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Error_EmitLast()
+        public async Task Error_EmitLast()
         {
             await AsyncEnumerable.Error<int>(new InvalidOperationException())
                 .Debounce(TimeSpan.FromMilliseconds(1000), true)
@@ -79,7 +80,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Item_Error_EmitLast()
+        public async Task Item_Error_EmitLast()
         {
             await AsyncEnumerable.Just(1).WithError(new InvalidOperationException())
                 .Debounce(TimeSpan.FromMilliseconds(1000), true)
@@ -87,7 +88,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Delayed_Completion_After_Debounced_Item()
+        public async Task Delayed_Completion_After_Debounced_Item()
         {
             await AsyncEnumerable.Just(1)
                 .ConcatWith(
@@ -100,7 +101,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Long_Source_Skipped()
+        public async Task Long_Source_Skipped()
         {
             await AsyncEnumerable.Range(1, 1_000_000)
                 .Debounce(TimeSpan.FromSeconds(10))
@@ -108,7 +109,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Long_Source_Skipped_EmitLast()
+        public async Task Long_Source_Skipped_EmitLast()
         {
             await AsyncEnumerable.Range(1, 1_000_000)
                 .Debounce(TimeSpan.FromSeconds(10), true)
@@ -116,7 +117,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Take()
+        public async Task Take()
         {
             await AsyncEnumerable.Interval(1, 5, TimeSpan.FromMilliseconds(200))
                 .Debounce(TimeSpan.FromMilliseconds(100))
@@ -125,7 +126,7 @@ namespace async_enumerable_dotnet_test
         }
         
         [Fact]
-        public async void Take_EmitLatest()
+        public async Task Take_EmitLatest()
         {
             await AsyncEnumerable.Interval(1, 5, TimeSpan.FromMilliseconds(200))
                 .Debounce(TimeSpan.FromMilliseconds(100), true)

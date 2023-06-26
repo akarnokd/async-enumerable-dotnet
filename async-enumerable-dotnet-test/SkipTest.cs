@@ -4,13 +4,14 @@
 
 using Xunit;
 using async_enumerable_dotnet;
+using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet_test
 {
     public class SkipTest
     {
         [Fact]
-        public async void Normal()
+        public async Task Normal()
         {
             await AsyncEnumerable.Range(1, 10)
                 .Skip(5)
@@ -18,7 +19,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Zero()
+        public async Task Zero()
         {
             await AsyncEnumerable.Range(1, 10)
                 .Skip(0)
@@ -26,7 +27,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void All()
+        public async Task All()
         {
             await AsyncEnumerable.Range(1, 10)
                 .Skip(10)
@@ -34,7 +35,7 @@ namespace async_enumerable_dotnet_test
         }
         
         [Fact]
-        public async void More()
+        public async Task More()
         {
             await AsyncEnumerable.Range(1, 10)
                 .Skip(11)

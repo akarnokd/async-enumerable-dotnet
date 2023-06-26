@@ -26,7 +26,8 @@ namespace async_enumerable_dotnet.impl
 
         public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            var en = new DebounceEnumerator(_source.GetAsyncEnumerator(cancellationToken), _delay, _emitLast, cancellationToken);
+            var sourceCTS = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            var en = new DebounceEnumerator(_source.GetAsyncEnumerator(sourceCTS.Token), _delay, _emitLast, sourceCTS);
             en.MoveNext();
             return en;
         }
@@ -39,7 +40,7 @@ namespace async_enumerable_dotnet.impl
 
             private readonly bool _emitLast;
 
-            private readonly CancellationToken _ct;
+            private readonly CancellationTokenSource _sourceCTS;
 
             public T Current { get; private set; }
 
@@ -62,16 +63,17 @@ namespace async_enumerable_dotnet.impl
 
             private CancellationTokenSource _cts;
 
-            public DebounceEnumerator(IAsyncEnumerator<T> source, TimeSpan delay, bool emitLast, CancellationToken ct)
+            public DebounceEnumerator(IAsyncEnumerator<T> source, TimeSpan delay, bool emitLast, CancellationTokenSource cts)
             {
                 _source = source;
                 _delay = delay;
                 _emitLast = emitLast;
-                _ct = ct;
+                _sourceCTS = cts;
             }
 
             public ValueTask DisposeAsync()
             {
+                _sourceCTS.Cancel();
                 CancellationHelper.Cancel(ref _cts);
                 if (Interlocked.Increment(ref _disposeWip) == 1)
                 {
@@ -175,7 +177,7 @@ namespace async_enumerable_dotnet.impl
                             _emitLastItem = v;
                         }
                         var idx = ++_sourceIndex;
-                        var newCts = CancellationTokenSource.CreateLinkedTokenSource(_ct);
+                        var newCts = CancellationTokenSource.CreateLinkedTokenSource(_sourceCTS.Token);
                         if (CancellationHelper.Replace(ref _cts, newCts))
                         {
                             Task.Delay(_delay, newCts.Token)

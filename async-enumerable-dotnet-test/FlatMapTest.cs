@@ -12,7 +12,7 @@ namespace async_enumerable_dotnet_test
     public class FlatMapTest
     {
         [Fact]
-        public async void Simple()
+        public async Task Simple()
         {
             var result = AsyncEnumerable.Range(1, 5)
                 .FlatMap(v => AsyncEnumerable.Range(v * 10, 5))
@@ -29,7 +29,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Simple_MaxConcurrency_1()
+        public async Task Simple_MaxConcurrency_1()
         {
             var result = AsyncEnumerable.Range(1, 5)
                 .FlatMap(v => AsyncEnumerable.Range(v * 10, 5), 1)
@@ -45,7 +45,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Simple_MaxConcurrency_2()
+        public async Task Simple_MaxConcurrency_2()
         {
             var result = AsyncEnumerable.Range(1, 5)
                 .FlatMap(v => AsyncEnumerable.Range(v * 10, 5), 2)
@@ -62,7 +62,7 @@ namespace async_enumerable_dotnet_test
 
 
         [Fact]
-        public async void Simple_MaxConcurrency_8()
+        public async Task Simple_MaxConcurrency_8()
         {
             var result = AsyncEnumerable.Range(1, 5)
                 .FlatMap(v => AsyncEnumerable.Range(v * 10, 5), 8)
@@ -78,7 +78,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Simple_MaxConcurrency_1_Prefetch_1()
+        public async Task Simple_MaxConcurrency_1_Prefetch_1()
         {
             var result = AsyncEnumerable.Range(1, 5)
                 .FlatMap(v => AsyncEnumerable.Range(v * 10, 5)
@@ -95,7 +95,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void OutOfOrder()
+        public async Task OutOfOrder()
         {
             var t = 100;
             if (Environment.GetEnvironmentVariable("CI") != null)
@@ -113,7 +113,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Just_Mapped_To_Range()
+        public async Task Just_Mapped_To_Range()
         {
             var result = AsyncEnumerable.Range(1, 1)
                 .FlatMap(v => AsyncEnumerable.Range(v * 10, 5))
@@ -125,7 +125,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Range_Mapped_To_Just()
+        public async Task Range_Mapped_To_Just()
         {
             var result = AsyncEnumerable.Range(1, 5)
                 .FlatMap(v => AsyncEnumerable.Range(v * 10, 1))
@@ -137,7 +137,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Range_Mapped_To_Just_Max1()
+        public async Task Range_Mapped_To_Just_Max1()
         {
             var result = AsyncEnumerable.Range(1, 5)
                 .FlatMap(v => AsyncEnumerable.Range(v * 10, 1), 1)
@@ -149,7 +149,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Take()
+        public async Task Take()
         {
             var disposed = 0;
 
@@ -170,7 +170,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Timer()
+        public async Task Timer()
         {
             await AsyncEnumerable.Range(1, 10)
                 .FlatMap(v => AsyncEnumerable.Timer(TimeSpan.FromMilliseconds(100)))
@@ -179,11 +179,40 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Mapper_Crash()
+        public async Task Mapper_Crash()
         {
             await AsyncEnumerable.Range(1, 5)
                 .FlatMap<int, int>(v => throw new InvalidOperationException())
                 .AssertFailure(typeof(InvalidOperationException));
+        }
+
+        [Fact]
+        public async Task NoCancelDelay()
+        {
+            var start = DateTime.Now;
+            try
+            {
+                await foreach (var item in async_enumerable_dotnet.AsyncEnumerable.Interval(TimeSpan.Zero, TimeSpan.FromSeconds(10))
+                .Map(x => async_enumerable_dotnet.AsyncEnumerable.Just(x))
+                .Merge())
+                {
+                    Console.WriteLine(item);
+
+                    throw new Exception("expected");
+                }
+
+                throw new Exception("unexpected");
+            }
+            catch (Exception e) when (e.Message == "expected")
+            {
+                // expected
+            }
+            var end = DateTime.Now;
+
+            if (end - start > TimeSpan.FromSeconds(5))
+            {
+                Assert.True(false, "Test took too much time");
+            }
         }
     }
 }

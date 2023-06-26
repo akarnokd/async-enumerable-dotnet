@@ -6,13 +6,14 @@ using Xunit;
 using async_enumerable_dotnet;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet_test
 {
     public class BufferBoundaryTest
     {
         [Fact]
-        public async void Size()
+        public async Task Size()
         {
             await AsyncEnumerable.Range(1, 5)
                 .Buffer(AsyncEnumerable.Timer(TimeSpan.FromMilliseconds(200)), 2)
@@ -24,7 +25,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Size_Collection()
+        public async Task Size_Collection()
         {
             await AsyncEnumerable.Range(1, 5)
                 .Buffer(AsyncEnumerable.Timer(TimeSpan.FromMilliseconds(200)), () => new HashSet<int>(), 2)
@@ -36,7 +37,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Time()
+        public async Task Time()
         {
             var t = 100L;
             if (Environment.GetEnvironmentVariable("CI") != null)
@@ -61,7 +62,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Error_Main()
+        public async Task Error_Main()
         {
             await AsyncEnumerable.Error<int>(new InvalidOperationException())
                 .Buffer(AsyncEnumerable.Timer(TimeSpan.FromMilliseconds(200)), 2)
@@ -69,7 +70,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Error_Other()
+        public async Task Error_Other()
         {
             await AsyncEnumerable.Timer(TimeSpan.FromMilliseconds(200))
                 .Buffer(AsyncEnumerable.Error<int>(new InvalidOperationException()), 2)
@@ -77,7 +78,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Empty_Main()
+        public async Task Empty_Main()
         {
             await AsyncEnumerable.Empty<int>()
                 .Buffer(AsyncEnumerable.Timer(TimeSpan.FromMilliseconds(200)), 2)
@@ -85,7 +86,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Empty_Other()
+        public async Task Empty_Other()
         {
             await AsyncEnumerable.Timer(TimeSpan.FromMilliseconds(200))
                 .Buffer(AsyncEnumerable.Empty<int>(), 2)
@@ -93,7 +94,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Time_And_Size()
+        public async Task Time_And_Size()
         {
             var t = 100L;
             if (Environment.GetEnvironmentVariable("CI") != null)

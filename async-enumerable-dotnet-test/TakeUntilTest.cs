@@ -5,13 +5,14 @@
 using System;
 using Xunit;
 using async_enumerable_dotnet;
+using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet_test
 {
     public class TakeUntilTest
     {
         [Fact]
-        public async void Normal()
+        public async Task Normal()
         {
             var t = 500;
             if (Environment.GetEnvironmentVariable("CI") != null)
@@ -34,7 +35,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Until()
+        public async Task Until()
         {
             var disposedMain = 0;
             var disposedOther = 0;
@@ -52,7 +53,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void MainError()
+        public async Task MainError()
         {
             await AsyncEnumerable.Error<int>(new InvalidOperationException())
                 .TakeUntil(AsyncEnumerable.Timer(TimeSpan.FromMilliseconds(200)))
@@ -62,7 +63,7 @@ namespace async_enumerable_dotnet_test
 
         
         [Fact]
-        public async void OtherError()
+        public async Task OtherError()
         {
             await AsyncEnumerable.Timer(TimeSpan.FromMilliseconds(200))
                 .TakeUntil(AsyncEnumerable.Error<int>(new InvalidOperationException()))

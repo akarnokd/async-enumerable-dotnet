@@ -5,13 +5,14 @@
 using System;
 using Xunit;
 using async_enumerable_dotnet;
+using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet_test
 {
     public class ScanTest
     {
         [Fact]
-        public async void NoSeed_Some()
+        public async Task NoSeed_Some()
         {
             await AsyncEnumerable.Range(1, 5)
                 .Scan((a, b) => a + b)
@@ -19,7 +20,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void NoSeed_One()
+        public async Task NoSeed_One()
         {
             await AsyncEnumerable.Just(1)
                 .Scan((a, b) => a + b)
@@ -27,7 +28,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void NoSeed_None()
+        public async Task NoSeed_None()
         {
             await AsyncEnumerable.Empty<int>()
                 .Scan((a, b) => a + b)
@@ -35,7 +36,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Seed_Some()
+        public async Task Seed_Some()
         {
             await AsyncEnumerable.Range(1, 5)
                 .Scan(() => 100, (a, b) => a + b)
@@ -43,7 +44,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Seed_One()
+        public async Task Seed_One()
         {
             await AsyncEnumerable.Just(1)
                 .Scan(() => 100, (a, b) => a + b)
@@ -51,7 +52,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Seed_None()
+        public async Task Seed_None()
         {
             await AsyncEnumerable.Empty<int>()
                 .Scan(() => 100, (a, b) => a + b)
@@ -59,7 +60,7 @@ namespace async_enumerable_dotnet_test
         }
         
         [Fact]
-        public async void Seed_Crash()
+        public async Task Seed_Crash()
         {
             await AsyncEnumerable.Empty<int>()
                 .Scan<int, int>(() => throw new InvalidOperationException(), (a, b) => a + b)

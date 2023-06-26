@@ -55,6 +55,10 @@ namespace async_enumerable_dotnet.impl
 
             public async ValueTask DisposeAsync()
             {
+                foreach (var cts in _tokenSources)
+                {
+                    cts.Cancel();
+                }
                 foreach (var en in _enumerators)
                 {
                     await en.DisposeAsync().ConfigureAwait(false);

@@ -5,13 +5,14 @@
 using Xunit;
 using async_enumerable_dotnet;
 using System;
+using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet_test
 {
     public class ConcatMapEagerTest
     {
         [Fact]
-        public async void Normal()
+        public async Task Normal()
         {
             await AsyncEnumerable.Range(1, 5)
                 .ConcatMapEager(v => AsyncEnumerable.Range(v * 10, 5))
@@ -25,7 +26,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Normal_Take()
+        public async Task Normal_Take()
         {
             await AsyncEnumerable.Range(1, 5)
                 .ConcatMapEager(v => AsyncEnumerable.Range(v * 10, 5))
@@ -37,7 +38,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Normal_Params()
+        public async Task Normal_Params()
         {
             await AsyncEnumerable.ConcatEager(
                     AsyncEnumerable.Range(1, 5),
@@ -49,7 +50,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Normal_Params_MaxConcurrency()
+        public async Task Normal_Params_MaxConcurrency()
         {
             await AsyncEnumerable.ConcatEager(1,
                     AsyncEnumerable.Range(1, 5),
@@ -61,7 +62,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Normal_Params_MaxConcurrency_Prefetch()
+        public async Task Normal_Params_MaxConcurrency_Prefetch()
         {
             await AsyncEnumerable.ConcatEager(1, 1,
                     AsyncEnumerable.Range(1, 5),
@@ -73,7 +74,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Nested_Normal()
+        public async Task Nested_Normal()
         {
             await AsyncEnumerable.FromArray(
                     AsyncEnumerable.Range(1, 5),
@@ -86,7 +87,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Main_Error()
+        public async Task Main_Error()
         {
             await AsyncEnumerable.Range(1, 5).WithError(new InvalidOperationException())
                 .ConcatMapEager(v => AsyncEnumerable.Range(v * 10, 5))
@@ -100,7 +101,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Inner_Error()
+        public async Task Inner_Error()
         {
             await AsyncEnumerable.Range(1, 5)
                 .ConcatMapEager(v => {
@@ -121,7 +122,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void MaxConcurrency_Prefetch_Matrix()
+        public async Task MaxConcurrency_Prefetch_Matrix()
         {
             for (var concurrency = 1; concurrency < 7; concurrency++)
             {
@@ -141,7 +142,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Mapper_Crash()
+        public async Task Mapper_Crash()
         {
             await AsyncEnumerable.Range(1, 5)
                 .ConcatMapEager<int, int>(v => throw new InvalidOperationException())
@@ -149,7 +150,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Take()
+        public async Task Take()
         {
             await TestHelper.TimeSequence(0, 200, 400, 600)
                 .ConcatMapEager(v => AsyncEnumerable.Timer(TimeSpan.FromMilliseconds(100)))

@@ -4,13 +4,14 @@
 
 using Xunit;
 using async_enumerable_dotnet;
+using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet_test
 {
     public class SkipWhileTest
     {
         [Fact]
-        public async void Skip_All()
+        public async Task Skip_All()
         {
             await AsyncEnumerable.Range(1, 5)
                 .SkipWhile(v => v < 6)
@@ -18,7 +19,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Skip_Some()
+        public async Task Skip_Some()
         {
             await AsyncEnumerable.Range(1, 5)
                 .SkipWhile(v => v < 3)
@@ -26,7 +27,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Skip_None()
+        public async Task Skip_None()
         {
             await AsyncEnumerable.Range(1, 5)
                 .SkipWhile(v => v < 1)

@@ -5,13 +5,14 @@
 using System;
 using Xunit;
 using async_enumerable_dotnet;
+using System.Threading.Tasks;
 
 namespace async_enumerable_dotnet_test
 {
     public class SampleTest
     {
         [Fact]
-        public async void Normal()
+        public async Task Normal()
         {
             var t = 200;
             if (Environment.GetEnvironmentVariable("CI") != null)
@@ -29,7 +30,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Last()
+        public async Task Last()
         {
             await AsyncEnumerable.Range(1, 5)
                 .Sample(TimeSpan.FromMilliseconds(500))
@@ -37,7 +38,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Normal_EmitLast()
+        public async Task Normal_EmitLast()
         {
             var t = 200;
             if (Environment.GetEnvironmentVariable("CI") != null)
@@ -55,7 +56,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Last_EmitLast()
+        public async Task Last_EmitLast()
         {
             await AsyncEnumerable.Range(1, 5)
                 .Sample(TimeSpan.FromMilliseconds(500), true)
@@ -63,7 +64,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Error()
+        public async Task Error()
         {
             await AsyncEnumerable.Error<int>(new InvalidOperationException())
                 .Sample(TimeSpan.FromMilliseconds(500))
@@ -71,7 +72,7 @@ namespace async_enumerable_dotnet_test
         }
         
         [Fact]
-        public async void Error_EmitLast()
+        public async Task Error_EmitLast()
         {
             await AsyncEnumerable.Error<int>(new InvalidOperationException())
                 .Sample(TimeSpan.FromMilliseconds(500), true)
@@ -79,7 +80,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Take()
+        public async Task Take()
         {
             await TestHelper.TimeSequence(100, 300)
                 .Sample(TimeSpan.FromMilliseconds(200))

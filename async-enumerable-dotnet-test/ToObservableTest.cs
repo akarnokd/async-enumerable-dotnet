@@ -13,7 +13,7 @@ namespace async_enumerable_dotnet_test
     public class ToObservableTest
     {
         [Fact]
-        public async void Normal()
+        public async Task Normal()
         {
             var result = AsyncEnumerable.Range(1, 5)
                 .ToObservable();
@@ -31,7 +31,7 @@ namespace async_enumerable_dotnet_test
         }
 
         [Fact]
-        public async void Take()
+        public async Task Take()
         {
             var consumer = new BasicObserver<long>();
 
@@ -50,7 +50,7 @@ namespace async_enumerable_dotnet_test
         }
         
         [Fact]
-        public async void Error()
+        public async Task Error()
         {
             var ex = new InvalidOperationException();
             var result = AsyncEnumerable.Error<int>(ex)
