@@ -24,14 +24,12 @@ namespace async_enumerable_dotnet.impl
         public IAsyncEnumerator<TResult> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
             var enumerators = new IAsyncEnumerator<TSource>[_sources.Length];
-            var tokenSources = new CancellationTokenSource[_sources.Length];
+            var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             for (var i = 0; i < _sources.Length; i++)
             {
-                var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-                tokenSources[i] = cts;
                 enumerators[i] = _sources[i].GetAsyncEnumerator(cts.Token);
             }
-            return new ZipArrayEnumerator(enumerators, _zipper, tokenSources);
+            return new ZipArrayEnumerator(enumerators, _zipper, cts);
         }
 
         private sealed class ZipArrayEnumerator : IAsyncEnumerator<TResult>
@@ -42,15 +40,15 @@ namespace async_enumerable_dotnet.impl
 
             private readonly ValueTask<bool>[] _tasks;
 
-            private readonly CancellationTokenSource[] _tokenSources;
+            private readonly CancellationTokenSource _tokenSources;
 
             public ZipArrayEnumerator(IAsyncEnumerator<TSource>[] enumerators, Func<TSource[], TResult> zipper,
-                CancellationTokenSource[] tokenSources)
+                CancellationTokenSource tokenSource)
             {
                 _enumerators = enumerators;
                 _zipper = zipper;
                 _tasks = new ValueTask<bool>[enumerators.Length];
-                _tokenSources = tokenSources;
+                _tokenSources = tokenSource;
             }
 
             public TResult Current { get; private set; }
@@ -87,7 +85,6 @@ namespace async_enumerable_dotnet.impl
                         else
                         {
                             fullRow = false;
-                            break;
                         }
                     }
                     catch (Exception ex)
@@ -99,15 +96,13 @@ namespace async_enumerable_dotnet.impl
 
                 if (!fullRow)
                 {
+                    _tokenSources.Cancel();
+
                     if (errors != null)
                     {
                         throw errors;
                     }
 
-                    foreach (var cts in _tokenSources)
-                    {
-                        cts.Cancel();
-                    }
                     return false;
                 }
 
